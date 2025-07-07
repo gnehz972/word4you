@@ -14,7 +14,7 @@ fi
 if [ ! -f ".env" ]; then
     echo "⚠️  No .env file found."
     echo "💡 Configuration will be prompted automatically when needed!"
-    echo "   Just run: ./word4you learn <word> or ./word4you test"
+    echo "   Just run: ./word4you <word> or ./word4you test"
     echo ""
 fi
 

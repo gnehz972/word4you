@@ -91,7 +91,7 @@ def main():
     print("\n📋 Next steps:")
     print("1. Copy the executable to your desired location")
     print("2. Create a .env file with your GEMINI_API_KEY")
-    print("3. Run: ./word4you learn <word>")
+    print("3. Run: ./word4you <word>")
     print("\n💡 For development, use: uv run main.py <command>")
     
     return True
