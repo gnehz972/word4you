@@ -1,6 +1,7 @@
 use anyhow::Result;
 use console::{style, Term};
 use dialoguer::Select;
+use termimad::*;
 use crate::gemini_client::GeminiClient;
 use crate::utils::{commit_and_push_changes, format_commit_message, prepend_to_wordbook, validate_word};
 use crate::config::Config;
@@ -31,10 +32,17 @@ impl WordProcessor {
             .get_word_explanation(word, &self.config.gemini_prompt_template)
             .await?);
         
-        // Display the explanation
+        // Display the explanation with beautiful markdown rendering
         term.write_line("\n📖 Word Explanation:")?;
         term.write_line(&style("=".repeat(50)).blue().to_string())?;
-        term.write_line(&explanation)?;
+        
+        // Create a markdown skin for beautiful rendering
+        let skin = make_skin();
+        
+        // Render the markdown
+        let text = FmtText::from(&skin, &explanation, None);
+        term.write_line(&text.to_string())?;
+        
         term.write_line(&style("=".repeat(50)).blue().to_string())?;
         
         // Ask for user confirmation with options
@@ -74,9 +82,14 @@ impl WordProcessor {
                         .get_word_explanation(word, &self.config.gemini_prompt_template)
                         .await?;
                     explanation = Box::new(new_explanation);
+                    
                     term.write_line("\n📖 New Word Explanation:")?;
                     term.write_line(&style("=".repeat(50)).blue().to_string())?;
-                    term.write_line(&explanation)?;
+                    
+                    // Render the new markdown
+                    let text = FmtText::from(&skin, &explanation, None);
+                    term.write_line(&text.to_string())?;
+                    
                     term.write_line(&style("=".repeat(50)).blue().to_string())?;
                     continue; // Ask again
                 }
@@ -119,4 +132,22 @@ impl WordProcessor {
     pub async fn test_api_connection(&self) -> Result<bool> {
         self.gemini_client.test_connection().await
     }
+}
+
+fn make_skin() -> MadSkin {
+    let mut skin = MadSkin::default();
+    
+    // Configure colors for different markdown elements
+    skin.set_headers_fg(rgb(255, 187, 0));
+    skin.bold.set_fg(rgb(255, 187, 0));
+    skin.italic.set_fg(rgb(215, 255, 135));
+    skin.bullet = StyledChar::from_fg_char(rgb(255, 187, 0), '•');
+    skin.quote_mark = StyledChar::from_fg_char(rgb(0, 187, 255), '│');
+    skin.quote_mark.set_fg(rgb(0, 187, 255));
+    skin.inline_code.set_fg(rgb(255, 119, 119));
+    skin.inline_code.set_bg(rgb(40, 44, 52));
+    skin.code_block.set_bg(rgb(40, 44, 52));
+    skin.code_block.set_fg(rgb(255, 119, 119));
+    
+    skin
 } 

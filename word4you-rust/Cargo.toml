@@ -29,6 +29,7 @@ dotenvy = "0.15"
 console = "0.15"
 indicatif = "0.17"
 dialoguer = "0.11"
+termimad = "0.28"
 
 # File and path handling
 anyhow = "1.0"
