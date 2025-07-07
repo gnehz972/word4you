@@ -58,14 +58,11 @@ def main():
         f"--add-data=env.example{data_sep}.",  # Include example env file
         f"--add-data=wordbook.md{data_sep}.",  # Include wordbook if it exists
         "--hidden-import=click",
-        "--hidden-import=rich",
-        "--hidden-import=google",
+        "--hidden-import=rich", 
         "--hidden-import=google.genai",
+        "--hidden-import=google.genai.types",
         "--hidden-import=dotenv",
         "--hidden-import=git",
-        "--collect-all=google",
-        "--collect-all=google.genai",
-        "--additional-hooks-dir=.",
         "main.py"
     ]
     
