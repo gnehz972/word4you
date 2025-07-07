@@ -33,7 +33,7 @@ make build-standalone
 pip install pyinstaller
 
 # Build the executable
-pyinstaller --onefile --name=word4you --add-data=env.example;. --add-data=wordbook.md;. --hidden-import=click --hidden-import=rich --hidden-import=google.genai --hidden-import=dotenv --hidden-import=git main.py
+pyinstaller --onefile --name=word4you --add-data=env.example;. --add-data=vocabulary_notebook.md;. --hidden-import=click --hidden-import=rich --hidden-import=google.genai --hidden-import=dotenv --hidden-import=git main.py
 ```
 
 ## Build Output
@@ -80,7 +80,7 @@ nano .env
 Add your configuration:
 ```
 GEMINI_API_KEY=your_actual_api_key_here
-WORDBOOK_FILE=my_words.md
+VOCABULARY_NOTEBOOK_FILE=my_words.md
 GIT_REMOTE_URL=https://github.com/your/repo.git  # Optional
 ```
 
@@ -180,7 +180,7 @@ build_cmd = [
     "--onefile",
     "--name=word4you",
     "--add-data=env.example;.",
-    "--add-data=wordbook.md;.",
+    "--add-data=vocabulary_notebook.md;.",
     "--hidden-import=click",
     "--hidden-import=rich",
     "--hidden-import=google.genai",
