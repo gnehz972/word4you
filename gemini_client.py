@@ -7,7 +7,6 @@ class GeminiClient:
     
     def __init__(self):
         """Initialize the Gemini client."""
-        print(f"Initializing Gemini client with API key: {Config.GEMINI_API_KEY}")
         genai.configure(api_key=Config.GEMINI_API_KEY)
         self.model = genai.GenerativeModel('gemini-2.0-flash-lite')
     
