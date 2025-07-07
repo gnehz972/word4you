@@ -4,8 +4,8 @@ use git2::{Repository, Signature};
 use std::fs;
 use std::path::Path;
 
-pub fn ensure_wordbook_exists(wordbook_file: &str) -> Result<()> {
-    if !Path::new(wordbook_file).exists() {
+pub fn ensure_vocabulary_notebook_exists(vocabulary_notebook_file: &str) -> Result<()> {
+    if !Path::new(vocabulary_notebook_file).exists() {
         let content = r#"# My Vocabulary Notebook
 
 This is my personal collection of English words with explanations.
@@ -13,20 +13,20 @@ This is my personal collection of English words with explanations.
 ---
 
 "#;
-        fs::write(wordbook_file, content)?;
+        fs::write(vocabulary_notebook_file, content)?;
     }
     Ok(())
 }
 
-pub fn prepend_to_wordbook(wordbook_file: &str, content: &str) -> Result<()> {
-    ensure_wordbook_exists(wordbook_file)?;
+pub fn prepend_to_vocabulary_notebook(vocabulary_notebook_file: &str, content: &str) -> Result<()> {
+    ensure_vocabulary_notebook_exists(vocabulary_notebook_file)?;
     
     // Read existing content
-    let existing_content = fs::read_to_string(wordbook_file)?;
+    let existing_content = fs::read_to_string(vocabulary_notebook_file)?;
     
     // Prepend new content
     let new_content = format!("{}\n\n---\n\n{}", content, existing_content);
-    fs::write(wordbook_file, new_content)?;
+    fs::write(vocabulary_notebook_file, new_content)?;
     
     Ok(())
 }

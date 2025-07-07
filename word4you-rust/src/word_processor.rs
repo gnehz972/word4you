@@ -3,7 +3,7 @@ use console::{style, Term};
 use dialoguer::Select;
 use termimad::*;
 use crate::gemini_client::GeminiClient;
-use crate::utils::{commit_and_push_changes, format_commit_message, prepend_to_wordbook, validate_word};
+use crate::utils::{commit_and_push_changes, format_commit_message, prepend_to_vocabulary_notebook, validate_word};
 use crate::config::Config;
 
 pub struct WordProcessor {
@@ -65,7 +65,7 @@ impl WordProcessor {
                 0 => {
                     // Save to vocabulary notebook
                     term.write_line("\n💾 Saving to vocabulary notebook...")?;
-                    prepend_to_wordbook(&self.config.wordbook_file, &explanation)?;
+                    prepend_to_vocabulary_notebook(&self.config.vocabulary_notebook_file, &explanation)?;
                     
                     // Commit and push changes
                     term.write_line("📝 Committing changes...")?;
