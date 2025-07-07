@@ -41,28 +41,44 @@ class WordProcessor:
             md = Markdown(explanation)
             console.print(md)
             
-            # Ask for user confirmation
+            # Ask for user confirmation with options
             console.print("\n" + "="*50, style="blue")
-            save_confirmation = Confirm.ask(
-                f"💾 Do you want to save the explanation for '{word}' to your wordbook?",
-                default=True
-            )
-            
-            if not save_confirmation:
-                console.print("❌ Word explanation not saved.", style="yellow")
-                return True
-            
-            # Save to wordbook
-            console.print("\n💾 Saving to wordbook...", style="yellow")
-            prepend_to_wordbook(explanation)
-            
-            # Commit and push changes
-            console.print("📝 Committing changes...", style="yellow")
-            commit_message = format_commit_message(word)
-            commit_and_push_changes(commit_message)
-            
-            console.print(f"✅ Successfully processed and saved word: {word}", style="green")
-            return True
+            while True:
+                action = console.input(
+                    f"💾 What would you like to do with the explanation for '{word}'?\n"
+                    f"[bold green]s[/bold green]ave, [bold yellow]r[/bold yellow]egenerate, or [bold red]s[/bold red]kip? (s/r/s): "
+                ).lower().strip()
+                
+                if action in ['s', 'save']:
+                    # Save to wordbook
+                    console.print("\n💾 Saving to wordbook...", style="yellow")
+                    prepend_to_wordbook(explanation)
+                    
+                    # Commit and push changes
+                    console.print("📝 Committing changes...", style="yellow")
+                    commit_message = format_commit_message(word)
+                    commit_and_push_changes(commit_message)
+                    
+                    console.print(f"✅ Successfully processed and saved word: {word}", style="green")
+                    return True
+                    
+                elif action in ['r', 'regenerate']:
+                    console.print("🔄 Regenerating explanation...", style="yellow")
+                    explanation = self.gemini_client.get_word_explanation(word)
+                    
+                    console.print("\n📖 New Word Explanation:", style="green")
+                    md = Markdown(explanation)
+                    console.print(md)
+                    console.print("\n" + "="*50, style="blue")
+                    continue  # Ask again
+                    
+                elif action in ['skip']:
+                    console.print("❌ Word explanation skipped.", style="yellow")
+                    return True
+                    
+                else:
+                    console.print("❓ Please enter 's' for save, 'r' for regenerate, or 'skip' to skip.", style="red")
+                    continue
             
         except Exception as e:
             console.print(f"❌ Error processing word: {str(e)}", style="red")

@@ -1,3 +1,41 @@
+## test
+
+**Phonetic:** /tɛst/
+
+**Chinese Translation:** 测试 (cè shì) / 试验 (shì yàn)
+
+**Example Sentence:**
+- English: We need to test the software before releasing it.
+- Chinese: 我们需要在发布软件之前测试它。(Wǒmen xūyào zài fābù ruǎnjiàn zhīqián cèshì tā.)
+
+**Definition:** A procedure intended to establish the quality, performance, or reliability of something, especially before it is taken into widespread use. It can also be an examination of someone's knowledge or ability.
+
+**Usage Notes:**
+
+*   **Broad Applications:** "Test" has a very broad application. It can refer to:
+    *   **Examinations/Assessments:** (e.g., a math test, a blood test) - evaluating skills, knowledge, or condition.
+    *   **Experimentation/Evaluation:** (e.g., testing a new product, testing a hypothesis) - determining the qualities or effectiveness of something.
+    *   **Trials/Experiences:** (e.g., putting someone to the test) -  subjecting someone or something to a difficult situation to see how they perform.
+
+*   **Verb vs. Noun:** "Test" functions as both a noun and a verb.
+    *   **Noun:**  "I took a test."
+    *   **Verb:**  "I need to test the new software."
+
+*   **Collocations:** Common collocations include:
+    *   "take a test" (参加考试 - cānjiā kǎoshì)
+    *   "run a test" (进行测试 - jìnxíng cèshì)
+    *   "pass a test" (通过考试 - tōngguò kǎoshì)
+    *   "fail a test" (考试不及格 - kǎoshì bù jígé)
+
+*   **Context is Key:** The exact meaning of "test" is heavily dependent on the context in which it's used. Understanding the surrounding words will help you determine whether it refers to an examination, an experiment, or a challenging situation.
+
+*   **Figurative Usage:** "Test" can be used figuratively to describe something that proves or confirms something else. For example: "His success is a test of his hard work." (他的成功是他努力的证明 - Tā de chénggōng shì tā nǔlì de zhèngmíng.)
+
+*   **Distinguishing from similar words:** While "experiment" (实验 - shíyàn) and "test" (测试 - cèshì) are sometimes interchangeable, "experiment" often implies a more scientific and exploratory process, whereas "test" is often more focused on verifying a specific property or performance.  "Trial" (试验 - shìyàn/审判 - shěnpàn) can also mean "test", but it often implies a limited-scale application to check feasibility or effectiveness, or in the legal context, a judicial examination.
+
+
+---
+
 ## example
 
 **Phonetic:** [ɪɡˈzæmpl]
