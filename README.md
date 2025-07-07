@@ -2,6 +2,37 @@
 
 A command-line tool for learning English words with AI-powered explanations using Google Gemini API. Available in both Python and Rust implementations.
 
+## 🎯 What is Word4You?
+
+Word4You is an intelligent command-line tool designed to help you learn English vocabulary effectively. It combines the power of Google's Gemini AI with a structured learning approach to create comprehensive word explanations that include:
+
+- **Phonetic pronunciations** using International Phonetic Alphabet (IPA)
+- **Clear English definitions** with usage context
+- **Chinese translations** for bilingual learners
+- **Practical example sentences** in both languages
+- **Usage tips and notes** to enhance understanding
+
+### Why Word4You?
+
+Learning vocabulary can be challenging, especially when you need:
+- **Contextual understanding** of how words are used
+- **Pronunciation guidance** for proper speaking
+- **Bilingual support** for non-native English speakers
+- **Structured learning** with organized vocabulary notes
+- **Version control** to track your learning progress
+
+Word4You addresses these needs by providing an AI-powered, interactive learning experience that creates beautiful, markdown-formatted vocabulary notebooks that you can review, share, and version control with Git.
+
+### How It Works
+
+1. **Input a word** you want to learn
+2. **AI generates** a comprehensive explanation using Google Gemini
+3. **Review and interact** with the explanation (save, regenerate, preview, or skip)
+4. **Save to notebook** for future reference
+5. **Version control** automatically commits your learning progress
+
+The tool is available in both **Python** and **Rust** implementations, giving you flexibility in deployment and performance preferences.
+
 ## 🌟 Features
 
 - **AI-Powered Explanations**: Get comprehensive word explanations using Google Gemini API
