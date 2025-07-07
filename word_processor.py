@@ -2,6 +2,7 @@ from gemini_client import GeminiClient
 from utils import prepend_to_wordbook, commit_and_push_changes, format_commit_message
 from rich.console import Console
 from rich.markdown import Markdown
+from rich.prompt import Confirm
 import re
 
 console = Console()
@@ -40,6 +41,17 @@ class WordProcessor:
             md = Markdown(explanation)
             console.print(md)
             
+            # Ask for user confirmation
+            console.print("\n" + "="*50, style="blue")
+            save_confirmation = Confirm.ask(
+                f"💾 Do you want to save the explanation for '{word}' to your wordbook?",
+                default=True
+            )
+            
+            if not save_confirmation:
+                console.print("❌ Word explanation not saved.", style="yellow")
+                return True
+            
             # Save to wordbook
             console.print("\n💾 Saving to wordbook...", style="yellow")
             prepend_to_wordbook(explanation)
@@ -49,7 +61,7 @@ class WordProcessor:
             commit_message = format_commit_message(word)
             commit_and_push_changes(commit_message)
             
-            console.print(f"✅ Successfully processed word: {word}", style="green")
+            console.print(f"✅ Successfully processed and saved word: {word}", style="green")
             return True
             
         except Exception as e:
