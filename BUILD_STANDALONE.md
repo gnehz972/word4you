@@ -61,7 +61,7 @@ The application will automatically prompt for configuration when needed! You hav
 #### Option A: Automatic Configuration (Recommended)
 Just start using the application - it will prompt for setup when needed:
 ```bash
-./word4you learn beautiful
+./word4you beautiful
 # or
 ./word4you test
 ```
@@ -97,7 +97,7 @@ GIT_REMOTE_URL=https://github.com/your/repo.git  # Optional
 
 ```bash
 # Just start using it - configuration will be prompted automatically!
-./word4you learn beautiful
+./word4you beautiful
 
 # Test the API connection
 ./word4you test
@@ -106,7 +106,7 @@ GIT_REMOTE_URL=https://github.com/your/repo.git  # Optional
 ./word4you init
 
 # Using the launcher script
-./run_word4you.sh learn beautiful
+./run_word4you.sh beautiful
 ```
 
 ## Features of the Standalone Build

@@ -16,15 +16,20 @@ from config import Config
 
 console = Console()
 
-@click.group()
+@click.group(invoke_without_command=True)
+@click.argument('word', required=False)
 @click.version_option(version="1.0.0")
-def cli():
+@click.pass_context
+def cli(ctx, word):
     """Word4You - Learn English words with AI assistance."""
-    pass
+    if ctx.invoked_subcommand is None and word:
+        # If no subcommand is used but a word is provided, learn the word
+        ctx.invoke(learn_word, word=word)
+    elif ctx.invoked_subcommand is None:
+        # If no subcommand and no word, show help
+        click.echo(ctx.get_help())
 
-@cli.command()
-@click.argument('word')
-def learn(word):
+def learn_word(word):
     """Learn a new English word."""
     try:
         # Validate configuration
@@ -139,9 +144,9 @@ def setup():
     
     setup_text.append("6. ", style="bold")
     setup_text.append("Start learning words:\n")
-    setup_text.append("   python main.py learn <word>\n", style="cyan")
+    setup_text.append("   python main.py <word>\n", style="cyan")
     setup_text.append("   # or with uv:\n", style="cyan")
-    setup_text.append("   uv run main.py learn <word>\n\n", style="cyan")
+    setup_text.append("   uv run main.py <word>\n\n", style="cyan")
     
     setup_text.append("Optional: Set GIT_REMOTE_URL in .env for automatic pushing to remote repository.", style="yellow")
     
@@ -162,8 +167,8 @@ def info():
     info_text.append("• Markdown-formatted word book\n\n")
     
     info_text.append("Usage:\n", style="bold")
+    info_text.append("  python main.py <word>           # Learn a new word (auto-configures if needed)\n")
     info_text.append("  python main.py init             # Interactive first-time setup\n")
-    info_text.append("  python main.py learn <word>     # Learn a new word (auto-configures if needed)\n")
     info_text.append("  python main.py test             # Test API connection (auto-configures if needed)\n")
     info_text.append("  python main.py setup            # Show setup instructions\n")
     info_text.append("  python main.py info             # Show this information\n")

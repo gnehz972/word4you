@@ -3,4 +3,4 @@ description:
 globs: 
 alwaysApply: true
 ---
-- Attach the raw prompt user type in to the end of generated commit message.
+- Attach the raw prompt user type in to the end of generated commit message when commit. eg: user raw prompt: "abc"
