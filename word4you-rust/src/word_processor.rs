@@ -48,7 +48,7 @@ impl WordProcessor {
         // Ask for user confirmation with options
         loop {
             term.write_line("\nChoose an action:")?;
-            term.write_line(format!("{} - Save to wordbook", style("s").green().to_string()).as_str())?;
+            term.write_line(format!("{} - Save to vocabulary notebook", style("s").green().to_string()).as_str())?;
             term.write_line(format!("{} - Regenerate explanation", style("r").yellow().to_string()).as_str())?;
             term.write_line(format!("{} - Preview what will be saved", style("p").blue().to_string()).as_str())?;
             term.write_line(format!("{} - Skip this word", style("k").red().to_string()).as_str())?;
@@ -63,8 +63,8 @@ impl WordProcessor {
             
             match selection {
                 0 => {
-                    // Save to wordbook
-                    term.write_line("\n💾 Saving to wordbook...")?;
+                    // Save to vocabulary notebook
+                    term.write_line("\n💾 Saving to vocabulary notebook...")?;
                     prepend_to_wordbook(&self.config.wordbook_file, &explanation)?;
                     
                     // Commit and push changes

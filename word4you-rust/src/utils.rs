@@ -6,7 +6,7 @@ use std::path::Path;
 
 pub fn ensure_wordbook_exists(wordbook_file: &str) -> Result<()> {
     if !Path::new(wordbook_file).exists() {
-        let content = r#"# My English Word Book
+        let content = r#"# My Vocabulary Notebook
 
 This is my personal collection of English words with explanations.
 
