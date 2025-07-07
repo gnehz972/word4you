@@ -1,4 +1,4 @@
-.PHONY: help install run test format lint check dev-install clean
+.PHONY: help install run test format lint check dev-install clean build-standalone
 
 help: ## Show this help message
 	@echo "Word4You - Development Commands"
@@ -32,4 +32,7 @@ dev-install: ## Install development dependencies
 clean: ## Clean up generated files
 	find . -type f -name "*.pyc" -delete
 	find . -type d -name "__pycache__" -delete
-	find . -type d -name "*.egg-info" -exec rm -rf {} + 
+	find . -type d -name "*.egg-info" -exec rm -rf {} +
+
+build-standalone: ## Build standalone executable using PyInstaller with uv
+	python build_standalone.py 

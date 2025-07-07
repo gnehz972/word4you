@@ -1,3 +1,20 @@
+## good
+
+**Phonetic:** [ɡʊd]
+
+**Chinese Translation:** 好
+
+**Example Sentence:**
+- English: This is a good book.
+- Chinese: 这是一本好书。
+
+**Definition:** Pleasing, satisfactory, or beneficial in some way.
+
+**Usage Notes:** "Good" is a versatile adjective. It can describe morality ("a good person"), quality ("good food"), skill ("a good player"), and many other positive attributes. Be aware of its different senses based on context. "Good" is also the adjective form, and "well" is the adverb form, although "good" is sometimes used colloquially as an adverb.
+
+
+---
+
 ## sample
 
 **Phonetic:** /ˈsæmpəl/
