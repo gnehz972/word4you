@@ -1,3 +1,19 @@
+## look
+
+*[lʊk]*
+
+> To direct one's eyes in a specified direction.
+
+**看**
+
+- Look at the bird in the tree!
+- 看树上的鸟！
+
+*“Look” can also be used to express an emotion or appearance, as in "She looks happy."*
+
+
+---
+
 ## beautiful
 
 */ˈbjuːtɪfl/*
