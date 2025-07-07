@@ -56,28 +56,56 @@ cp dist/word4you ~/bin/
 
 ### 2. Set up configuration
 
+The application will automatically prompt for configuration when needed! You have several options:
+
+#### Option A: Automatic Configuration (Recommended)
+Just start using the application - it will prompt for setup when needed:
+```bash
+./word4you learn beautiful
+# or
+./word4you test
+```
+
+#### Option B: Interactive Setup
+```bash
+./word4you init
+```
+This will guide you through setting up:
+- Gemini API key
+- Wordbook file location
+- Git remote URL (optional)
+
+#### Option C: Manual Configuration
 Create a `.env` file in the same directory as the executable:
 
 ```bash
 # Copy the example
 cp env.example .env
 
-# Edit the file and add your API key
+# Edit the file and add your configuration
 nano .env
 ```
 
-Add your Gemini API key:
+Add your configuration:
 ```
 GEMINI_API_KEY=your_actual_api_key_here
+WORDBOOK_FILE=my_words.md
+GIT_REMOTE_URL=https://github.com/your/repo.git  # Optional
 ```
 
 ### 3. Run the application
 
 ```bash
-# Using the executable directly
+# Just start using it - configuration will be prompted automatically!
 ./word4you learn beautiful
 
-# Using the launcher script (automatically handles .env setup)
+# Test the API connection
+./word4you test
+
+# Or use the interactive setup first
+./word4you init
+
+# Using the launcher script
 ./run_word4you.sh learn beautiful
 ```
 
