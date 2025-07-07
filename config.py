@@ -14,7 +14,7 @@ class Config:
     GIT_REMOTE_URL = os.getenv('GIT_REMOTE_URL')
     
     # File paths
-    WORDBOOK_FILE = 'wordbook.md'
+    WORDBOOK_FILE = os.getenv('WORDBOOK_FILE', 'wordbook.md')
     
     # Gemini prompt template
     GEMINI_PROMPT_TEMPLATE = """
