@@ -24,17 +24,21 @@ class Config:
     
     **Phonetic:** [IPA phonetic symbols]
     
-    **Chinese Translation:** [Simplified Chinese explanation]
+    **Chinese Translation:** [Simplified Chinese characters only, NO pinyin]
     
     **Example Sentence:**
     - English: [One example sentence using the word]
-    - Chinese: [Chinese translation of the example sentence]
+    - Chinese: [Chinese translation using only Simplified Chinese characters, NO pinyin]
     
     **Definition:** [Brief English definition]
     
     **Usage Notes:** [Any important usage notes or tips]
     
-    Please ensure the response is in proper markdown format and the Chinese translation is clear and accurate.
+    Important formatting rules:
+    - Use only Simplified Chinese characters for Chinese translations
+    - Do NOT include pinyin (romanized Chinese) in any Chinese text
+    - Keep Chinese translations concise and clear
+    - Ensure the response is in proper markdown format
     """
     
     @classmethod
