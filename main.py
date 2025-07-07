@@ -23,8 +23,13 @@ console = Console()
 def cli(ctx, word):
     """Word4You - Learn English words with AI assistance."""
     if ctx.invoked_subcommand is None and word:
-        # If no subcommand is used but a word is provided, learn the word
-        ctx.invoke(learn_word, word=word)
+        # Check if the word is actually a command
+        if word in ['info', 'test']:
+            # If it's a command, show help
+            click.echo(ctx.get_help())
+        else:
+            # If no subcommand is used but a word is provided, learn the word
+            ctx.invoke(learn_word, word=word)
     elif ctx.invoked_subcommand is None:
         # If no subcommand and no word, show help
         click.echo(ctx.get_help())
@@ -110,48 +115,7 @@ def test():
         else:
             exit(1)
 
-@cli.command()
-def setup():
-    """Display setup instructions."""
-    setup_text = Text()
-    setup_text.append("Word4You Setup Instructions\n\n", style="bold blue")
-    
-    setup_text.append("1. ", style="bold")
-    setup_text.append("Install dependencies:\n")
-    setup_text.append("   # Using uv (recommended):\n", style="cyan")
-    setup_text.append("   uv sync\n\n", style="cyan")
-    setup_text.append("   # Or using pip:\n", style="cyan")
-    setup_text.append("   pip install -r requirements.txt\n\n", style="cyan")
-    
-    setup_text.append("2. ", style="bold")
-    setup_text.append("Get your Google Gemini API key:\n")
-    setup_text.append("   Visit: https://makersuite.google.com/app/apikey\n\n", style="cyan")
-    
-    setup_text.append("3. ", style="bold")
-    setup_text.append("Create a .env file with your API key:\n")
-    setup_text.append("   GEMINI_API_KEY=your_api_key_here\n\n", style="cyan")
-    
-    setup_text.append("4. ", style="bold")
-    setup_text.append("Configure the application:\n")
-    setup_text.append("   # Interactive setup:\n", style="cyan")
-    setup_text.append("   python main.py init\n\n", style="cyan")
-    setup_text.append("   # Or just start using it - configuration will be prompted automatically!\n", style="cyan")
-    setup_text.append("   python main.py learn beautiful\n\n", style="cyan")
-    
-    setup_text.append("5. ", style="bold")
-    setup_text.append("Test the connection:\n")
-    setup_text.append("   python main.py test\n\n", style="cyan")
-    
-    setup_text.append("6. ", style="bold")
-    setup_text.append("Start learning words:\n")
-    setup_text.append("   python main.py <word>\n", style="cyan")
-    setup_text.append("   # or with uv:\n", style="cyan")
-    setup_text.append("   uv run main.py <word>\n\n", style="cyan")
-    
-    setup_text.append("Optional: Set GIT_REMOTE_URL in .env for automatic pushing to remote repository.", style="yellow")
-    
-    panel = Panel(setup_text, title="Setup Guide", border_style="blue")
-    console.print(panel)
+
 
 @cli.command()
 def info():
@@ -168,9 +132,7 @@ def info():
     
     info_text.append("Usage:\n", style="bold")
     info_text.append("  python main.py <word>           # Learn a new word (auto-configures if needed)\n")
-    info_text.append("  python main.py init             # Interactive first-time setup\n")
     info_text.append("  python main.py test             # Test API connection (auto-configures if needed)\n")
-    info_text.append("  python main.py setup            # Show setup instructions\n")
     info_text.append("  python main.py info             # Show this information\n")
     
     panel = Panel(info_text, title="About Word4You", border_style="green")
@@ -255,47 +217,7 @@ def _auto_configure():
         console.print(f"❌ Configuration error: {str(e)}", style="red")
         return False
 
-@cli.command()
-def init():
-    """Initialize Word4You with interactive configuration."""
-    console.print("🚀 Welcome to Word4You Setup!", style="bold blue")
-    console.print("\nThis will help you configure Word4You for first use.\n", style="cyan")
-    
-    # Check if .env already exists
-    if os.path.exists('.env'):
-        console.print("⚠️  .env file already exists. Do you want to overwrite it?", style="yellow")
-        response = input("Type 'yes' to continue: ").lower().strip()
-        if response != 'yes':
-            console.print("Setup cancelled.", style="red")
-            return
-    
-    # Interactive configuration
-    console.print("\n📝 Let's configure your Word4You installation:\n", style="bold")
-    
-    # Get API key
-    api_key = input("Enter your Gemini API key: ").strip()
-    if not api_key:
-        console.print("❌ API key is required!", style="red")
-        return
-    
-    # Get wordbook path
-    wordbook_path = input("Enter path for wordbook file (default: wordbook.md): ").strip()
-    if not wordbook_path:
-        wordbook_path = 'wordbook.md'
-    
-    # Get Git remote (optional)
-    git_remote = input("Enter Git remote URL (optional, press Enter to skip): ").strip()
-    
-    try:
-        # Use shared functions
-        _save_config(api_key, wordbook_path, git_remote)
-        success = _test_config()
-        
-        if success:
-            console.print("\n🎉 You're ready to start learning words!", style="bold green")
-            console.print("Try: python main.py learn beautiful", style="cyan")
-    except Exception as e:
-        console.print(f"❌ Configuration error: {str(e)}", style="red")
+
 
 if __name__ == '__main__':
     cli() 

@@ -66,16 +66,7 @@ Just start using the application - it will prompt for setup when needed:
 ./word4you test
 ```
 
-#### Option B: Interactive Setup
-```bash
-./word4you init
-```
-This will guide you through setting up:
-- Gemini API key
-- Wordbook file location
-- Git remote URL (optional)
-
-#### Option C: Manual Configuration
+#### Option B: Manual Configuration
 Create a `.env` file in the same directory as the executable:
 
 ```bash
@@ -101,9 +92,6 @@ GIT_REMOTE_URL=https://github.com/your/repo.git  # Optional
 
 # Test the API connection
 ./word4you test
-
-# Or use the interactive setup first
-./word4you init
 
 # Using the launcher script
 ./run_word4you.sh beautiful
