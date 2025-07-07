@@ -22,17 +22,16 @@ class Config:
     
     ## {word}
     
-    **Phonetic:** [IPA phonetic symbols]
+    *[IPA phonetic symbols]*
     
-    **Chinese Translation:** [Simplified Chinese characters only, NO pinyin]
+    > [Brief English definition]
     
-    **Example Sentence:**
-    - English: [One example sentence using the word]
-    - Chinese: [Chinese translation using only Simplified Chinese characters, NO pinyin]
+    **[Simplified Chinese meaning, NO pinyin]**
     
-    **Definition:** [Brief English definition]
+    - [One example sentence using the word]
+    - [Chinese translation using only Simplified Chinese characters, NO pinyin]
     
-    **Usage Notes:** [Any important usage notes or tips]
+    *[one usage note or tip]*
     
     Important formatting rules:
     - Use only Simplified Chinese characters for Chinese translations
