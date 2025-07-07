@@ -230,7 +230,7 @@ word4you/
 ## Dependencies
 
 ### Core Dependencies
-- `google-generativeai`: Google Gemini API client
+- `google-genai`: Google Gemini API client (latest SDK)
 - `python-dotenv`: Environment variable management
 - `click`: CLI framework
 - `rich`: Terminal formatting
