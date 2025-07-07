@@ -108,7 +108,7 @@ Features:
 • Chinese translations and phonetic symbols
 • Example sentences in both English and Chinese
 • Automatic Git integration for version control
-• Markdown-formatted word book
+• Markdown-formatted vocabulary notebook
 
 Usage:
   word4you <word>           # Learn a new word

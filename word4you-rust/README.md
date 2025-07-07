@@ -8,7 +8,7 @@ A fast, efficient command-line tool for learning English words with AI-powered e
 - 🇨🇳 Chinese translations
 - 📝 Phonetic symbols (IPA)
 - 🌍 Bilingual examples
-- 📚 Markdown word book
+- 📚 Markdown vocabulary notebook
 - 🔄 Git integration
 - 🎨 Rich terminal UI
 - ⚡ Fast execution (Rust)
@@ -78,7 +78,7 @@ Edit the `.env` file with your settings:
 # Required: Your Gemini API key
 GEMINI_API_KEY=your_api_key_here
 
-# Optional: Path to your wordbook file (default: wordbook.md)
+# Optional: Path to your vocabulary notebook file (default: wordbook.md)
 WORDBOOK_FILE=wordbook.md
 
 # Optional: Git remote URL for automatic pushing
@@ -126,7 +126,7 @@ GIT_REMOTE_URL=https://github.com/yourusername/your-repo.git
 ==================================================
 
 Choose an action:
-s - Save to wordbook
+s - Save to vocabulary notebook
 r - Regenerate explanation
 p - Preview what will be saved
 k - Skip this word
@@ -134,7 +134,7 @@ k - Skip this word
 Enter your choice (s/r/p/k):
 ```
 
-## Word Book
+## Vocabulary Notebook
 
 Words are saved in `wordbook.md` with phonetic symbols, translations, examples, and definitions.
 
@@ -224,4 +224,4 @@ RUST_LOG=debug ./target/release/word4you beautiful
 
 ## License
 
-MIT License - see LICENSE file for details. 
+MIT License - see LICENSE file for details.
