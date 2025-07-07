@@ -1,3 +1,30 @@
+## sample
+
+**Phonetic:** /ˈsæmpəl/
+
+**Chinese Translation:** 样品 (yàng pǐn), 样本 (yàng běn), 抽样 (chōu yàng)
+
+**Example Sentence:**
+- English: We took a sample of the water to test for contamination.
+- Chinese: 我们取了一份水样来测试是否有污染。 (Wǒmen qǔ le yī fèn shuǐ yàng lái cèshì shìfǒu yǒu wūrǎn.)
+
+**Definition:** A small part or quantity intended to show what the whole is like.
+
+**Usage Notes:**
+
+*   **Noun:** "Sample" as a noun commonly refers to a representative portion of something. It can be a physical object (like a food sample) or a data point (like a statistical sample). When referring to products for potential buyers, "sample" translates directly to 样品 (yàng pǐn). When referring to a representative selection for analysis, "sample" translates to 样本 (yàng běn).
+
+*   **Verb:** "Sample" as a verb means to take a sample of something, often for testing or analysis. It can also mean to experience or try something briefly. When used in the context of taking a representative part, it can be translated as 抽样 (chōu yàng), which means "to sample" or "to draw a sample". It can also mean to test something out.
+
+*   **Adjective:** "Sample" can also be used as an adjective, meaning "serving as a sample" or "representative."
+
+*   **Context is Key:** The most appropriate Chinese translation depends heavily on the context. Consider the intent behind the use of "sample." Is it a free product giveaway (样品), a selection for analysis (样本), or the act of choosing a representative portion (抽样)?
+
+*   **Music Production:** In music production, "sample" has a specific meaning – a portion of a sound recording reused in a new song. In this context, the Chinese term is 采样 (cǎiyàng), which is different from 样本 (yàngběn) used in statistical or scientific contexts.
+
+
+---
+
 ## test
 
 **Phonetic:** /tɛst/
