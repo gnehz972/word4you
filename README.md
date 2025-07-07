@@ -1,4 +1,4 @@
-# Word4You - AI-Powered English Word Learning Tool
+# Word4You - AI-Powered English Word Learning CLI Tool
 
 A command-line tool for learning English words with AI-powered explanations using Google Gemini API.
 
@@ -11,17 +11,6 @@ Word4You is an intelligent command-line tool designed to help you learn English 
 - **Chinese translations** for bilingual learners
 - **Practical example sentences** in both languages
 - **Usage tips and notes** to enhance understanding
-
-### Why Word4You?
-
-Learning vocabulary can be challenging, especially when you need:
-- **Contextual understanding** of how words are used
-- **Pronunciation guidance** for proper speaking
-- **Bilingual support** for non-native English speakers
-- **Structured learning** with organized vocabulary notes
-- **Version control** to track your learning progress
-
-Word4You addresses these needs by providing an AI-powered, interactive learning experience that creates beautiful, markdown-formatted vocabulary notebooks that you can review, share, and version control with Git.
 
 ### How It Works
 
@@ -77,48 +66,3 @@ The tool creates a markdown file (`vocabulary_notebook.md` by default) with your
 - **Chinese translation**
 - **Example sentences** in both languages
 - **Usage notes**
-
-## ⚙️ Configuration
-
-The tool uses environment variables for configuration. Create a `.env` file in your project directory:
-
-```bash
-# Required: Google Gemini API Key
-GEMINI_API_KEY=your_gemini_api_key_here
-
-# Optional: Vocabulary notebook file path (defaults to vocabulary_notebook.md)
-VOCABULARY_NOTEBOOK_FILE=vocabulary_notebook.md
-
-# Optional: Git remote URL for automatic push
-GIT_REMOTE_URL=your_git_repo_url_here
-```
-
-## 🔄 Git Integration
-
-The tool supports automatic Git integration:
-
-1. **Automatic commits** when words are saved
-2. **Push to remote** if `GIT_REMOTE_URL` is configured
-3. **Version control** for your vocabulary notebook
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- **Google Gemini API** for AI-powered word explanations
-- **Rich** (Python) and **Termimad** (Rust) for beautiful terminal output
-- **Click** (Python) and **Clap** (Rust) for CLI framework
-
-## 🔗 Links
-
-- [Google AI Studio](https://makersuite.google.com/app/apikey) - Get your Gemini API key 
