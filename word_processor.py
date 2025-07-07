@@ -44,10 +44,13 @@ class WordProcessor:
             # Ask for user confirmation with options
             console.print("\n" + "="*50, style="blue")
             while True:
-                action = console.input(
-                    f"💾 What would you like to do with the explanation for '{word}'?\n"
-                    f"[bold green]s[/bold green]ave, [bold yellow]r[/bold yellow]egenerate, or [bold red]s[/bold red]kip? (s/r/s): "
-                ).lower().strip()
+                console.print("\n[bold]Choose an action:[/bold]")
+                console.print("[green]s[/green] - Save to wordbook")
+                console.print("[yellow]r[/yellow] - Regenerate explanation") 
+                console.print("[red]k[/red] - Skip this word")
+                console.print()
+                
+                action = console.input("Enter your choice (s/r/k): ").lower().strip()
                 
                 if action in ['s', 'save']:
                     # Save to wordbook
@@ -72,12 +75,12 @@ class WordProcessor:
                     console.print("\n" + "="*50, style="blue")
                     continue  # Ask again
                     
-                elif action in ['skip']:
+                elif action in ['k', 'skip']:
                     console.print("❌ Word explanation skipped.", style="yellow")
                     return True
                     
                 else:
-                    console.print("❓ Please enter 's' for save, 'r' for regenerate, or 'skip' to skip.", style="red")
+                    console.print("❓ Invalid choice. Please enter 's', 'r', or 'k'.", style="red")
                     continue
             
         except Exception as e:
