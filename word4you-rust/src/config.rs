@@ -19,7 +19,7 @@ impl Config {
         let gemini_api_key = env::var("GEMINI_API_KEY")
             .map_err(|_| anyhow!("GEMINI_API_KEY not found in environment variables. Please set it in your .env file or environment."))?;
 
-        let vocabulary_notebook_file = env::var("WORDBOOK_FILE").unwrap_or_else(|_| "vocabulary_notebook.md".to_string());
+        let vocabulary_notebook_file = env::var("VOCABULARY_NOTEBOOK_FILE").unwrap_or_else(|_| "vocabulary_notebook.md".to_string());
         let git_remote_url = env::var("GIT_REMOTE_URL").ok();
 
         let gemini_prompt_template = r#"
