@@ -1,4 +1,5 @@
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from config import Config
 import time
 
@@ -7,8 +8,7 @@ class GeminiClient:
     
     def __init__(self):
         """Initialize the Gemini client."""
-        genai.configure(api_key=Config.GEMINI_API_KEY)
-        self.model = genai.GenerativeModel('gemini-2.0-flash-lite')
+        self.client = genai.Client(api_key=Config.GEMINI_API_KEY)
     
     def get_word_explanation(self, word: str) -> str:
         """
@@ -24,8 +24,11 @@ class GeminiClient:
             # Format the prompt with the word
             prompt = Config.GEMINI_PROMPT_TEMPLATE.format(word=word.lower())
             
-            # Generate response
-            response = self.model.generate_content(prompt)
+            # Generate response using the new SDK
+            response = self.client.models.generate_content(
+                model='gemini-2.0-flash-001',
+                contents=prompt
+            )
             
             if response.text:
                 return response.text
@@ -38,7 +41,10 @@ class GeminiClient:
     def test_connection(self) -> bool:
         """Test the connection to Gemini API."""
         try:
-            response = self.model.generate_content("Hello")
+            response = self.client.models.generate_content(
+                model='gemini-2.0-flash-001',
+                contents="Hello"
+            )
             return response.text is not None
         except Exception:
             return False 
