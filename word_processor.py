@@ -47,10 +47,11 @@ class WordProcessor:
                 console.print("\n[bold]Choose an action:[/bold]")
                 console.print("[green]s[/green] - Save to wordbook")
                 console.print("[yellow]r[/yellow] - Regenerate explanation") 
+                console.print("[blue]p[/blue] - Preview what will be saved")
                 console.print("[red]k[/red] - Skip this word")
                 console.print()
                 
-                action = console.input("Enter your choice (s/r/k): ").lower().strip()
+                action = console.input("Enter your choice (s/r/p/k): ").lower().strip()
                 
                 if action in ['s', 'save']:
                     # Save to wordbook
@@ -75,12 +76,24 @@ class WordProcessor:
                     console.print("\n" + "="*50, style="blue")
                     continue  # Ask again
                     
+                elif action in ['p', 'preview']:
+                    console.print("\n📋 [bold]Preview of what will be saved:[/bold]", style="blue")
+                    console.print("="*50, style="blue")
+                    # Show first few lines as preview
+                    lines = explanation.split('\n')
+                    preview_lines = lines[:10]  # Show first 10 lines
+                    console.print('\n'.join(preview_lines))
+                    if len(lines) > 10:
+                        console.print(f"\n... and {len(lines) - 10} more lines")
+                    console.print("="*50, style="blue")
+                    continue
+                    
                 elif action in ['k', 'skip']:
                     console.print("❌ Word explanation skipped.", style="yellow")
                     return True
                     
                 else:
-                    console.print("❓ Invalid choice. Please enter 's', 'r', or 'k'.", style="red")
+                    console.print("❓ Invalid choice. Please enter 's', 'r', 'p', or 'k'.", style="red")
                     continue
             
         except Exception as e:

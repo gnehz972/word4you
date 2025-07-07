@@ -1,0 +1,7 @@
+---
+description: commit
+globs: 
+alwaysApply: false
+---
+this rule is helpfull to gengerate the git commit message.
+Attach the raw prompt user type in to the commit message.
