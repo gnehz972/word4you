@@ -45,29 +45,29 @@ def commit_and_push_changes(commit_message: str):
     except Exception as e:
         print(f"⚠️  Warning: Could not commit/push changes: {str(e)}")
 
-def ensure_wordbook_exists():
-    """Ensure the wordbook file exists with proper header."""
-    if not os.path.exists(Config.WORDBOOK_FILE):
-        with open(Config.WORDBOOK_FILE, 'w', encoding='utf-8') as f:
-            f.write("# My English Word Book\n\n")
+def ensure_vocabulary_notebook_exists():
+    """Ensure the vocabulary notebook file exists with proper header."""
+    if not os.path.exists(Config.VOCABULARY_NOTEBOOK_FILE):
+        with open(Config.VOCABULARY_NOTEBOOK_FILE, 'w', encoding='utf-8') as f:
+            f.write("# My Vocabulary Notebook\n\n")
             f.write("This is my personal collection of English words with explanations.\n\n")
             f.write("---\n\n")
 
-def prepend_to_wordbook(content: str):
+def prepend_to_vocabulary_notebook(content: str):
     """
-    Prepend new content to the wordbook file.
+    Prepend new content to the vocabulary notebook file.
     
     Args:
         content: The content to prepend
     """
-    ensure_wordbook_exists()
+    ensure_vocabulary_notebook_exists()
     
     # Read existing content
-    with open(Config.WORDBOOK_FILE, 'r', encoding='utf-8') as f:
+    with open(Config.VOCABULARY_NOTEBOOK_FILE, 'r', encoding='utf-8') as f:
         existing_content = f.read()
     
     # Prepend new content
-    with open(Config.WORDBOOK_FILE, 'w', encoding='utf-8') as f:
+    with open(Config.VOCABULARY_NOTEBOOK_FILE, 'w', encoding='utf-8') as f:
         f.write(content + "\n\n---\n\n" + existing_content)
 
 def format_commit_message(word: str) -> str:
