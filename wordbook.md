@@ -1,3 +1,27 @@
+## example
+
+**Phonetic:** [ɪɡˈzæmpl]
+
+**Chinese Translation:** 例子 (lìzi) - means "instance," "case," or "sample." Can also be translated as 实例 (shílì) which means "concrete example."
+
+**Example Sentence:**
+- English: This recipe provides a good example of Italian cuisine.
+- Chinese: 这个食谱提供了一个意大利美食的好例子。(Zhège shípǔ tígōng le yī gè Yìdàlì měishí de hǎo lìzi.)
+
+**Definition:** A thing characteristic of its kind or illustrating a general rule. Also, a person or thing worthy of imitation; a pattern.
+
+**Usage Notes:**
+
+*   "Example" can be used both as a countable noun (e.g., "Give me an example") and an uncountable noun (e.g., "For example, ...").
+*   Common phrases include: "for example," "a good example," "to give an example," "set an example."
+*   The word often implies that the thing used to illustrate the rule or principle is representative and helpful for understanding.
+*   Pay attention to the context to decide if a more specific word like "instance," "illustration," or "demonstration" might be a better fit.
+*   In some cases, "sample" or "prototype" might be appropriate alternatives.
+*   When referring to someone who is a role model, "example" emphasizes the act of emulation or following their behavior.
+
+
+---
+
 ## good
 
 **Phonetic:** [ɡʊd]
