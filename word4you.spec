@@ -1,22 +1,13 @@
 # -*- mode: python ; coding: utf-8 -*-
-from PyInstaller.utils.hooks import collect_all
-
-datas = [('env.example', '.'), ('wordbook.md', '.')]
-binaries = []
-hiddenimports = ['click', 'rich', 'google', 'google.genai', 'dotenv', 'git']
-tmp_ret = collect_all('google')
-datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
-tmp_ret = collect_all('google.genai')
-datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 
 
 a = Analysis(
     ['main.py'],
     pathex=[],
-    binaries=binaries,
-    datas=datas,
-    hiddenimports=hiddenimports,
-    hookspath=['.'],
+    binaries=[],
+    datas=[('env.example', '.'), ('wordbook.md', '.')],
+    hiddenimports=['click', 'rich', 'google.genai', 'google.genai.types', 'dotenv', 'git'],
+    hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[],
