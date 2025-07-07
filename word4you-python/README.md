@@ -108,7 +108,7 @@ describe things that are admirable or morally good.
 ==================================================
 
 Choose an action:
-s - Save to wordbook
+s - Save to vocabulary notebook
 r - Regenerate explanation
 p - Preview what will be saved
 k - Skip this word
@@ -118,7 +118,7 @@ Enter your choice (s/r/p/k):
 
 ## Word Book
 
-Words are saved in `wordbook.md` with phonetic symbols, translations, examples, and definitions.
+Words are saved in `vocabulary_notebook.md` with phonetic symbols, translations, examples, and definitions.
 
 ## Git Integration
 

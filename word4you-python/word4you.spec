@@ -5,7 +5,7 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('env.example', '.'), ('wordbook.md', '.')],
+    datas=[('env.example', '.'), ('vocabulary_notebook.md', '.')],
     hiddenimports=[
         'click.core', 'click.decorators', 'click.types', 'click.utils',
         'rich.console', 'rich.panel', 'rich.text', 'rich.markdown',

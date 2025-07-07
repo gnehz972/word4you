@@ -16,7 +16,7 @@ class WordProcessor:
     
     def process_word(self, word: str) -> bool:
         """
-        Process a word: get explanation, save to wordbook, and commit changes.
+        Process a word: get explanation, save to vocabulary notebook, and commit changes.
         
         Args:
             word: The English word to process
