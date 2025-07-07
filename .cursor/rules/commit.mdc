@@ -1,6 +1,6 @@
 ---
 description: 
 globs: 
-alwaysApply: false
+alwaysApply: true
 ---
-- Attach the raw prompt user type in to the end of geneerated commit message.
+- Attach the raw prompt user type in to the end of generated commit message.

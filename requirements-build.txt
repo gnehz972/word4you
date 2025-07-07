@@ -1,0 +1,2 @@
+# Requirements for building standalone executable
+pyinstaller>=5.0.0 

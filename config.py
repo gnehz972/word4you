@@ -37,7 +37,6 @@ class Config:
     Important formatting rules:
     - Use only Simplified Chinese characters for Chinese translations
     - Do NOT include pinyin (romanized Chinese) in any Chinese text
-    - Keep Chinese translations concise and clear
     - Ensure the response is in proper markdown format
     """
     
