@@ -1,6 +1,6 @@
 # Word4You - AI-Powered English Word Learning Tool
 
-A command-line tool for learning English words with AI-powered explanations using Google Gemini API. Available in both Python and Rust implementations.
+A command-line tool for learning English words with AI-powered explanations using Google Gemini API.
 
 ## 🎯 What is Word4You?
 
@@ -31,8 +31,6 @@ Word4You addresses these needs by providing an AI-powered, interactive learning 
 4. **Save to notebook** for future reference
 5. **Version control** automatically commits your learning progress
 
-The tool is available in both **Python** and **Rust** implementations, giving you flexibility in deployment and performance preferences.
-
 ## 🌟 Features
 
 - **AI-Powered Explanations**: Get comprehensive word explanations using Google Gemini API
@@ -41,112 +39,8 @@ The tool is available in both **Python** and **Rust** implementations, giving yo
 - **Markdown Vocabulary Notebook**: Beautifully formatted vocabulary notebook in markdown
 - **Git Integration**: Automatic version control with Git commit and push
 - **Interactive Interface**: Choose to save, regenerate, preview, or skip word explanations
-- **Cross-Platform**: Available in both Python and Rust implementations
-
-## 📁 Project Structure
-
-```
-word4you/
-├── word4you-python/     # Python implementation
-│   ├── main.py
-│   ├── word_processor.py
-│   ├── gemini_client.py
-│   ├── config.py
-│   ├── utils.py
-│   ├── requirements.txt
-│   ├── pyproject.toml
-│   └── env.example
-├── word4you-rust/       # Rust implementation
-│   ├── src/
-│   │   ├── main.rs
-│   │   ├── word_processor.rs
-│   │   ├── gemini_client.rs
-│   │   ├── config.rs
-│   │   └── utils.rs
-│   ├── Cargo.toml
-│   └── env.example
-└── README.md
-```
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-1. **Google Gemini API Key**: Get your API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. **Git** (optional, for version control)
-
-### Python Implementation
-
-```bash
-# Navigate to Python project
-cd word4you-python
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Set up environment
-cp env.example .env
-# Edit .env and add your GEMINI_API_KEY
-
-# Learn a word
-python main.py hello
-
-# Test API connection
-python main.py test
-
-# Show help
-python main.py info
-```
-
-### Rust Implementation
-
-```bash
-# Navigate to Rust project
-cd word4you-rust
-
-# Set up environment
-cp env.example .env
-# Edit .env and add your GEMINI_API_KEY
-
-# Build the project
-cargo build --release
-
-# Learn a word
-cargo run -- hello
-
-# Test API connection
-cargo run -- test
-
-# Show help
-cargo run -- info
-```
-
-## ⚙️ Configuration
-
-Both implementations use environment variables for configuration. Create a `.env` file in the respective project directory:
-
-```bash
-# Required: Google Gemini API Key
-GEMINI_API_KEY=your_gemini_api_key_here
-
-# Optional: Vocabulary notebook file path (defaults to vocabulary_notebook.md)
-VOCABULARY_NOTEBOOK_FILE=vocabulary_notebook.md
-
-# Optional: Git remote URL for automatic push
-GIT_REMOTE_URL=your_git_repo_url_here
-```
 
 ## 📖 Usage
-
-### Basic Usage
-
-```bash
-# Python
-python main.py <word>
-
-# Rust
-cargo run -- <word>
-```
 
 ### Interactive Options
 
@@ -184,49 +78,24 @@ The tool creates a markdown file (`vocabulary_notebook.md` by default) with your
 - **Example sentences** in both languages
 - **Usage notes**
 
-## 🔧 Development
+## ⚙️ Configuration
 
-### Python Implementation
-
-- **Framework**: Click for CLI, Rich for UI
-- **Dependencies**: See `requirements.txt`
-- **Structure**: Modular design with separate modules for different concerns
-
-### Rust Implementation
-
-- **Framework**: Clap for CLI, Termimad for markdown rendering
-- **Dependencies**: See `Cargo.toml`
-- **Features**: Async/await, beautiful markdown rendering, Git integration
-
-## 🛠️ Building
-
-### Python
+The tool uses environment variables for configuration. Create a `.env` file in your project directory:
 
 ```bash
-cd word4you-python
-pip install -r requirements.txt
-```
+# Required: Google Gemini API Key
+GEMINI_API_KEY=your_gemini_api_key_here
 
-### Rust
+# Optional: Vocabulary notebook file path (defaults to vocabulary_notebook.md)
+VOCABULARY_NOTEBOOK_FILE=vocabulary_notebook.md
 
-```bash
-cd word4you-rust
-cargo build --release
-```
-
-## 📦 Standalone Executable (Rust)
-
-The Rust implementation can be built into a standalone executable:
-
-```bash
-cd word4you-rust
-cargo build --release
-# Executable will be in target/release/word4you
+# Optional: Git remote URL for automatic push
+GIT_REMOTE_URL=your_git_repo_url_here
 ```
 
 ## 🔄 Git Integration
 
-Both implementations support automatic Git integration:
+The tool supports automatic Git integration:
 
 1. **Automatic commits** when words are saved
 2. **Push to remote** if `GIT_REMOTE_URL` is configured
@@ -252,6 +121,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🔗 Links
 
-- [Google AI Studio](https://makersuite.google.com/app/apikey) - Get your Gemini API key
-- [Python Implementation](./word4you-python/) - Python version details
-- [Rust Implementation](./word4you-rust/) - Rust version details 
+- [Google AI Studio](https://makersuite.google.com/app/apikey) - Get your Gemini API key 
