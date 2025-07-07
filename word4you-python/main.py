@@ -128,7 +128,7 @@ def info():
     info_text.append("• Chinese translations and phonetic symbols\n")
     info_text.append("• Example sentences in both English and Chinese\n")
     info_text.append("• Automatic Git integration for version control\n")
-    info_text.append("• Markdown-formatted word book\n\n")
+    info_text.append("• Markdown-formatted vocabulary notebook\n\n")
     
     info_text.append("Usage:\n", style="bold")
     info_text.append("  python main.py <word>           # Learn a new word (auto-configures if needed)\n")
@@ -138,11 +138,11 @@ def info():
     panel = Panel(info_text, title="About Word4You", border_style="green")
     console.print(panel)
 
-def _save_config(api_key, wordbook_path, git_remote):
+def _save_config(api_key, vocabulary_notebook_path, git_remote):
     """Internal function to save configuration."""
     env_content = f"""# Word4You Configuration
 GEMINI_API_KEY={api_key}
-WORDBOOK_FILE={wordbook_path}
+VOCABULARY_NOTEBOOK_FILE={vocabulary_notebook_path}
 """
     
     if git_remote:
@@ -157,11 +157,11 @@ WORDBOOK_FILE={wordbook_path}
     
     # Update Config class variables
     Config.GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
-    Config.WORDBOOK_FILE = os.getenv('WORDBOOK_FILE', 'wordbook.md')
+    Config.VOCABULARY_NOTEBOOK_FILE = os.getenv('VOCABULARY_NOTEBOOK_FILE', 'vocabulary_notebook.md')
     Config.GIT_REMOTE_URL = os.getenv('GIT_REMOTE_URL')
     
     console.print("✅ Configuration saved successfully!", style="green")
-    console.print(f"📁 Wordbook will be saved to: {wordbook_path}", style="cyan")
+    console.print(f"📁 Vocabulary notebook will be saved to: {vocabulary_notebook_path}", style="cyan")
     
     if git_remote:
         console.print(f"🔗 Git remote set to: {git_remote}", style="cyan")
@@ -195,16 +195,16 @@ def _auto_configure():
         console.print("❌ API key is required!", style="red")
         return False
     
-    # Get wordbook path
-    wordbook_path = input("Enter path for wordbook file (default: wordbook.md): ").strip()
-    if not wordbook_path:
-        wordbook_path = 'wordbook.md'
+    # Get vocabulary notebook path
+    vocabulary_notebook_path = input("Enter path for vocabulary notebook file (default: vocabulary_notebook.md): ").strip()
+    if not vocabulary_notebook_path:
+        vocabulary_notebook_path = 'vocabulary_notebook.md'
     
     # Get Git remote (optional)
     git_remote = input("Enter Git remote URL (optional, press Enter to skip): ").strip()
     
     try:
-        _save_config(api_key, wordbook_path, git_remote)
+        _save_config(api_key, vocabulary_notebook_path, git_remote)
         success = _test_config()
         
         if success:

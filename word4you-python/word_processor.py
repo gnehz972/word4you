@@ -1,5 +1,5 @@
 from gemini_client import GeminiClient
-from utils import prepend_to_wordbook, commit_and_push_changes, format_commit_message
+from utils import prepend_to_vocabulary_notebook, commit_and_push_changes, format_commit_message
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.prompt import Confirm
@@ -45,7 +45,7 @@ class WordProcessor:
             console.print("\n" + "="*50, style="blue")
             while True:
                 console.print("\n[bold]Choose an action:[/bold]")
-                console.print("[green]s[/green] - Save to wordbook")
+                console.print("[green]s[/green] - Save to vocabulary notebook")
                 console.print("[yellow]r[/yellow] - Regenerate explanation") 
                 console.print("[blue]p[/blue] - Preview what will be saved")
                 console.print("[red]k[/red] - Skip this word")
@@ -54,9 +54,9 @@ class WordProcessor:
                 action = console.input("Enter your choice (s/r/p/k): ").lower().strip()
                 
                 if action in ['s', 'save']:
-                    # Save to wordbook
-                    console.print("\n💾 Saving to wordbook...", style="yellow")
-                    prepend_to_wordbook(explanation)
+                    # Save to vocabulary notebook
+                    console.print("\n💾 Saving to vocabulary notebook...", style="yellow")
+                    prepend_to_vocabulary_notebook(explanation)
                     
                     # Commit and push changes
                     console.print("📝 Committing changes...", style="yellow")
