@@ -3,4 +3,4 @@ description:
 globs: 
 alwaysApply: true
 ---
-- Attach the raw prompts from user since last commit to the end of generated commit message when commit. eg: user raw prompt: "explain this file - commit - the standalone executable is slow, how to enhance the speed - why just include the module needed? - why add so many exclude, just include what's needed - commit"
+- Attach the raw prompts from user since last commit to the end of generated commit message when commit, excluding the "commit" command itself. eg: user raw prompt: "explain this file - the standalone executable is slow, how to enhance the speed - why just include the module needed? - why add so many exclude, just include what's needed"
