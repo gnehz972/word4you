@@ -2,6 +2,7 @@ import { Action, ActionPanel, Detail, Form, Toast, showToast, useNavigation, get
 import { useState } from "react";
 import { execSync } from "child_process";
 import path from "path";
+import React from "react";
 
 interface Preferences {
   geminiApiKey: string;
@@ -20,46 +21,19 @@ interface WordExplanation {
   raw_output: string;
 }
 
-function parseWordExplanation(output: string): WordExplanation | null {
+function parseRawWordExplanation(output: string, word: string): WordExplanation | null {
   try {
-    // Remove ANSI color codes and script command output
-    let cleanOutput = output
-      .replace(/\x1b\[[0-9;]*m/g, '')  // Remove ANSI codes
-      .replace(/Script started.*?\n/g, '')  // Remove script start messages
-      .replace(/Script done.*?\n/g, '');    // Remove script done messages
-
-    console.log('Cleaned output:', cleanOutput); // Log first 200 chars for debugging
-    console.log('Full output:', output); // Log full output for debugging
+    // Raw output format:
+    // ## word
+    // */pronunciation/*
+    // > Definition
+    // **Chinese**
+    // - English example
+    // - Chinese example
+    // *Tip*
     
-    // Find the word explanation section between the separators
-    const explanationMatch = cleanOutput.match(/📖 Word Explanation:(.*?)(?:Choose an action:|$)/s);
-    if (!explanationMatch) {
-      return null;
-    }
+    const lines = output.split('\n').map(line => line.trim()).filter(line => line);
     
-    const explanationSection = explanationMatch[1];
-    
-    // Parse based on the actual beautified output line sequence:
-    // Line 1: ==================== (separators)
-    // Line 2: word (plain text)
-    // Line 3: empty
-    // Line 4: [pronunciation] (in brackets)
-    // Line 5: empty  
-    // Line 6: │ definition (with │ symbol)
-    // Line 7: empty
-    // Line 8: chinese (Chinese characters)
-    // Line 9: empty
-    // Line 10: - English example
-    // Line 11: - Chinese example
-    // Line 12: empty
-    // Line 13: [tip] (in brackets)
-    
-    const lines = explanationSection
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line && !line.match(/^=+$/)); // Remove empty lines and separators
-    
-    let word = '';
     let pronunciation = '';
     let definition = '';
     let chinese = '';
@@ -70,44 +44,39 @@ function parseWordExplanation(output: string): WordExplanation | null {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       
-      // Line 1: Word (plain alphabetic text)
-      if (i === 0 && /^[a-zA-Z]+$/.test(line)) {
-        word = line;
+      // Pronunciation: */pronunciation/*
+      if (line.match(/^\*\/.*\/\*$/)) {
+        pronunciation = line.replace(/^\*\//, '').replace(/\/\*$/, '');
       }
       
-      // Line 2: Pronunciation (in brackets [])
-      else if (line.match(/^\[.*\]$/)) {
-        if (!pronunciation) {
-          pronunciation = line.replace(/[\[\]]/g, '');
-        } else if (!tip) {
-          // Second bracketed text is the tip
-          tip = line.replace(/[\[\]]/g, '');
-        }
+      // Definition: > Definition text
+      else if (line.startsWith('> ')) {
+        definition = line.replace(/^> /, '');
       }
       
-      // Line 3: Definition (starts with │)
-      else if (line.startsWith('│')) {
-        definition = line.replace(/│\s*/, '').trim();
+      // Chinese: **Chinese text**
+      else if (line.match(/^\*\*.*\*\*$/)) {
+        chinese = line.replace(/^\*\*/, '').replace(/\*\*$/, '');
       }
       
-      // Line 4: Chinese (only Chinese characters)
-      else if (/^[\u4e00-\u9fa5，。、；：""''！？]+$/.test(line)) {
-        chinese = line;
-      }
-      
-      // Lines 5-6: Examples (start with -)
+      // Examples: - Example text
       else if (line.startsWith('- ')) {
-        const exampleText = line.replace('- ', '');
+        const exampleText = line.replace(/^- /, '');
         if (!/[\u4e00-\u9fa5]/.test(exampleText) && !example_en) {
           example_en = exampleText;
         } else if (/[\u4e00-\u9fa5]/.test(exampleText) && !example_zh) {
           example_zh = exampleText;
         }
       }
+      
+      // Tip: *Tip text* (but not pronunciation format)
+      else if (line.match(/^\*.*\*$/) && !line.match(/^\*\/.*\/\*$/)) {
+        tip = line.replace(/^\*/, '').replace(/\*$/, '');
+      }
     }
-
+    
     return {
-      word: word || 'Unknown',
+      word: word,
       pronunciation: pronunciation || '',
       definition: definition || '',
       chinese: chinese || '',
@@ -117,18 +86,13 @@ function parseWordExplanation(output: string): WordExplanation | null {
       raw_output: output
     };
   } catch (error) {
-    console.error('Error parsing word explanation:', error);
+    console.error('Error parsing raw word explanation:', error);
     return null;
   }
 }
 
+
 function getExecutablePath(): string {
-  const preferences = getPreferenceValues<Preferences>();
-  
-  if (preferences.executablePath && preferences.executablePath.trim()) {
-    return preferences.executablePath.trim();
-  }
-  
   // Default to the executable in the extension project directory
   return path.join(__dirname, 'assets/word4you');
 }
@@ -146,38 +110,24 @@ async function getWordExplanation(word: string): Promise<WordExplanation | null>
       ...(preferences.gitRemoteUrl && { GIT_REMOTE_URL: preferences.gitRemoteUrl })
     };
     
-    // The executable works but fails on TTY, so we capture both stdout and stderr
-    const command = `echo "k" | "${executablePath}" "${word}"`;
+    // Use --raw flag to get clean output without TTY interaction
+    const command = `"${executablePath}" --raw "${word}"`;
     
-    let output = '';
-    try {
-      // Try normal execution first
-      output = execSync(command, {
-        encoding: 'utf8',
-        timeout: 30000,
-        cwd: path.dirname(executablePath),
-        env: env
-      });
-    } catch (error: any) {
-      // The command "fails" due to TTY error, but the output is in stderr
-      console.log('Command failed as expected due to TTY, extracting output...');
-      if (error.stdout) output += error.stdout;
-      if (error.stderr) output += error.stderr;
-      
-      // If we got some output, continue processing
-      if (output.trim().length === 0) {
-        throw error;
-      }
-    }
+    const output = execSync(command, {
+      encoding: 'utf8',
+      timeout: 30000,
+      cwd: path.dirname(executablePath),
+      env: env
+    });
     
-    return parseWordExplanation(output);
+    return parseRawWordExplanation(output, word);
   } catch (error) {
     console.error('Error getting word explanation:', error);
     return null;
   }
 }
 
-async function saveWordToVocabulary(word: string): Promise<boolean> {
+async function saveWordToVocabulary(word: string, content: string): Promise<boolean> {
   try {
     const preferences = getPreferenceValues<Preferences>();
     const executablePath = getExecutablePath();
@@ -190,47 +140,26 @@ async function saveWordToVocabulary(word: string): Promise<boolean> {
       ...(preferences.gitRemoteUrl && { GIT_REMOTE_URL: preferences.gitRemoteUrl })
     };
     
-    // The executable works but fails on TTY, so we capture both stdout and stderr
-    const command = `echo "s" | "${executablePath}" "${word}"`;
+    // Use the save command with the raw content
+    const command = `"${executablePath}" save "${word}" "${content.replace(/"/g, '\\"')}"`;
+    console.log('save command:', command);
     
-    let output = '';
-    try {
-      // Try normal execution first
-      output = execSync(command, {
-        encoding: 'utf8',
-        timeout: 30000,
-        cwd: path.dirname(executablePath),
-        env: env
-      });
-    } catch (error: any) {
-      // The command "fails" due to TTY error, but may have actually saved
-      console.log('Save command failed as expected due to TTY, checking output...');
-      if (error.stdout) output += error.stdout;
-      if (error.stderr) output += error.stderr;
-      
-      // Check if the output indicates successful processing
-      if (output.includes('Successfully processed') || 
-          output.includes('Saving to vocabulary notebook') ||
-          output.includes('📖 Word Explanation:')) {
-        console.log('Word appears to have been processed successfully despite TTY error');
-        return true;
-      }
-    }
+    const output = execSync(command, {
+      encoding: 'utf8',
+      timeout: 30000,
+      cwd: path.dirname(executablePath),
+      env: env
+    });
     
-    // If we get here and have output, assume success
-    if (output.trim().length > 0) {
-      console.log('Save operation completed with output:', output.substring(0, 100));
-      return true;
-    }
-    
-    return false;
+    // Check if the output indicates successful saving
+    return output.includes('Successfully saved word') || output.includes('Saving word');
   } catch (error) {
     console.error('Error saving word:', error);
     return false;
   }
 }
 
-function WordDetailView({ word, explanation }: { word: string; explanation: WordExplanation }) {
+function WordDetailView({ word, explanation }: { word: string; explanation: WordExplanation }): JSX.Element {
   const { pop } = useNavigation();
 
   const handleSave = async () => {
@@ -239,7 +168,7 @@ function WordDetailView({ word, explanation }: { word: string; explanation: Word
       title: "Saving word...",
     });
 
-    const success = await saveWordToVocabulary(word);
+    const success = await saveWordToVocabulary(word, explanation.raw_output);
     
     if (success) {
       toast.style = Toast.Style.Success;
@@ -290,7 +219,7 @@ ${explanation.tip ? `## 💡 Tip\n${explanation.tip}` : ''}
   );
 }
 
-export default function LearnWordCommand() {
+export default function LearnWordCommand(): JSX.Element {
   const [word, setWord] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { push } = useNavigation();
