@@ -1,9 +1,7 @@
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use clap::{Parser, Subcommand};
 use console::{style, Term};
-use std::io::{self, Write};
 use termimad::*;
-use utils::{commit_and_push_changes, prepend_to_vocabulary_notebook, validate_word};
 use word_processor::WordProcessor;
 
 mod config;
@@ -12,7 +10,6 @@ mod utils;
 mod word_processor;
 
 use config::Config;
-use gemini_client::GeminiClient;
 
 #[derive(Parser)]
 #[command(
@@ -23,6 +20,10 @@ use gemini_client::GeminiClient;
 struct Cli {
     /// The word to learn
     word: Option<String>,
+
+    /// Output raw response from API without user interaction
+    #[arg(long)]
+    raw: bool,
 
     #[command(subcommand)]
     command: Option<Commands>,
@@ -38,6 +39,13 @@ enum Commands {
     Learn {
         /// The word to learn
         word: String,
+    },
+    /// Save raw response to vocabulary notebook
+    Save {
+        /// The word being saved
+        word: String,
+        /// The raw response content to save
+        content: String,
     },
 }
 
@@ -60,14 +68,20 @@ async fn main() -> Result<()> {
             show_info(&term);
         }
         Some(Commands::Learn { word }) => {
-            if let Err(e) = learn_word(&term, &word).await {
+            if let Err(e) = query_word(&term, &word, cli.raw).await {
+                eprintln!("❌ Error: {}", e);
+                return Ok(());
+            }
+        }
+        Some(Commands::Save { word, content }) => {
+            if let Err(e) = save_word(&term, &word, &content).await {
                 eprintln!("❌ Error: {}", e);
                 return Ok(());
             }
         }
         None => {
             if let Some(word) = cli.word {
-                if let Err(e) = learn_word(&term, &word).await {
+                if let Err(e) = query_word(&term, &word, cli.raw).await {
                     eprintln!("❌ Error: {}", e);
                     return Ok(());
                 }
@@ -81,7 +95,7 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn learn_word(term: &Term, word: &str) -> anyhow::Result<()> {
+async fn query_word(term: &Term, word: &str, raw: bool) -> anyhow::Result<()> {
     // Validate configuration
     let config = Config::load()?;
     
@@ -89,7 +103,20 @@ async fn learn_word(term: &Term, word: &str) -> anyhow::Result<()> {
     let processor = WordProcessor::new(config);
     
     // Process the word
-    processor.process_word(term, word).await?;
+    processor.process_word(term, word, raw).await?;
+    
+    Ok(())
+}
+
+async fn save_word(term: &Term, word: &str, content: &str) -> anyhow::Result<()> {
+    // Validate configuration
+    let config = Config::load()?;
+    
+    // Initialize word processor
+    let processor = WordProcessor::new(config);
+    
+    // Save the word
+    processor.save_word(term, word, content)?;
     
     Ok(())
 }
