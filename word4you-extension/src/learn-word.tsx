@@ -4,7 +4,9 @@ import { execSync } from "child_process";
 import path from "path";
 
 interface Preferences {
-  executablePath: string;
+  geminiApiKey: string;
+  vocabularyFile: string;
+  gitRemoteUrl: string;
 }
 
 interface WordExplanation {
@@ -128,13 +130,21 @@ function getExecutablePath(): string {
   }
   
   // Default to the executable in the extension project directory
-  return path.join(__dirname, '../word4you');
+  return path.join(__dirname, 'assets/word4you');
 }
 
 async function getWordExplanation(word: string): Promise<WordExplanation | null> {
   try {
-    // Path to the word4you executable
+    const preferences = getPreferenceValues<Preferences>();
     const executablePath = getExecutablePath();
+    
+    // Create environment variables from preferences
+    const env = {
+      ...process.env,
+      GEMINI_API_KEY: preferences.geminiApiKey,
+      VOCABULARY_NOTEBOOK_FILE: preferences.vocabularyFile || 'vocabulary_notebook.md',
+      ...(preferences.gitRemoteUrl && { GIT_REMOTE_URL: preferences.gitRemoteUrl })
+    };
     
     // The executable works but fails on TTY, so we capture both stdout and stderr
     const command = `echo "k" | "${executablePath}" "${word}"`;
@@ -145,7 +155,8 @@ async function getWordExplanation(word: string): Promise<WordExplanation | null>
       output = execSync(command, {
         encoding: 'utf8',
         timeout: 30000,
-        cwd: path.dirname(executablePath)
+        cwd: path.dirname(executablePath),
+        env: env
       });
     } catch (error: any) {
       // The command "fails" due to TTY error, but the output is in stderr
@@ -168,7 +179,16 @@ async function getWordExplanation(word: string): Promise<WordExplanation | null>
 
 async function saveWordToVocabulary(word: string): Promise<boolean> {
   try {
+    const preferences = getPreferenceValues<Preferences>();
     const executablePath = getExecutablePath();
+    
+    // Create environment variables from preferences
+    const env = {
+      ...process.env,
+      GEMINI_API_KEY: preferences.geminiApiKey,
+      VOCABULARY_NOTEBOOK_FILE: preferences.vocabularyFile || 'vocabulary_notebook.md',
+      ...(preferences.gitRemoteUrl && { GIT_REMOTE_URL: preferences.gitRemoteUrl })
+    };
     
     // The executable works but fails on TTY, so we capture both stdout and stderr
     const command = `echo "s" | "${executablePath}" "${word}"`;
@@ -179,7 +199,8 @@ async function saveWordToVocabulary(word: string): Promise<boolean> {
       output = execSync(command, {
         encoding: 'utf8',
         timeout: 30000,
-        cwd: path.dirname(executablePath)
+        cwd: path.dirname(executablePath),
+        env: env
       });
     } catch (error: any) {
       // The command "fails" due to TTY error, but may have actually saved

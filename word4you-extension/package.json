@@ -20,12 +20,29 @@
       "keywords": ["word", "learn", "english", "vocabulary", "AI", "gemini"],
       "preferences": [
         {
-          "name": "executablePath",
+          "name": "geminiApiKey",
+          "type": "password",
+          "required": true,
+          "title": "Gemini API Key",
+          "description": "Your Google Gemini API key for AI word explanations",
+          "placeholder": "Enter your Gemini API key"
+        },
+        {
+          "name": "vocabularyFile",
           "type": "textfield",
           "required": false,
-          "title": "Word4You Executable Path",
-          "description": "Path to the word4you executable (optional, defaults to extension directory)",
-          "placeholder": "/path/to/word4you"
+          "title": "Vocabulary Notebook File",
+          "description": "Path to your vocabulary notebook markdown file",
+          "default": "vocabulary_notebook.md",
+          "placeholder": "vocabulary_notebook.md"
+        },
+        {
+          "name": "gitRemoteUrl",
+          "type": "textfield",
+          "required": false,
+          "title": "Git Remote URL",
+          "description": "Git repository URL for vocabulary notebook backup (optional)",
+          "placeholder": "https://github.com/username/vocabulary.git"
         }
       ]
     }

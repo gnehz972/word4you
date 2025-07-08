@@ -15,8 +15,12 @@ declare type Preferences = ExtensionPreferences
 declare namespace Preferences {
   /** Preferences accessible in the `learn-word` command */
   export type LearnWord = ExtensionPreferences & {
-  /** Word4You Executable Path - Path to the word4you executable (optional, defaults to extension directory) */
-  "executablePath"?: string
+  /** Gemini API Key - Your Google Gemini API key for AI word explanations */
+  "geminiApiKey": string,
+  /** Vocabulary Notebook File - Path to your vocabulary notebook markdown file */
+  "vocabularyFile": string,
+  /** Git Remote URL - Git repository URL for vocabulary notebook backup (optional) */
+  "gitRemoteUrl"?: string
 }
 }
 
