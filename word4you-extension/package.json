@@ -1,0 +1,52 @@
+{
+  "$schema": "https://www.raycast.com/schemas/extension.json",
+  "name": "word4you",
+  "title": "Word4You",
+  "description": "Learn English words with AI-powered explanations using Google Gemini",
+  "icon": "📚",
+  "author": "zouzheng",
+  "categories": [
+    "Productivity",
+    "Developer Tools"
+  ],
+  "license": "MIT",
+  "commands": [
+    {
+      "name": "learn-word",
+      "title": "Learn Word",
+      "subtitle": "Word4You",
+      "description": "Learn an English word with AI explanation and save to vocabulary",
+      "mode": "view",
+      "keywords": ["word", "learn", "english", "vocabulary", "AI", "gemini"],
+      "preferences": [
+        {
+          "name": "executablePath",
+          "type": "textfield",
+          "required": false,
+          "title": "Word4You Executable Path",
+          "description": "Path to the word4you executable (optional, defaults to extension directory)",
+          "placeholder": "/path/to/word4you"
+        }
+      ]
+    }
+  ],
+  "dependencies": {
+    "@raycast/api": "^1.100.0"
+  },
+  "devDependencies": {
+    "@raycast/eslint-config": "^1.0.11",
+    "@types/node": "20.8.10",
+    "@types/react": "18.0.0",
+    "eslint": "^8.57.0",
+    "prettier": "^3.0.3",
+    "typescript": "^5.2.0"
+  },
+  "scripts": {
+    "build": "ray build -e dist",
+    "dev": "ray develop",
+    "fix-lint": "ray lint --fix",
+    "lint": "ray lint",
+    "prepublishOnly": "echo \"\\n\\nIt seems like you are trying to publish the Raycast extension to npm.\\n\\nIf you did intend to publish it to npm, remove the \\`prepublishOnly\\` script and rerun \\`npm publish\\` again.\\nIf you wanted to publish it to the Raycast Store instead, use \\`npm run publish\\` instead.\\n\\n\" && exit 1",
+    "publish": "npx @raycast/api@latest publish"
+  }
+}
