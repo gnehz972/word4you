@@ -20,17 +20,25 @@ impl WordProcessor {
         }
     }
 
-    pub async fn process_word(&self, term: &Term, word: &str) -> Result<()> {
+    pub async fn process_word(&self, term: &Term, word: &str, raw: bool) -> Result<()> {
         // Validate word
         validate_word(word)?;
         
-        term.write_line(&format!("🔍 Processing word: {}", word))?;
+        if !raw {
+            term.write_line(&format!("🔍 Processing word: {}", word))?;
+            term.write_line("🤖 Querying Gemini API...")?;
+        }
         
         // Get explanation from Gemini
-        term.write_line("🤖 Querying Gemini API...")?;
         let mut explanation = Box::new(self.gemini_client
             .get_word_explanation(word, &self.config.gemini_prompt_template)
             .await?);
+        
+        // If raw mode, just print the response and return
+        if raw {
+            println!("{}", explanation);
+            return Ok(());
+        }
         
         // Display the explanation with beautiful markdown rendering
         term.write_line("\n📖 Word Explanation:")?;
@@ -63,16 +71,8 @@ impl WordProcessor {
             
             match selection {
                 0 => {
-                    // Save to vocabulary notebook
-                    term.write_line("\n💾 Saving to vocabulary notebook...")?;
-                    prepend_to_vocabulary_notebook(&self.config.vocabulary_notebook_file, &explanation)?;
-                    
-                    // Commit and push changes
-                    term.write_line("📝 Committing changes...")?;
-                    let commit_message = format_commit_message(word);
-                    commit_and_push_changes(&commit_message, self.config.git_remote_url.as_deref())?;
-                    
-                    term.write_line(&format!("✅ Successfully processed and saved word: {}", word))?;
+                    // Save to vocabulary notebook using the shared method
+                    self.save_word(term, word, &explanation)?;
                     return Ok(());
                 }
                 1 => {
@@ -131,6 +131,25 @@ impl WordProcessor {
 
     pub async fn test_api_connection(&self) -> Result<bool> {
         self.gemini_client.test_connection().await
+    }
+
+    pub fn save_word(&self, term: &Term, word: &str, content: &str) -> Result<()> {
+        // Validate word
+        validate_word(word)?;
+        
+        term.write_line(&format!("💾 Saving word '{}' to vocabulary notebook...", word))?;
+        
+        // Save to vocabulary notebook
+        prepend_to_vocabulary_notebook(&self.config.vocabulary_notebook_file, content)?;
+        
+        // Commit and push changes
+        term.write_line("📝 Committing changes...")?;
+        let commit_message = format_commit_message(word);
+        commit_and_push_changes(&commit_message, self.config.git_remote_url.as_deref())?;
+        
+        term.write_line(&format!("✅ Successfully saved word: {}", word))?;
+        
+        Ok(())
     }
 }
 
