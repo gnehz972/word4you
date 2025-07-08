@@ -13,13 +13,12 @@ Learn English words with AI-powered explanations using Google Gemini.
 
 ## Setup
 
-1. Make sure you have the `word4you` executable in the extension directory
-2. Configure your `.env` file with your Gemini API key:
-   ```
-   GEMINI_API_KEY=your_api_key_here
-   VOCABULARY_NOTEBOOK_FILE=vocabulary_notebook.md
-   ```
-3. Install the extension in Raycast
+1. Install the `word4you` executable (see Installation section below)
+2. Install the extension in Raycast
+3. Configure your settings in Raycast extension preferences:
+   - **Gemini API Key** (required): Your Google Gemini API key
+   - **Vocabulary File** (optional): Path to your vocabulary notebook markdown file
+   - **Git Remote URL** (optional): Git repository for vocabulary backup
 
 ## Usage
 
