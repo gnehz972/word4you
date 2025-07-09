@@ -18,6 +18,14 @@
       "description": "Learn an English word with AI explanation and save to vocabulary",
       "mode": "view",
       "keywords": ["word", "learn", "english", "vocabulary", "AI", "gemini"],
+      "arguments": [
+        {
+          "name": "word",
+          "placeholder": "Word to learn",
+          "type": "text",
+          "required": false
+        }
+      ],
       "preferences": [
         {
           "name": "geminiApiKey",

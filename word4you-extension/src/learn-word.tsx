@@ -1,5 +1,5 @@
-import { Action, ActionPanel, Detail, Form, Toast, showToast, useNavigation, getPreferenceValues } from "@raycast/api";
-import { useState } from "react";
+import { Action, ActionPanel, Detail, Form, Toast, showToast, getPreferenceValues, LaunchProps, useNavigation } from "@raycast/api";
+import { useState, useEffect } from "react";
 import { execSync } from "child_process";
 import path from "path";
 import React from "react";
@@ -8,6 +8,10 @@ interface Preferences {
   geminiApiKey: string;
   vocabularyFile: string;
   gitRemoteUrl: string;
+}
+
+interface Arguments {
+  word: string;
 }
 
 interface WordExplanation {
@@ -219,13 +223,15 @@ ${explanation.tip ? `## 💡 Tip\n${explanation.tip}` : ''}
   );
 }
 
-export default function LearnWordCommand(): JSX.Element {
-  const [word, setWord] = useState("");
+export default function LearnWordCommand(props: LaunchProps<{ arguments: Arguments }>): JSX.Element {
+  const { word: argWord } = props.arguments;
+  const [word, setWord] = useState(argWord || "");
   const [isLoading, setIsLoading] = useState(false);
+  const [explanation, setExplanation] = useState<WordExplanation | null>(null);
   const { push } = useNavigation();
 
-  const handleSubmit = async () => {
-    if (!word.trim()) {
+  const handleLearnWord = async (wordToLearn: string) => {
+    if (!wordToLearn.trim()) {
       await showToast({
         style: Toast.Style.Failure,
         title: "Please enter a word",
@@ -237,17 +243,17 @@ export default function LearnWordCommand(): JSX.Element {
     
     const toast = await showToast({
       style: Toast.Style.Animated,
-      title: "Getting explanation...",
+      title: `Learning "${wordToLearn}"...`,
     });
 
     try {
-      const explanation = await getWordExplanation(word.trim());
+      const result = await getWordExplanation(wordToLearn.trim());
       
-      if (explanation) {
+      if (result) {
         toast.style = Toast.Style.Success;
-        toast.title = "Explanation ready!";
+        toast.title = "Word learned!";
         
-        push(<WordDetailView word={word.trim()} explanation={explanation} />);
+        push(<WordDetailView word={wordToLearn.trim()} explanation={result} />);
       } else {
         toast.style = Toast.Style.Failure;
         toast.title = "Failed to get explanation";
@@ -262,6 +268,28 @@ export default function LearnWordCommand(): JSX.Element {
     }
   };
 
+  // Auto-trigger if word is provided as argument
+  useEffect(() => {
+    if (argWord && argWord.trim()) {
+      handleLearnWord(argWord);
+    }
+  }, [argWord]);
+
+  const handleSubmit = async () => {
+    await handleLearnWord(word);
+  };
+
+  // If we have an argument word, show loading state while processing
+  if (argWord && argWord.trim()) {
+    return (
+      <Detail
+        isLoading={isLoading}
+        markdown={`# 📚 Learning "${argWord}"...\n\nPlease wait while we get the explanation for "${argWord}".`}
+      />
+    );
+  }
+
+  // Otherwise show the input form
   return (
     <Form
       isLoading={isLoading}
