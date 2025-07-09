@@ -193,22 +193,24 @@ function WordDetailView({ word, explanation }: { word: string; explanation: Word
     }
   };
 
+  // Helper: render a register/usage if present in tip
+  function renderRegister(text: string | undefined) {
+    if (!text) return '';
+    if (/^(informal|formal|slang|archaic|literary|technical)$/i.test(text.trim())) {
+      return `_${text}_\n`;
+    }
+    return '';
+  }
+
   const markdown = `
-# 📖 ${explanation.word}
-
-**🔊 Pronunciation:** ${explanation.pronunciation}
-
-**📝 Definition:** ${explanation.definition}
-
-**🇨🇳 Chinese:** ${explanation.chinese}
-
-## Examples
-**English:** ${explanation.example_en}
-
-**Chinese:** ${explanation.example_zh}
-
-${explanation.tip ? `## 💡 Tip\n${explanation.tip}` : ''}
-  `;
+# ${explanation.word}
+${explanation.pronunciation ? `\n*/${explanation.pronunciation}/*` : ''}
+${explanation.definition ? `\n*${explanation.definition}*` : ''}
+${explanation.chinese ? `\n*${explanation.chinese}*` : ''}
+${explanation.example_en ? `\n> _${explanation.example_en}_` : ''}
+${explanation.example_zh ? `\n> _${explanation.example_zh}_` : ''}
+${explanation.tip ? `\n💡*${explanation.tip}*` : ''}
+`;
 
   return (
     <DetailComponent
