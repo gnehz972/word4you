@@ -26,6 +26,9 @@ declare namespace Preferences {
 
 declare namespace Arguments {
   /** Arguments passed to the `learn-word` command */
-  export type LearnWord = {}
+  export type LearnWord = {
+  /** Word to learn */
+  "word": string
+}
 }
 
