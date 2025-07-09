@@ -1,7 +1,6 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use console::{style, Term};
-use termimad::*;
 use word_processor::WordProcessor;
 
 mod config;
@@ -51,8 +50,6 @@ enum Commands {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Initialize logging
-    tracing_subscriber::fmt::init();
 
     let cli = Cli::parse();
     let term = Term::stdout();
@@ -163,20 +160,4 @@ Usage:
     term.write_line(&style(info).cyan().to_string()).unwrap();
 }
 
-fn display_explanation(explanation: &str) {
-    // Create a custom skin for beautiful markdown rendering
-    let mut skin = MadSkin::default();
-    
-    // Customize colors
-    skin.set_headers_fg(rgb(255, 187, 0));
-    skin.bold.set_fg(rgb(255, 187, 0));
-    skin.italic.set_fg(rgb(215, 255, 135));
-    skin.bullet = StyledChar::from_fg_char(rgb(255, 187, 0), '•');
-    skin.quote_mark = StyledChar::from_fg_char(rgb(255, 187, 0), '▐');
-    skin.quote_mark.set_fg(rgb(255, 187, 0));
-    skin.inline_code.set_fg(rgb(255, 187, 0));
-    skin.code_block.set_bg(rgb(28, 28, 28));
-    
-    // Print the formatted explanation
-    skin.print_text(explanation);
-} 
+ 

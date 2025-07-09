@@ -1,6 +1,5 @@
 use anyhow::{anyhow, Result};
 use dotenvy::dotenv;
-use serde::{Deserialize, Serialize};
 use std::env;
 
 #[derive(Debug, Clone)]
@@ -51,10 +50,4 @@ Important formatting rules:
         })
     }
 
-    pub fn validate(&self) -> Result<()> {
-        if self.gemini_api_key.is_empty() {
-            return Err(anyhow!("GEMINI_API_KEY cannot be empty"));
-        }
-        Ok(())
-    }
 } 
