@@ -4,6 +4,14 @@ import { execSync } from "child_process";
 import path from "path";
 import React from "react";
 
+// Type assertion to bypass TypeScript errors with Raycast API
+const DetailComponent = Detail as any;
+const FormComponent = Form as any;
+const ActionPanelComponent = ActionPanel as any;
+const ActionComponent = Action as any;
+const FormTextFieldComponent = Form.TextField as any;
+const ActionSubmitFormComponent = Action.SubmitForm as any;
+
 interface Preferences {
   geminiApiKey: string;
   vocabularyFile: string;
@@ -203,21 +211,22 @@ ${explanation.tip ? `## 💡 Tip\n${explanation.tip}` : ''}
   `;
 
   return (
-    <Detail
+    <DetailComponent
       markdown={markdown}
       actions={
-        <ActionPanel>
-          <Action
+        <ActionPanelComponent>
+          <ActionComponent
             title="Save to Vocabulary"
             icon="💾"
             onAction={handleSave}
           />
-          <Action
-            title="Back"
-            icon="←"
+          <ActionComponent
+            title="Close"
+            icon="✖️"
             onAction={pop}
+            shortcut={{ modifiers: ["cmd"], key: "escape" }}
           />
-        </ActionPanel>
+        </ActionPanelComponent>
       }
     />
   );
@@ -253,7 +262,14 @@ export default function LearnWordCommand(props: LaunchProps<{ arguments: Argumen
         toast.style = Toast.Style.Success;
         toast.title = "Word learned!";
         
-        push(<WordDetailView word={wordToLearn.trim()} explanation={result} />);
+        // If this was triggered by an argument, set the explanation directly
+        // so we can render the detail view immediately
+        if (argWord && argWord.trim() === wordToLearn.trim()) {
+          setExplanation(result);
+        } else {
+                  // Otherwise, push to the detail view
+        push(<WordDetailView word={wordToLearn.trim()} explanation={result} /> as any);
+        }
       } else {
         toast.style = Toast.Style.Failure;
         toast.title = "Failed to get explanation";
@@ -279,37 +295,42 @@ export default function LearnWordCommand(props: LaunchProps<{ arguments: Argumen
     await handleLearnWord(word);
   };
 
-  // If we have an argument word, show loading state while processing
-  if (argWord && argWord.trim()) {
+  // If we have an argument word and we're still loading, show loading state
+  if (argWord && argWord.trim() && isLoading) {
     return (
-      <Detail
+      <DetailComponent
         isLoading={isLoading}
         markdown={`# 📚 Learning "${argWord}"...\n\nPlease wait while we get the explanation for "${argWord}".`}
       />
     );
   }
 
+  // If we have an argument word and we have the explanation, show the detail view directly
+  if (argWord && argWord.trim() && explanation) {
+    return <WordDetailView word={argWord.trim()} explanation={explanation} />;
+  }
+
   // Otherwise show the input form
   return (
-    <Form
+    <FormComponent
       isLoading={isLoading}
       actions={
-        <ActionPanel>
-          <Action.SubmitForm
+        <ActionPanelComponent>
+          <ActionSubmitFormComponent
             title="Learn Word"
             icon="📚"
             onSubmit={handleSubmit}
           />
-        </ActionPanel>
+        </ActionPanelComponent>
       }
     >
-      <Form.TextField
+      <FormTextFieldComponent
         id="word"
         title="Word"
         placeholder="Enter an English word to learn"
         value={word}
         onChange={setWord}
       />
-    </Form>
+    </FormComponent>
   );
 }
