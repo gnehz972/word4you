@@ -27,20 +27,19 @@ Please provide a comprehensive explanation for the English word "{word}" in the 
 
 ## {word}
 
-*[IPA phonetic symbols]*
+*/{IPA phonetic symbols}/*
 
-> [Brief English definition]
+> {Brief English definition}
 
-**[Simplified Chinese meaning, NO pinyin]**
+**{Simplified Chinese meaning, NO pinyin}**
 
-- [One example sentence using the word]
-- [Chinese translation using only Simplified Chinese characters, NO pinyin]
+- {One example sentence using the word}
+- {Chinese translation of the English example}
 
-*[one usage note or tip]*
+*{one usage note or tip}*
 
 Important formatting rules:
-- Use only Simplified Chinese characters for Chinese translations
-- Do NOT include pinyin (romanized Chinese) in any Chinese text
+- Use Simplified Chinese, no Pinyin(romanized Chinese) included
 - Ensure the response is in proper markdown format
 "#.to_string();
 
