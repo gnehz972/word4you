@@ -1,4 +1,4 @@
-import { Action, ActionPanel, Detail, Form, Toast, showToast, getPreferenceValues, LaunchProps, useNavigation } from "@raycast/api";
+import { Action, ActionPanel, Detail, List, Toast, showToast, getPreferenceValues, LaunchProps, useNavigation } from "@raycast/api";
 import { useState, useEffect } from "react";
 import { execSync } from "child_process";
 import path from "path";
@@ -6,11 +6,9 @@ import React from "react";
 
 // Type assertion to bypass TypeScript errors with Raycast API
 const DetailComponent = Detail as any;
-const FormComponent = Form as any;
+const ListComponent = List as any;
 const ActionPanelComponent = ActionPanel as any;
 const ActionComponent = Action as any;
-const FormTextFieldComponent = Form.TextField as any;
-const ActionSubmitFormComponent = Action.SubmitForm as any;
 
 interface Preferences {
   geminiApiKey: string;
@@ -226,7 +224,7 @@ ${explanation.tip ? `\n💡*${explanation.tip}*` : ''}
             title="Close"
             icon="✖️"
             onAction={pop}
-            shortcut={{ modifiers: ["cmd"], key: "escape" }}
+            shortcut={{ modifiers: ["opt"], key: "escape" }}
           />
         </ActionPanelComponent>
       }
@@ -254,7 +252,7 @@ export default function LearnWordCommand(props: LaunchProps<{ arguments: Argumen
     
     const toast = await showToast({
       style: Toast.Style.Animated,
-      title: `Learning "${wordToLearn}"...`,
+      title: `Querying "${wordToLearn}"...`,
     });
 
     try {
@@ -262,7 +260,7 @@ export default function LearnWordCommand(props: LaunchProps<{ arguments: Argumen
       
       if (result) {
         toast.style = Toast.Style.Success;
-        toast.title = "Word learned!";
+        toast.title = "Query completed!";
         
         // If this was triggered by an argument, set the explanation directly
         // so we can render the detail view immediately
@@ -302,7 +300,7 @@ export default function LearnWordCommand(props: LaunchProps<{ arguments: Argumen
     return (
       <DetailComponent
         isLoading={isLoading}
-        markdown={`# 📚 Learning "${argWord}"...\n\nPlease wait while we get the explanation for "${argWord}".`}
+        markdown={`# 📚 Querying "${argWord}"...\n\nPlease wait while we get the explanation for "${argWord}".`}
       />
     );
   }
@@ -312,27 +310,50 @@ export default function LearnWordCommand(props: LaunchProps<{ arguments: Argumen
     return <WordDetailView word={argWord.trim()} explanation={explanation} />;
   }
 
-  // Otherwise show the input form
+  // Show loading state if loading
+  if (isLoading) {
+    return (
+      <DetailComponent
+        isLoading={isLoading}
+        markdown={`# 📚 Querying "${word}"...\n\nPlease wait while we get the explanation for "${word}".`}
+      />
+    );
+  }
+
+  // Otherwise show the input field
   return (
-    <FormComponent
-      isLoading={isLoading}
+    <ListComponent
+      searchBarPlaceholder="Enter an English word to query"
+      onSearchTextChange={setWord}
+      searchText={word}
       actions={
         <ActionPanelComponent>
-          <ActionSubmitFormComponent
-            title="Learn Word"
+          <ActionComponent
+            title="Query Word"
             icon="📚"
-            onSubmit={handleSubmit}
+            onAction={() => handleSubmit()}
+            shortcut={{ modifiers: [], key: "return" }}
           />
         </ActionPanelComponent>
       }
     >
-      <FormTextFieldComponent
-        id="word"
-        title="Word"
-        placeholder="Enter an English word to learn"
-        value={word}
-        onChange={setWord}
-      />
-    </FormComponent>
+      {word.trim() && (
+        <ListComponent.Item
+          title={`Query "${word}"`}
+          subtitle="Press Enter to query this word"
+          icon="📚"
+          actions={
+            <ActionPanelComponent>
+              <ActionComponent
+                title="Query Word"
+                icon="📚"
+                onAction={() => handleSubmit()}
+                shortcut={{ modifiers: [], key: "return" }}
+              />
+            </ActionPanelComponent>
+          }
+        />
+      )}
+    </ListComponent>
   );
 }

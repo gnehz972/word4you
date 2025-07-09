@@ -4,7 +4,7 @@
   "title": "Word4You",
   "description": "Learn English words with AI-powered explanations using Google Gemini",
   "icon": "📚",
-  "author": "zouzheng",
+  "author": "gnehz972",
   "categories": [
     "Productivity",
     "Developer Tools"
@@ -13,15 +13,15 @@
   "commands": [
     {
       "name": "learn-word",
-      "title": "Learn Word",
-      "subtitle": "Word4You",
-      "description": "Learn an English word with AI explanation and save to vocabulary",
+      "title": "Word4You",
+      "subtitle": "Query",
+      "description": "Query and learn an English word with AI explanation and save to vocabulary",
       "mode": "view",
       "keywords": ["word", "learn", "english", "vocabulary", "AI", "gemini"],
       "arguments": [
         {
           "name": "word",
-          "placeholder": "Word to learn",
+          "placeholder": "word to query",
           "type": "text",
           "required": false
         }
