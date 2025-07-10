@@ -34,7 +34,7 @@ termimad = "0.28"
 anyhow = "1.0"
 
 # Git integration
-git2 = "0.18"
+git2 = "0.20.2"
 
 # Date and time
 chrono = { version = "0.4", features = ["serde"] }
