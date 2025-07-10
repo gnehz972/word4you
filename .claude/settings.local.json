@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod:*)",
+      "Bash(/Users/zouzheng/dev/workshop/word4you/word4you-raycast.sh:*)",
+      "Bash(WORD4YOU_PATH=\"/Users/zouzheng/dev/workshop/word4you/word4you-rust/target/release/word4you\" /Users/zouzheng/dev/workshop/word4you/word4you-raycast.sh \"world\")",
+      "Bash(WORD4YOU_PATH=\"/Users/zouzheng/dev/workshop/word4you/word4you-rust/target/release/word4you\" /Users/zouzheng/dev/workshop/word4you/word4you-raycast.sh \"test\")",
+      "Bash(cp:*)",
+      "Bash(mv:*)",
+      "Bash(/Users/zouzheng/dev/workshop/word4you/word4you-save.sh:*)",
+      "Bash(rm:*)",
+      "Bash(npx @raycast/api@latest init word4you-extension)",
+      "Bash(mkdir:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(git add:*)",
+      "Bash(ls:*)",
+      "WebFetch(domain:developers.raycast.com)",
+      "Bash(git commit:*)",
+      "Bash(cargo:*)",
+      "Bash(./target/debug/word4you:*)",
+      "Bash(node:*)",
+      "Bash(rg:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)"
+    ],
+    "deny": []
+  }
+}

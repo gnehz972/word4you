@@ -17,7 +17,7 @@ declare namespace Preferences {
   export type LearnWord = ExtensionPreferences & {
   /** Gemini API Key - Your Google Gemini API key for AI word explanations */
   "geminiApiKey": string,
-  /** Vocabulary Notebook File - Path to your vocabulary notebook markdown file */
+  /** Vocabulary Notebook File - Path to your vocabulary notebook markdown file (leave empty for default: ~/word4you/vocabulary_notebook.md) */
   "vocabularyFile": string,
   /** Git Remote URL - Git repository URL for vocabulary notebook backup (optional) */
   "gitRemoteUrl"?: string

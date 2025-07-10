@@ -40,9 +40,9 @@
           "type": "textfield",
           "required": false,
           "title": "Vocabulary Notebook File",
-          "description": "Path to your vocabulary notebook markdown file",
-          "default": "vocabulary_notebook.md",
-          "placeholder": "vocabulary_notebook.md"
+          "description": "Path to your vocabulary notebook markdown file (leave empty for default: ~/word4you/vocabulary_notebook.md)",
+          "default": "",
+          "placeholder": "~/word4you/vocabulary_notebook.md"
         },
         {
           "name": "gitRemoteUrl",
