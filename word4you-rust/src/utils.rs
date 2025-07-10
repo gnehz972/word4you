@@ -8,16 +8,18 @@ use std::path::Path;
 pub fn ensure_vocabulary_notebook_exists(vocabulary_notebook_file: &str) -> Result<()> {
     let path = Path::new(vocabulary_notebook_file);
     
-    // Create parent directory if it doesn't exist
+    // Create word4you directory if it doesn't exist
     if let Some(parent) = path.parent() {
         if !parent.exists() {
             fs::create_dir_all(parent)?;
+            println!("📁 Created word4you directory: {}", parent.display());
         }
     }
     
     // Create empty file if it doesn't exist
     if !path.exists() {
         File::create(vocabulary_notebook_file)?;
+        println!("📄 Created vocabulary notebook: {}", vocabulary_notebook_file);
     }
     Ok(())
 }
@@ -40,21 +42,26 @@ pub fn format_commit_message(word: &str) -> String {
     format!("Add word: {} - {}", word, timestamp)
 }
 
-pub fn init_git_repo() -> Result<Repository> {
-    match Repository::open(".") {
+pub fn init_git_repo(vocabulary_notebook_file: &str) -> Result<Repository> {
+    let notebook_path = Path::new(vocabulary_notebook_file);
+    let word4you_dir = notebook_path.parent()
+        .ok_or_else(|| anyhow!("Invalid vocabulary notebook file path"))?;
+    
+    match Repository::open(word4you_dir) {
         Ok(repo) => Ok(repo),
         Err(_) => {
-            // Initialize new repository
-            let repo = Repository::init(".")?;
+            // Initialize new repository in the word4you directory
+            let repo = Repository::init(word4you_dir)?;
+            println!("🔧 Initialized git repository in: {}", word4you_dir.display());
             Ok(repo)
         }
     }
 }
 
-pub fn commit_and_push_changes(commit_message: &str, git_remote_url: Option<&str>) -> Result<()> {
-    let repo = init_git_repo()?;
+pub fn commit_and_push_changes(commit_message: &str, vocabulary_notebook_file: &str, git_remote_url: Option<&str>) -> Result<()> {
+    let repo = init_git_repo(vocabulary_notebook_file)?;
     
-    // Add all changes
+    // Add all files in the word4you directory (since it's a dedicated directory)
     let mut index = repo.index()?;
     index.add_all(["*"].iter(), git2::IndexAddOption::DEFAULT, None)?;
     index.write()?;

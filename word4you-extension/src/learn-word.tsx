@@ -13,7 +13,7 @@ const ActionComponent = Action as any;
 
 interface Preferences {
   geminiApiKey: string;
-  vocabularyFile: string;
+  vocabularyBaseDir: string;
   gitRemoteUrl: string;
 }
 
@@ -33,9 +33,9 @@ interface WordExplanation {
 }
 
 // Cross-platform path resolution for vocabulary file
-function getDefaultVocabularyPath(): string {
-  const homeDir = os.homedir();
-  return path.join(homeDir, 'word4you', 'vocabulary_notebook.md');
+function getVocabularyPath(baseDir?: string): string {
+  const vocabularyBaseDir = baseDir || os.homedir();
+  return path.join(vocabularyBaseDir, 'word4you', 'vocabulary_notebook.md');
 }
 
 // Ensure directory exists for vocabulary file
@@ -132,7 +132,7 @@ async function getWordExplanation(word: string): Promise<WordExplanation | null>
     const executablePath = getExecutablePath();
     
     // Use cross-platform path resolution for vocabulary file
-    const vocabularyPath = preferences.vocabularyFile || getDefaultVocabularyPath();
+    const vocabularyPath = getVocabularyPath(preferences.vocabularyBaseDir);
     
     // Ensure the directory exists
     ensureVocabularyDirectoryExists(vocabularyPath);
@@ -141,7 +141,7 @@ async function getWordExplanation(word: string): Promise<WordExplanation | null>
     const env = {
       ...process.env,
       GEMINI_API_KEY: preferences.geminiApiKey,
-      VOCABULARY_NOTEBOOK_FILE: vocabularyPath,
+      VOCABULARY_BASE_DIR: preferences.vocabularyBaseDir || os.homedir(),
       ...(preferences.gitRemoteUrl && { GIT_REMOTE_URL: preferences.gitRemoteUrl })
     };
     
@@ -167,8 +167,8 @@ async function saveWordToVocabulary(word: string, content: string): Promise<bool
     const preferences = getPreferenceValues<Preferences>();
     const executablePath = getExecutablePath();
     
-        // Use cross-platform path resolution for vocabulary file
-    const vocabularyPath = preferences.vocabularyFile || getDefaultVocabularyPath();
+    // Use cross-platform path resolution for vocabulary file
+    const vocabularyPath = getVocabularyPath(preferences.vocabularyBaseDir);
     
     console.log('vocabularyPath:', vocabularyPath);
     
@@ -179,7 +179,7 @@ async function saveWordToVocabulary(word: string, content: string): Promise<bool
     const env = {
       ...process.env,
       GEMINI_API_KEY: preferences.geminiApiKey,
-      VOCABULARY_NOTEBOOK_FILE: vocabularyPath,
+      VOCABULARY_BASE_DIR: preferences.vocabularyBaseDir || os.homedir(),
       ...(preferences.gitRemoteUrl && { GIT_REMOTE_URL: preferences.gitRemoteUrl })
     };
     
