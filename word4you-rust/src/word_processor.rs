@@ -138,11 +138,12 @@ impl WordProcessor {
         validate_word(word)?;
         
         term.write_line(&format!("💾 Saving word '{}' to vocabulary notebook...", word))?;
-        
+        term.write_line(&format!("dir: {}", &self.config.vocabulary_notebook_file))?;
         // Save to vocabulary notebook
         prepend_to_vocabulary_notebook(&self.config.vocabulary_notebook_file, content)?;
         
         // Commit and push changes
+        term.write_line("✅ Successfully saved word locally")?;
         term.write_line("📝 Committing changes...")?;
         let commit_message = format_commit_message(word);
         commit_and_push_changes(&commit_message, &self.config.vocabulary_notebook_file, self.config.git_remote_url.as_deref())?;
