@@ -17,8 +17,25 @@ Learn English words with AI-powered explanations using Google Gemini.
 2. Install the extension in Raycast
 3. Configure your settings in Raycast extension preferences:
    - **Gemini API Key** (required): Your Google Gemini API key
-   - **Vocabulary File** (optional): Path to your vocabulary notebook markdown file
+   - **Vocabulary Base Directory** (optional): Base directory where 'word4you' subdirectory will be created (defaults to home directory)
    - **Git Remote URL** (optional): Git repository for vocabulary backup
+
+## Directory Structure
+
+The extension automatically creates a dedicated `word4you` subdirectory in your configured base directory:
+
+```
+{Base Directory}/
+└── word4you/                    # Dedicated directory for Word4You
+    ├── .git/                    # Git repository (auto-initialized)
+    └── vocabulary_notebook.md   # Your vocabulary notebook
+```
+
+**Benefits:**
+- ✅ Clean separation from other files
+- ✅ Safe git operations (only tracks Word4You files)
+- ✅ Easy backup/sync of just the `word4you` directory
+- ✅ No risk of accidentally tracking unrelated files
 
 ## Usage
 

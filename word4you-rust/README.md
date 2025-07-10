@@ -32,7 +32,7 @@ A fast, efficient command-line tool for learning English words with AI-powered e
 
 4. **Configure**:
    ```bash
-   cp env.example .env
+   cp .env.example .env
    # Edit .env and add: GEMINI_API_KEY=your_api_key_here
    ```
 
@@ -69,7 +69,7 @@ cargo install word4you
 Create a `.env` file in the project directory:
 
 ```bash
-cp env.example .env
+cp .env.example .env
 ```
 
 Edit the `.env` file with your settings:
@@ -78,12 +78,31 @@ Edit the `.env` file with your settings:
 # Required: Your Gemini API key
 GEMINI_API_KEY=your_api_key_here
 
-# Optional: Path to your vocabulary notebook file (default: ~/word4you/vocabulary_notebook.md)
-VOCABULARY_NOTEBOOK_FILE=~/word4you/vocabulary_notebook.md
+# Optional: Base directory where 'word4you' subdirectory will be created
+# Default: home directory (~)
+# The program will create: {VOCABULARY_BASE_DIR}/word4you/vocabulary_notebook.md
+VOCABULARY_BASE_DIR=~
 
 # Optional: Git remote URL for automatic pushing
 GIT_REMOTE_URL=https://github.com/yourusername/your-repo.git
 ```
+
+### Directory Structure
+
+The program automatically creates a dedicated `word4you` subdirectory:
+
+```
+{VOCABULARY_BASE_DIR}/
+└── word4you/                    # Dedicated directory for Word4You
+    ├── .git/                    # Git repository (auto-initialized)
+    └── vocabulary_notebook.md   # Your vocabulary notebook
+```
+
+**Benefits of this approach:**
+- ✅ Clean separation from other files
+- ✅ Safe git operations (only tracks Word4You files)
+- ✅ Easy backup/sync of just the `word4you` directory
+- ✅ No risk of accidentally tracking unrelated files
 
 ## Commands
 
@@ -136,11 +155,19 @@ Enter your choice (s/r/p/k):
 
 ## Vocabulary Notebook
 
-Words are saved in `~/word4you/vocabulary_notebook.md` with phonetic symbols, translations, examples, and definitions.
+Words are saved in `{VOCABULARY_BASE_DIR}/word4you/vocabulary_notebook.md` with:
+- 📝 Phonetic symbols (IPA)
+- 🇨🇳 Chinese translations
+- 🌍 Bilingual examples
+- 📖 Detailed definitions
+- 🏷️ Usage notes and tips
 
 ## Git Integration
 
-Automatically commits and pushes each word addition to your repository.
+- **Automatic initialization**: Git repository is created in the `word4you` directory
+- **Safe operations**: Only tracks files within the dedicated `word4you` directory
+- **Auto-commit**: Each word addition is automatically committed
+- **Optional push**: Configure `GIT_REMOTE_URL` for automatic pushing to remote repository
 
 ## Performance Benefits
 

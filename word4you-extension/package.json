@@ -36,13 +36,13 @@
           "placeholder": "Enter your Gemini API key"
         },
         {
-          "name": "vocabularyFile",
+          "name": "vocabularyBaseDir",
           "type": "textfield",
           "required": false,
-          "title": "Vocabulary Notebook File",
-          "description": "Path to your vocabulary notebook markdown file (leave empty for default: ~/word4you/vocabulary_notebook.md)",
+          "title": "Vocabulary Base Directory",
+          "description": "Base directory where 'word4you' subdirectory will be created (leave empty for default: home directory)",
           "default": "",
-          "placeholder": "~/word4you/vocabulary_notebook.md"
+          "placeholder": "Home dir by default"
         },
         {
           "name": "gitRemoteUrl",
