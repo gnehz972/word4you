@@ -78,8 +78,8 @@ Edit the `.env` file with your settings:
 # Required: Your Gemini API key
 GEMINI_API_KEY=your_api_key_here
 
-# Optional: Path to your vocabulary notebook file (default: vocabulary_notebook.md)
-VOCABULARY_NOTEBOOK_FILE=vocabulary_notebook.md
+# Optional: Path to your vocabulary notebook file (default: ~/word4you/vocabulary_notebook.md)
+VOCABULARY_NOTEBOOK_FILE=~/word4you/vocabulary_notebook.md
 
 # Optional: Git remote URL for automatic pushing
 GIT_REMOTE_URL=https://github.com/yourusername/your-repo.git
@@ -136,7 +136,7 @@ Enter your choice (s/r/p/k):
 
 ## Vocabulary Notebook
 
-Words are saved in `vocabulary_notebook.md` with phonetic symbols, translations, examples, and definitions.
+Words are saved in `~/word4you/vocabulary_notebook.md` with phonetic symbols, translations, examples, and definitions.
 
 ## Git Integration
 

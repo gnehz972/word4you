@@ -2,6 +2,7 @@ import { Action, ActionPanel, Detail, List, Toast, showToast, getPreferenceValue
 import { useState, useEffect } from "react";
 import { execSync } from "child_process";
 import path from "path";
+import os from "os";
 import React from "react";
 
 // Type assertion to bypass TypeScript errors with Raycast API
@@ -29,6 +30,24 @@ interface WordExplanation {
   example_zh: string;
   tip: string;
   raw_output: string;
+}
+
+// Cross-platform path resolution for vocabulary file
+function getDefaultVocabularyPath(): string {
+  const homeDir = os.homedir();
+  return path.join(homeDir, 'word4you', 'vocabulary_notebook.md');
+}
+
+// Ensure directory exists for vocabulary file
+function ensureVocabularyDirectoryExists(vocabularyPath: string): void {
+  try {
+    const dir = path.dirname(vocabularyPath);
+    if (!require('fs').existsSync(dir)) {
+      require('fs').mkdirSync(dir, { recursive: true });
+    }
+  } catch (error) {
+    console.error('Error creating vocabulary directory:', error);
+  }
 }
 
 function parseRawWordExplanation(output: string, word: string): WordExplanation | null {
@@ -112,11 +131,17 @@ async function getWordExplanation(word: string): Promise<WordExplanation | null>
     const preferences = getPreferenceValues<Preferences>();
     const executablePath = getExecutablePath();
     
+    // Use cross-platform path resolution for vocabulary file
+    const vocabularyPath = preferences.vocabularyFile || getDefaultVocabularyPath();
+    
+    // Ensure the directory exists
+    ensureVocabularyDirectoryExists(vocabularyPath);
+    
     // Create environment variables from preferences
     const env = {
       ...process.env,
       GEMINI_API_KEY: preferences.geminiApiKey,
-      VOCABULARY_NOTEBOOK_FILE: preferences.vocabularyFile || 'vocabulary_notebook.md',
+      VOCABULARY_NOTEBOOK_FILE: vocabularyPath,
       ...(preferences.gitRemoteUrl && { GIT_REMOTE_URL: preferences.gitRemoteUrl })
     };
     
@@ -142,18 +167,25 @@ async function saveWordToVocabulary(word: string, content: string): Promise<bool
     const preferences = getPreferenceValues<Preferences>();
     const executablePath = getExecutablePath();
     
+        // Use cross-platform path resolution for vocabulary file
+    const vocabularyPath = preferences.vocabularyFile || getDefaultVocabularyPath();
+    
+    console.log('vocabularyPath:', vocabularyPath);
+    
+    // Ensure the directory exists
+    ensureVocabularyDirectoryExists(vocabularyPath);
+    
     // Create environment variables from preferences
     const env = {
       ...process.env,
       GEMINI_API_KEY: preferences.geminiApiKey,
-      VOCABULARY_NOTEBOOK_FILE: preferences.vocabularyFile || 'vocabulary_notebook.md',
+      VOCABULARY_NOTEBOOK_FILE: vocabularyPath,
       ...(preferences.gitRemoteUrl && { GIT_REMOTE_URL: preferences.gitRemoteUrl })
     };
     
     // Use the save command with the raw content
     const command = `"${executablePath}" save "${word}" "${content.replace(/"/g, '\\"')}"`;
-    console.log('save command:', command);
-    
+
     const output = execSync(command, {
       encoding: 'utf8',
       timeout: 30000,

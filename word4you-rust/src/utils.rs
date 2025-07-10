@@ -2,18 +2,22 @@ use anyhow::{anyhow, Result};
 use chrono::Utc;
 use git2::{Repository, Signature};
 use std::fs;
+use std::fs::File;
 use std::path::Path;
 
 pub fn ensure_vocabulary_notebook_exists(vocabulary_notebook_file: &str) -> Result<()> {
-    if !Path::new(vocabulary_notebook_file).exists() {
-        let content = r#"# My Vocabulary Notebook
-
-This is my personal collection of English words with explanations.
-
----
-
-"#;
-        fs::write(vocabulary_notebook_file, content)?;
+    let path = Path::new(vocabulary_notebook_file);
+    
+    // Create parent directory if it doesn't exist
+    if let Some(parent) = path.parent() {
+        if !parent.exists() {
+            fs::create_dir_all(parent)?;
+        }
+    }
+    
+    // Create empty file if it doesn't exist
+    if !path.exists() {
+        File::create(vocabulary_notebook_file)?;
     }
     Ok(())
 }
