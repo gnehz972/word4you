@@ -83,8 +83,8 @@ GEMINI_API_KEY=your_api_key_here
 # The program will create: {VOCABULARY_BASE_DIR}/word4you/vocabulary_notebook.md
 VOCABULARY_BASE_DIR=~
 
-# Optional: Git remote URL for automatic pushing
-GIT_REMOTE_URL=https://github.com/yourusername/your-repo.git
+# Optional: Git remote URL for automatic pushing (SSH URLs only)
+GIT_REMOTE_URL=git@github.com:yourusername/your-repo.git
 ```
 
 ### Directory Structure

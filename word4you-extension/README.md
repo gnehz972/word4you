@@ -18,7 +18,9 @@ Learn English words with AI-powered explanations using Google Gemini.
 3. Configure your settings in Raycast extension preferences:
    - **Gemini API Key** (required): Your Google Gemini API key
    - **Vocabulary Base Directory** (optional): Base directory where 'word4you' subdirectory will be created (defaults to home directory)
-   - **Git Remote URL** (optional): Git repository for vocabulary backup
+   - **Git Remote URL** (optional): Git repository for vocabulary backup (SSH URLs only, e.g., git@github.com:username/repo.git)
+   - **SSH Private Key Path** (optional): Path to SSH private key file for Git authentication (defaults to ~/.ssh/id_ed25519)
+   - **SSH Public Key Path** (optional): Path to SSH public key file for Git authentication (defaults to ~/.ssh/id_ed25519.pub)
 
 ## Directory Structure
 

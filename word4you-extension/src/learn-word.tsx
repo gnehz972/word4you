@@ -15,6 +15,8 @@ interface Preferences {
   geminiApiKey: string;
   vocabularyBaseDir: string;
   gitRemoteUrl: string;
+  sshPrivateKeyPath: string;
+  sshPublicKeyPath: string;
 }
 
 interface Arguments {
@@ -142,7 +144,9 @@ async function getWordExplanation(word: string): Promise<WordExplanation | null>
       ...process.env,
       GEMINI_API_KEY: preferences.geminiApiKey,
       VOCABULARY_BASE_DIR: preferences.vocabularyBaseDir || os.homedir(),
-      ...(preferences.gitRemoteUrl && { GIT_REMOTE_URL: preferences.gitRemoteUrl })
+      ...(preferences.gitRemoteUrl && { GIT_REMOTE_URL: preferences.gitRemoteUrl }),
+      ...(preferences.sshPrivateKeyPath && { SSH_PRIVATE_KEY_PATH: preferences.sshPrivateKeyPath }),
+      ...(preferences.sshPublicKeyPath && { SSH_PUBLIC_KEY_PATH: preferences.sshPublicKeyPath })
     };
     
     // Use --raw flag to get clean output without TTY interaction
@@ -180,7 +184,9 @@ async function saveWordToVocabulary(word: string, content: string): Promise<bool
       ...process.env,
       GEMINI_API_KEY: preferences.geminiApiKey,
       VOCABULARY_BASE_DIR: preferences.vocabularyBaseDir || os.homedir(),
-      ...(preferences.gitRemoteUrl && { GIT_REMOTE_URL: preferences.gitRemoteUrl })
+      ...(preferences.gitRemoteUrl && { GIT_REMOTE_URL: preferences.gitRemoteUrl }),
+      ...(preferences.sshPrivateKeyPath && { SSH_PRIVATE_KEY_PATH: preferences.sshPrivateKeyPath }),
+      ...(preferences.sshPublicKeyPath && { SSH_PUBLIC_KEY_PATH: preferences.sshPublicKeyPath })
     };
     
     // Use the save command with the raw content
