@@ -176,7 +176,7 @@ pub fn init_git_repo(vocabulary_notebook_file: &str) -> Result<Repository> {
     }
 }
 
-pub fn commit_and_push_changes(commit_message: &str, vocabulary_notebook_file: &str, git_remote_url: Option<&str>) -> Result<()> {
+pub fn commit_and_push_changes(commit_message: &str, vocabulary_notebook_file: &str, git_remote_url: Option<&str>, ssh_private_key_path: Option<&str>, ssh_public_key_path: Option<&str>) -> Result<()> {
     let repo = init_git_repo(vocabulary_notebook_file)?;
     
     // Add all files in the word4you directory (since it's a dedicated directory)
@@ -251,13 +251,23 @@ pub fn commit_and_push_changes(commit_message: &str, vocabulary_notebook_file: &
             callbacks.credentials(|_url, username_from_url, _allowed_types| {
                 // Try SSH key authentication first
                 if let Some(username) = username_from_url {
-                    // Try default SSH key locations
-                    let home_dir = env::var("HOME").unwrap_or_else(|_| ".".to_string());
-                    let ssh_key_path = format!("{}/.ssh/id_ed25519_personal", home_dir);
-                    let ssh_pub_key_path = format!("{}/.ssh/id_ed25519_personal.pub", home_dir);
+                    // Try provided SSH key paths (either from env vars or defaults)
+                    if let (Some(private_key), Some(public_key)) = (ssh_private_key_path, ssh_public_key_path) {
+                        if std::path::Path::new(private_key).exists() && std::path::Path::new(public_key).exists() {
+                            return Cred::ssh_key(username, Some(std::path::Path::new(public_key)), std::path::Path::new(private_key), None);
+                        }
+                    }
                     
-                    if std::path::Path::new(&ssh_key_path).exists() {
-                        return Cred::ssh_key(username, Some(std::path::Path::new(&ssh_pub_key_path)), std::path::Path::new(&ssh_key_path), None);
+                    // Try additional common SSH key locations as fallback
+                    let home_dir = env::var("HOME").unwrap_or_else(|_| ".".to_string());
+                    let fallback_keys = vec![
+                        (format!("{}/.ssh/id_rsa", home_dir), format!("{}/.ssh/id_rsa.pub", home_dir)),
+                    ];
+                    
+                    for (private_key, public_key) in fallback_keys {
+                        if std::path::Path::new(&private_key).exists() && std::path::Path::new(&public_key).exists() {
+                            return Cred::ssh_key(username, Some(std::path::Path::new(&public_key)), std::path::Path::new(&private_key), None);
+                        }
                     }
                 }
                 
