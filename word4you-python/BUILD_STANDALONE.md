@@ -81,7 +81,7 @@ Add your configuration:
 ```
 GEMINI_API_KEY=your_actual_api_key_here
 VOCABULARY_NOTEBOOK_FILE=my_words.md
-GIT_REMOTE_URL=https://github.com/your/repo.git  # Optional
+GIT_REMOTE_URL=git@github.com:your/repo.git  # Optional (SSH URLs only)
 ```
 
 ### 3. Run the application

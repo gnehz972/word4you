@@ -26,7 +26,7 @@ Word4You is an intelligent command-line tool designed to help you learn English 
 - **Chinese Translations**: Simplified Chinese translations with phonetic symbols
 - **Bilingual Examples**: Example sentences in both English and Chinese
 - **Markdown Vocabulary Notebook**: Beautifully formatted vocabulary notebook in markdown
-- **Git Integration**: Automatic version control with Git commit and push
+- **Git Integration**: Automatic version control with Git commit and push (SSH authentication)
 - **Interactive Interface**: Choose to save, regenerate, preview, or skip word explanations
 
 ## 📖 Usage

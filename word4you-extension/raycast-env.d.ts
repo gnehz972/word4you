@@ -19,8 +19,12 @@ declare namespace Preferences {
   "geminiApiKey": string,
   /** Vocabulary Base Directory - Base directory where 'word4you' subdirectory will be created (leave empty for default: home directory) */
   "vocabularyBaseDir": string,
-  /** Git Remote URL - Git repository URL for vocabulary notebook backup (optional) */
-  "gitRemoteUrl"?: string
+  /** Git Remote URL - Git repository URL for vocabulary notebook backup (SSH URLs only) */
+  "gitRemoteUrl"?: string,
+  /** SSH Private Key Path - Path to SSH private key file for Git authentication (leave empty for default: ~/.ssh/id_ed25519) */
+  "sshPrivateKeyPath": string,
+  /** SSH Public Key Path - Path to SSH public key file for Git authentication (leave empty for default: ~/.ssh/id_ed25519.pub) */
+  "sshPublicKeyPath": string
 }
 }
 

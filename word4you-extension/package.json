@@ -49,8 +49,26 @@
           "type": "textfield",
           "required": false,
           "title": "Git Remote URL",
-          "description": "Git repository URL for vocabulary notebook backup (optional)",
-          "placeholder": "https://github.com/username/vocabulary.git"
+          "description": "Git repository URL for vocabulary notebook backup (SSH URLs only)",
+          "placeholder": "git@github.com:username/vocabulary.git"
+        },
+        {
+          "name": "sshPrivateKeyPath",
+          "type": "textfield",
+          "required": false,
+          "title": "SSH Private Key Path",
+          "description": "Path to SSH private key file for Git authentication (leave empty for default: ~/.ssh/id_ed25519)",
+          "default": "",
+          "placeholder": "~/.ssh/id_ed25519"
+        },
+        {
+          "name": "sshPublicKeyPath",
+          "type": "textfield",
+          "required": false,
+          "title": "SSH Public Key Path",
+          "description": "Path to SSH public key file for Git authentication (leave empty for default: ~/.ssh/id_ed25519.pub)",
+          "default": "",
+          "placeholder": "~/.ssh/id_ed25519.pub"
         }
       ]
     }
