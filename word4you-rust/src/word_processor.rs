@@ -138,7 +138,6 @@ impl WordProcessor {
         validate_word(word)?;
         
         term.write_line(&format!("💾 Saving word '{}' to vocabulary notebook...", word))?;
-        term.write_line(&format!("dir: {}", &self.config.vocabulary_notebook_file))?;
         // Save to vocabulary notebook
         prepend_to_vocabulary_notebook(&self.config.vocabulary_notebook_file, content)?;
         

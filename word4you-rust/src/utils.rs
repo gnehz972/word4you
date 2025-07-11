@@ -1,11 +1,10 @@
 use anyhow::{anyhow, Result};
 use chrono::Utc;
-use git2::{Repository, Signature, RemoteCallbacks, PushOptions, Cred, Oid};
+use git2::{Repository, Signature, RemoteCallbacks, PushOptions, Cred, Oid, DiffOptions};
 use std::fs;
 use std::fs::File;
 use std::path::Path;
 use std::env;
-use std::collections::HashSet;
 
 fn perform_vocabulary_merge(repo: &Repository, vocabulary_file: &str, remote_oid: Oid, local_oid: Oid) -> Result<()> {
     // Get relative path for the vocabulary file within the repository
@@ -17,16 +16,14 @@ fn perform_vocabulary_merge(repo: &Repository, vocabulary_file: &str, remote_oid
     // Find the merge base (common ancestor)
     let merge_base_oid = repo.merge_base(local_oid, remote_oid)?;
     
-    // Get file content from all three states: base, local, remote
-    let base_content = get_file_content_from_commit(repo, merge_base_oid, relative_path)?;
-    let local_content = get_file_content_from_commit(repo, local_oid, relative_path)?;
-    let remote_content = get_file_content_from_commit(repo, remote_oid, relative_path)?;
+    // Step 1: Get local additions since base using Git diff
+    let local_additions = get_local_additions_from_diff(repo, merge_base_oid, local_oid, relative_path)?;
     
-    // Perform 3-way merge
-    let merged_content = three_way_merge_vocabulary(&base_content, &local_content, &remote_content)?;
+    // Step 2: Checkout remote content to working directory
+    checkout_remote_file_to_working_directory(repo, remote_oid, vocabulary_file, relative_path)?;
     
-    // Write merged content back to file
-    fs::write(vocabulary_file, merged_content)?;
+    // Step 3: Apply local additions to the file
+    apply_local_additions_to_file(vocabulary_file, &local_additions)?;
     
     // Stage the merged file
     let mut index = repo.index()?;
@@ -52,106 +49,74 @@ fn perform_vocabulary_merge(repo: &Repository, vocabulary_file: &str, remote_oid
     Ok(())
 }
 
-fn get_file_content_from_commit(repo: &Repository, commit_oid: Oid, file_path: &Path) -> Result<String> {
-    let commit = repo.find_commit(commit_oid)?;
-    let tree = commit.tree()?;
+fn get_local_additions_from_diff(repo: &Repository, base_oid: Oid, local_oid: Oid, file_path: &Path) -> Result<String> {
+    let base_commit = repo.find_commit(base_oid)?;
+    let local_commit = repo.find_commit(local_oid)?;
+    let base_tree = base_commit.tree()?;
+    let local_tree = local_commit.tree()?;
     
-    match tree.get_path(file_path) {
-        Ok(entry) => {
-            let blob = repo.find_blob(entry.id())?;
-            Ok(String::from_utf8_lossy(blob.content()).to_string())
-        }
-        Err(_) => Ok(String::new()), // File doesn't exist in this commit
-    }
-}
-
-fn three_way_merge_vocabulary(base_content: &str, local_content: &str, remote_content: &str) -> Result<String> {
-    // Parse all three versions
-    let base_entries = parse_vocabulary_entries(base_content);
-    let local_entries = parse_vocabulary_entries(local_content);
-    let remote_entries = parse_vocabulary_entries(remote_content);
+    // Create diff between base and local
+    let mut diff_options = DiffOptions::new();
+    diff_options.pathspec(file_path);
+    let diff = repo.diff_tree_to_tree(Some(&base_tree), Some(&local_tree), Some(&mut diff_options))?;
     
-    // Create sets for easier comparison
-    let base_words: HashSet<String> = base_entries.iter()
-        .filter_map(|entry| extract_word_from_entry(entry))
-        .map(|word| word.to_lowercase())
-        .collect();
+    let mut additions = String::new();
     
-    let local_words: HashSet<String> = local_entries.iter()
-        .filter_map(|entry| extract_word_from_entry(entry))
-        .map(|word| word.to_lowercase())
-        .collect();
-    
-    let remote_words: HashSet<String> = remote_entries.iter()
-        .filter_map(|entry| extract_word_from_entry(entry))
-        .map(|word| word.to_lowercase())
-        .collect();
-    
-    let mut merged_entries = Vec::new();
-    let mut seen_words = HashSet::new();
-    
-    // Add entries that are new in local (not in base)
-    for entry in &local_entries {
-        if let Some(word) = extract_word_from_entry(entry) {
-            let word_lower = word.to_lowercase();
-            if !base_words.contains(&word_lower) && seen_words.insert(word_lower) {
-                merged_entries.push(entry.clone());
-            }
-        }
-    }
-    
-    // Add entries that are new in remote (not in base)
-    for entry in &remote_entries {
-        if let Some(word) = extract_word_from_entry(entry) {
-            let word_lower = word.to_lowercase();
-            if !base_words.contains(&word_lower) && seen_words.insert(word_lower) {
-                merged_entries.push(entry.clone());
-            }
-        }
-    }
-    
-    // Add entries that existed in base and still exist in either local or remote
-    for entry in base_entries {
-        if let Some(word) = extract_word_from_entry(&entry) {
-            let word_lower = word.to_lowercase();
-            if (local_words.contains(&word_lower) || remote_words.contains(&word_lower)) 
-                && seen_words.insert(word_lower.clone()) {
-                // Use the version from local if available, otherwise remote
-                if local_words.contains(&word_lower) {
-                    if let Some(local_entry) = local_entries.iter().find(|e| {
-                        extract_word_from_entry(e).map(|w| w.to_lowercase()) == Some(word_lower.clone())
-                    }) {
-                        merged_entries.push(local_entry.clone());
-                    }
-                } else if let Some(remote_entry) = remote_entries.iter().find(|e| {
-                    extract_word_from_entry(e).map(|w| w.to_lowercase()) == Some(word_lower.clone())
-                }) {
-                    merged_entries.push(remote_entry.clone());
+    // Process the diff to extract added lines
+    diff.foreach(
+        &mut |_delta, _progress| true,
+        None,
+        Some(&mut |_delta, _hunk| true),
+        Some(&mut |_delta, _hunk, line| {
+            // Only process added lines (lines that start with '+')
+            if line.origin() == '+' {
+                if let Ok(line_content) = std::str::from_utf8(line.content()) {
+                    additions.push_str(line_content);
                 }
             }
+            true
+        }),
+    )?;
+    
+    Ok(additions)
+}
+
+
+fn checkout_remote_file_to_working_directory(repo: &Repository, remote_oid: Oid, vocabulary_file: &str, file_path: &Path) -> Result<()> {
+    let remote_commit = repo.find_commit(remote_oid)?;
+    let remote_tree = remote_commit.tree()?;
+    
+    match remote_tree.get_path(file_path) {
+        Ok(entry) => {
+            let blob = repo.find_blob(entry.id())?;
+            fs::write(vocabulary_file, blob.content())?;
+        }
+        Err(_) => {
+            // File doesn't exist in remote, create empty file
+            fs::write(vocabulary_file, "")?;
         }
     }
     
-    // Join entries back with separator
-    Ok(merged_entries.join("\n\n---\n\n"))
+    Ok(())
+}
+
+fn apply_local_additions_to_file(vocabulary_file: &str, local_additions: &str) -> Result<()> {
+    if !local_additions.trim().is_empty() {
+        // Read existing content
+        let existing_content = fs::read_to_string(vocabulary_file)?;
+        
+        // Simply prepend local additions to the top of the file - no extra separators
+        let new_content = format!("{}{}", local_additions, existing_content);
+        
+        // Write the new content back to the file
+        fs::write(vocabulary_file, new_content)?;
+    }
+    
+    Ok(())
 }
 
 
-fn parse_vocabulary_entries(content: &str) -> Vec<String> {
-    content
-        .split("\n---\n")
-        .map(|s| s.trim().to_string())
-        .filter(|s| !s.is_empty())
-        .collect()
-}
 
-fn extract_word_from_entry(entry: &str) -> Option<&str> {
-    // Extract word from markdown header "## word"
-    entry
-        .lines()
-        .find(|line| line.starts_with("## "))
-        .map(|line| line.trim_start_matches("## ").trim())
-}
 
 pub fn ensure_vocabulary_notebook_exists(vocabulary_notebook_file: &str) -> Result<()> {
     let path = Path::new(vocabulary_notebook_file);
@@ -395,4 +360,98 @@ pub fn validate_word(word: &str) -> Result<()> {
     }
     
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_apply_local_additions_to_file() {
+        // Create a temporary file
+        let temp_file = "/tmp/test_vocab.md";
+        fs::write(temp_file, "Remote content").unwrap();
+        
+        // Apply local additions (simulating what Git diff would provide - including separator)
+        let local_additions = "Local addition line 1\nLocal addition line 2\n\n---\n\n";
+        apply_local_additions_to_file(temp_file, local_additions).unwrap();
+        
+        // Read the result
+        let result = fs::read_to_string(temp_file).unwrap();
+        
+        // Should contain both remote content and local additions
+        assert!(result.contains("Remote content"));
+        assert!(result.contains("Local addition line 1"));
+        assert!(result.contains("Local addition line 2"));
+        
+        // Local additions should be at the top (before remote content)
+        assert!(result.starts_with("Local addition line 1"));
+        assert!(result.ends_with("Remote content"));
+        
+        // Should have exactly one separator (from the diff, not added extra)
+        assert_eq!(result.matches("---").count(), 1);
+        
+        // Clean up
+        fs::remove_file(temp_file).unwrap();
+    }
+
+    #[test]
+    fn test_apply_local_additions_empty_file() {
+        // Create an empty file
+        let temp_file = "/tmp/test_vocab_empty.md";
+        fs::write(temp_file, "").unwrap();
+        
+        // Apply local additions (exactly as they come from diff)
+        let local_additions = "First addition\n\n---\n\n";
+        apply_local_additions_to_file(temp_file, local_additions).unwrap();
+        
+        // Read the result
+        let result = fs::read_to_string(temp_file).unwrap();
+        
+        // Should contain exactly what was in the diff
+        assert_eq!(result, "First addition\n\n---\n\n");
+        
+        // Clean up
+        fs::remove_file(temp_file).unwrap();
+    }
+
+    #[test]
+    fn test_apply_local_additions_empty_additions() {
+        // Create a file with content
+        let temp_file = "/tmp/test_vocab_no_additions.md";
+        let original_content = "Original content";
+        fs::write(temp_file, original_content).unwrap();
+        
+        // Apply empty additions
+        let local_additions = "";
+        apply_local_additions_to_file(temp_file, local_additions).unwrap();
+        
+        // Read the result
+        let result = fs::read_to_string(temp_file).unwrap();
+        
+        // Should remain unchanged
+        assert_eq!(result, original_content);
+        
+        // Clean up
+        fs::remove_file(temp_file).unwrap();
+    }
+
+    #[test]
+    fn test_validate_word() {
+        // Valid words
+        assert!(validate_word("hello").is_ok());
+        assert!(validate_word("test-word").is_ok());
+        assert!(validate_word("a").is_ok());
+        
+        // Invalid words
+        assert!(validate_word("").is_err());
+        assert!(validate_word("   ").is_err());
+        assert!(validate_word("hello123").is_err());
+        assert!(validate_word("hello@world").is_err());
+        
+        // Word too long
+        let long_word = "a".repeat(51);
+        assert!(validate_word(&long_word).is_err());
+    }
+
 } 
