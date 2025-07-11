@@ -218,6 +218,9 @@ pub fn commit_and_push_changes(commit_message: &str, vocabulary_notebook_file: &
         commit_id
     };
     
+    // Print success message after commit
+    println!("✅ Successfully committed word locally");
+    
     // Push to remote if configured
     if let Some(remote_url) = git_remote_url {
         // Get the current branch name
@@ -338,15 +341,13 @@ pub fn commit_and_push_changes(commit_message: &str, vocabulary_notebook_file: &
         // Use the actual branch name instead of hardcoded "main"
         let refspec = format!("refs/heads/{}:refs/heads/{}", branch_name, branch_name);
         match remote.push(&[&refspec], Some(&mut push_options)) {
-            Ok(_) => println!("✅ Changes committed and pushed to remote repository (branch: {})", branch_name),
+            Ok(_) => println!("✅ Successfully pushed word to remote"),
             Err(e) if e.code() == git2::ErrorCode::NotFastForward => {
                 println!("⚠️  Cannot push: remote has newer commits. Changes saved locally.");
                 println!("   Run 'git pull' manually in the word4you directory to sync, then try again.");
             }
             Err(e) => return Err(e.into()),
         };
-    } else {
-        println!("✅ Changes committed to local repository");
     }
     
     Ok(())
