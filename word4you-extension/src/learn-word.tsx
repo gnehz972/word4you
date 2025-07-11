@@ -168,7 +168,7 @@ async function getWordExplanation(word: string): Promise<WordExplanation | null>
 }
 
 async function saveWordToVocabulary(word: string, content: string, onStatusUpdate?: (message: string) => void): Promise<boolean> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     try {
       const preferences = getPreferenceValues<Preferences>();
       const executablePath = getExecutablePath();
@@ -225,11 +225,15 @@ async function saveWordToVocabulary(word: string, content: string, onStatusUpdat
       child.on('close', (code) => {
         rl.close();
         success = fullOutput.includes('Successfully saved word') || fullOutput.includes('Saving word');
-        if (code === 0 && success) {
-          resolve(true);
-        } else {
-          resolve(false);
-        }
+        
+        // Add a small delay to ensure final summary toast is visible
+        setTimeout(() => {
+          if (code === 0 && success) {
+            resolve(true);
+          } else {
+            resolve(false);
+          }
+        }, 500);
       });
       
       // Handle errors
@@ -267,15 +271,35 @@ function WordDetailView({ word, explanation }: { word: string; explanation: Word
       title: "Saving word...",
     });
 
+    // Track the status of each step
+    let savedLocally = false;
+    let committedLocally = false;
+    let pushedToRemote = false;
+
     const success = await saveWordToVocabulary(word, explanation.raw_output, (statusMessage) => {
       // Update toast with real-time status messages
       toast.title = statusMessage;
+      
+      // Track completion of each step
+      if (statusMessage.includes('Successfully saved word locally')) {
+        savedLocally = true;
+      } else if (statusMessage.includes('Successfully committed word locally')) {
+        committedLocally = true;
+      } else if (statusMessage.includes('Successfully pushed word to remote')) {
+        pushedToRemote = true;
+      }
     });
     
     if (success) {
+      // Show summary toast with all steps
+      const summaryMessage = [
+        savedLocally ? '✅ Saved locally' : '❌ Save failed',
+        committedLocally ? '✅ Committed locally' : '❌ Commit failed',
+        pushedToRemote ? '✅ Pushed to remote' : '⚠️ No remote push'
+      ].join('\n');
+      
       toast.style = Toast.Style.Success;
-      toast.title = "Word saved!";
-      toast.message = `"${word}" has been added to your vocabulary notebook`;
+      toast.title = summaryMessage;
       setIsSaved(true); // Mark as saved permanently
     } else {
       toast.style = Toast.Style.Failure;
