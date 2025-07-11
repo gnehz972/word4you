@@ -1,6 +1,7 @@
 import { Action, ActionPanel, Detail, List, Toast, showToast, getPreferenceValues, LaunchProps, useNavigation } from "@raycast/api";
 import { useState, useEffect } from "react";
-import { execSync } from "child_process";
+import { execSync, spawn } from "child_process";
+import { createInterface } from "readline";
 import path from "path";
 import os from "os";
 import React from "react";
@@ -166,67 +167,123 @@ async function getWordExplanation(word: string): Promise<WordExplanation | null>
   }
 }
 
-async function saveWordToVocabulary(word: string, content: string): Promise<boolean> {
-  try {
-    const preferences = getPreferenceValues<Preferences>();
-    const executablePath = getExecutablePath();
-    
-    // Use cross-platform path resolution for vocabulary file
-    const vocabularyPath = getVocabularyPath(preferences.vocabularyBaseDir);
-    
-    console.log('vocabularyPath:', vocabularyPath);
-    
-    // Ensure the directory exists
-    ensureVocabularyDirectoryExists(vocabularyPath);
-    
-    // Create environment variables from preferences
-    const env = {
-      ...process.env,
-      GEMINI_API_KEY: preferences.geminiApiKey,
-      VOCABULARY_BASE_DIR: preferences.vocabularyBaseDir || os.homedir(),
-      ...(preferences.gitRemoteUrl && { GIT_REMOTE_URL: preferences.gitRemoteUrl }),
-      ...(preferences.sshPrivateKeyPath && { SSH_PRIVATE_KEY_PATH: preferences.sshPrivateKeyPath }),
-      ...(preferences.sshPublicKeyPath && { SSH_PUBLIC_KEY_PATH: preferences.sshPublicKeyPath })
-    };
-    
-    // Use the save command with the raw content
-    const command = `"${executablePath}" save "${word}" "${content.replace(/"/g, '\\"')}"`;
-
-    const output = execSync(command, {
-      encoding: 'utf8',
-      timeout: 30000,
-      cwd: path.dirname(executablePath),
-      env: env
-    });
-    
-    // Check if the output indicates successful saving
-    return output.includes('Successfully saved word') || output.includes('Saving word');
-  } catch (error) {
-    console.error('Error saving word:', error);
-    return false;
-  }
+async function saveWordToVocabulary(word: string, content: string, onStatusUpdate?: (message: string) => void): Promise<boolean> {
+  return new Promise((resolve, reject) => {
+    try {
+      const preferences = getPreferenceValues<Preferences>();
+      const executablePath = getExecutablePath();
+      
+      // Use cross-platform path resolution for vocabulary file
+      const vocabularyPath = getVocabularyPath(preferences.vocabularyBaseDir);
+      
+      // Ensure the directory exists
+      ensureVocabularyDirectoryExists(vocabularyPath);
+      
+      // Create environment variables from preferences
+      const env = {
+        ...process.env,
+        GEMINI_API_KEY: preferences.geminiApiKey,
+        VOCABULARY_BASE_DIR: preferences.vocabularyBaseDir || os.homedir(),
+        ...(preferences.gitRemoteUrl && { GIT_REMOTE_URL: preferences.gitRemoteUrl }),
+        ...(preferences.sshPrivateKeyPath && { SSH_PRIVATE_KEY_PATH: preferences.sshPrivateKeyPath }),
+        ...(preferences.sshPublicKeyPath && { SSH_PUBLIC_KEY_PATH: preferences.sshPublicKeyPath })
+      };
+      
+      // Use spawn to capture real-time output
+      const child = spawn(executablePath, ['save', word, content], {
+        cwd: path.dirname(executablePath),
+        env: env,
+        stdio: ['pipe', 'pipe', 'pipe']
+      });
+      
+      let fullOutput = '';
+      let success = false;
+      
+      // Use readline for perfect line buffering
+      const rl = createInterface({
+        input: child.stdout,
+        crlfDelay: Infinity
+      });
+      
+      // Process each complete line as it arrives
+      rl.on('line', (line) => {
+        const trimmedLine = line.trim();
+        if (trimmedLine) {
+          fullOutput += trimmedLine + '\n';
+          if (onStatusUpdate) {
+            onStatusUpdate(trimmedLine);
+          }
+        }
+      });
+      
+      // Capture stderr
+      child.stderr.on('data', (data) => {
+        console.error('stderr:', data.toString());
+      });
+      
+      // Handle process completion
+      child.on('close', (code) => {
+        rl.close();
+        success = fullOutput.includes('Successfully saved word') || fullOutput.includes('Saving word');
+        if (code === 0 && success) {
+          resolve(true);
+        } else {
+          resolve(false);
+        }
+      });
+      
+      // Handle errors
+      child.on('error', (error) => {
+        console.error('Error saving word:', error);
+        rl.close();
+        resolve(false);
+      });
+      
+      // Set timeout
+      setTimeout(() => {
+        child.kill();
+        rl.close();
+        resolve(false);
+      }, 30000);
+      
+    } catch (error) {
+      console.error('Error saving word:', error);
+      resolve(false);
+    }
+  });
 }
 
 function WordDetailView({ word, explanation }: { word: string; explanation: WordExplanation }): JSX.Element {
   const { pop } = useNavigation();
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
 
   const handleSave = async () => {
+    if (isSaving) return; // Prevent duplicate saves
+    
+    setIsSaving(true);
     const toast = await showToast({
       style: Toast.Style.Animated,
       title: "Saving word...",
     });
 
-    const success = await saveWordToVocabulary(word, explanation.raw_output);
+    const success = await saveWordToVocabulary(word, explanation.raw_output, (statusMessage) => {
+      // Update toast with real-time status messages
+      toast.title = statusMessage;
+    });
     
     if (success) {
       toast.style = Toast.Style.Success;
       toast.title = "Word saved!";
       toast.message = `"${word}" has been added to your vocabulary notebook`;
+      setIsSaved(true); // Mark as saved permanently
     } else {
       toast.style = Toast.Style.Failure;
       toast.title = "Failed to save word";
       toast.message = "Please check your configuration";
     }
+    
+    setIsSaving(false);
   };
 
   // Helper: render a register/usage if present in tip
@@ -253,11 +310,27 @@ ${explanation.tip ? `\n💡*${explanation.tip}*` : ''}
       markdown={markdown}
       actions={
         <ActionPanelComponent>
-          <ActionComponent
-            title="Save to Vocabulary"
-            icon="💾"
-            onAction={handleSave}
-          />
+          {!isSaved && !isSaving && (
+            <ActionComponent
+              title="Save to Vocabulary"
+              icon="💾"
+              onAction={handleSave}
+            />
+          )}
+          {!isSaved && isSaving && (
+            <ActionComponent
+              title="Saving..."
+              icon="⏳"
+              onAction={() => {}} // No-op action while saving
+            />
+          )}
+          {isSaved && (
+            <ActionComponent
+              title="Already Saved"
+              icon="✅"
+              onAction={pop} // Navigate back to main page
+            />
+          )}
           <ActionComponent
             title="Close"
             icon="✖️"
