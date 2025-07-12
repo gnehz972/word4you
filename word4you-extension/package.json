@@ -2,8 +2,8 @@
   "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "word4you",
   "title": "Word4You",
-  "description": "Learn English words with AI-powered explanations using Google Gemini",
-  "icon": "📚",
+  "description": "Query English words with AI-powered explanations using Google Gemini and save them to your vocabulary notebook. Supports Git backup for vocabulary management.",
+  "icon": "icon.png",
   "author": "gnehz972",
   "categories": [
     "Productivity",
@@ -13,15 +13,15 @@
   "commands": [
     {
       "name": "learn-word",
-      "title": "Word4You",
-      "subtitle": "Query",
-      "description": "Query and learn an English word with AI explanation and save to vocabulary",
+      "title": "Query Word",
+      "subtitle": "Word4You",
+      "description": "Query English word with AI explanation and save to vocabulary",
       "mode": "view",
-      "keywords": ["word", "learn", "english", "vocabulary", "AI", "gemini"],
+      "keywords": ["word", "query", "english", "vocabulary", "AI", "gemini"],
       "arguments": [
         {
           "name": "word",
-          "placeholder": "word to query",
+          "placeholder": "word",
           "type": "text",
           "required": false
         }
