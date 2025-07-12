@@ -13,9 +13,10 @@ Learn English words with AI-powered explanations using Google Gemini.
 
 ## Setup
 
-1. Install the `word4you` executable (see Installation section below)
-2. Install the extension in Raycast
-3. Configure your settings in Raycast extension preferences:
+1. Install the dev extension in Raycast
+   - Run `npm run dev` in the `word4you-extension` directory
+   - This will start the Raycast development server and open the extension in Raycast
+2. Configure your settings in Raycast extension preferences:
    - **Gemini API Key** (required): Your Google Gemini API key
    - **Vocabulary Base Directory** (optional): Base directory where 'word4you' subdirectory will be created (defaults to home directory)
    - **Git Remote URL** (optional): Git repository for vocabulary backup (SSH URLs only, e.g., git@github.com:username/repo.git)
@@ -42,19 +43,19 @@ The extension automatically creates a dedicated `word4you` subdirectory in your 
 ## Usage
 
 1. Open Raycast
-2. Search for "Learn Word" 
+2. Search for "Word4You" 
 3. Enter an English word
 4. View the detailed explanation
 5. Choose to save to vocabulary or just view
 
 ## Commands
 
-- **Learn Word**: Get explanation for any English word with option to save
+- **Query Word**: Get explanation for any English word with option to save
 
 ## Actions
 
 - **Save to Vocabulary**: Add the word to your vocabulary notebook and commit to git
-- **Back**: Return to word input form
+- **Close**: Return to word input form
 
 ## Requirements
 
