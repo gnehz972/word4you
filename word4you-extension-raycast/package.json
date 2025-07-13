@@ -2,7 +2,7 @@
   "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "word4you",
   "title": "Word4You",
-  "description": "Query English words with AI-powered explanations using Google Gemini and save them to your vocabulary notebook. Supports Git backup for vocabulary management.",
+  "description": "Query English words with AI-powered explanations using Google Gemini and save them to your vocabulary notebook in markdown file. Supports Git backup for vocabulary management.",
   "icon": "icon.png",
   "author": "gnehz972",
   "categories": [
