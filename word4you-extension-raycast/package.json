@@ -12,7 +12,7 @@
   "license": "MIT",
   "commands": [
     {
-      "name": "learn-word",
+      "name": "query-word",
       "title": "Query Word",
       "subtitle": "Word4You",
       "description": "Query English word with AI explanation and save to vocabulary",
@@ -85,7 +85,7 @@
     "typescript": "^5.2.0"
   },
   "scripts": {
-    "build": "ray build -e dist",
+    "build": "ray build -e dist -o ./dist",
     "dev": "ray develop",
     "fix-lint": "ray lint --fix",
     "lint": "ray lint",

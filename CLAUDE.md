@@ -6,9 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Word4You is a multi-platform AI-powered English word learning tool that provides comprehensive word explanations using Google Gemini API. The project has three main implementations:
 
-1. **Python CLI** (`word4you-python/`) - Full-featured command-line tool
-2. **Rust CLI** (`word4you-rust/`) - Fast, optimized native binary
-3. **Raycast Extension** (`word4you-extension/`) - macOS Raycast integration
+2. **Rust CLI** (`word4you-cli/`) - Fast, optimized native binary
+3. **Raycast Extension** (`word4you-extension-raycast/`) - macOS Raycast integration
 
 All implementations create a dedicated `word4you` subdirectory in the user's chosen base directory (defaults to home directory) for vocabulary storage and Git operations.
 
@@ -31,16 +30,7 @@ All implementations follow this consistent pattern:
 
 ## Development Commands
 
-### Python Implementation (`word4you-python/`)
-- **Environment**: Use `uv` for virtual environment and Python command execution
-- **Setup**: `uv sync`
-- **Run**: `uv run main.py <word>`
-- **Build standalone**: `pyinstaller word4you.spec`
-- **Test**: `uv run pytest` (if tests exist)
-- **Format**: `uv run black .`
-- **Lint**: `uv run flake8`
-
-### Rust Implementation (`word4you-rust/`)
+### Rust CLI (`word4you-cli/`)
 - **Build debug**: `cargo build`
 - **Build release**: `cargo build --release`
 - **Run**: `./target/release/word4you <word>`
@@ -48,7 +38,7 @@ All implementations follow this consistent pattern:
 - **Format**: `cargo fmt`
 - **Lint**: `cargo clippy`
 
-### Raycast Extension (`word4you-extension/`)
+### Raycast Extension (`word4you-extension-raycast/`)
 - **Development**: `npm run dev`
 - **Build**: `npm run build`
 - **Lint**: `npm run lint`
@@ -85,7 +75,6 @@ All implementations include automatic Git operations:
 
 ## Testing Strategy
 
-- Python: Uses pytest framework
 - Rust: Uses built-in `cargo test`
 - Raycast Extension: Uses standard JavaScript testing with Node.js
 
