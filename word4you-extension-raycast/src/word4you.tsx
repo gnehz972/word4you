@@ -1,4 +1,4 @@
-import { Action, ActionPanel, List, Toast, showToast, LaunchProps, useNavigation } from "@raycast/api";
+import { Action, ActionPanel, List, Toast, showToast, LaunchProps, useNavigation, Icon } from "@raycast/api";
 import { useState, useEffect } from "react";
 import { execSync, spawn } from "child_process";
 import React from "react";
@@ -241,10 +241,10 @@ export default function Word4YouCommand(props: LaunchProps<{ arguments: Argument
 
   // Auto-trigger if word is provided as argument
   useEffect(() => {
-    if (argWord && argWord.trim() && !isLoadingSaved) {
+    if (argWord && argWord.trim()) {
       handleSearch(argWord.trim());
     }
-  }, [argWord, isLoadingSaved]);
+  }, [argWord, savedWordsMap]);
 
   const loadSavedWords = async () => {
     try {
@@ -283,7 +283,6 @@ export default function Word4YouCommand(props: LaunchProps<{ arguments: Argument
     if (localWord) {
       // Word exists locally, no need to query AI
       setAiResult(null);
-      setSearchText(searchTerm); // Update search text to show the local word
       return;
     }
 
@@ -373,14 +372,46 @@ export default function Word4YouCommand(props: LaunchProps<{ arguments: Argument
       searchText={searchText}
       isShowingDetail
     >
-      {allWords.length === 0 && !isLoading ? (
-        <ListComponent.EmptyView
-          title="No Words Found"
-          description={searchText.trim() ? 
-            `No saved words match "${searchText}". Enter a new word to query with AI.` :
-            "You haven't saved any words yet. Enter a word to query with AI."
-          }
-        />
+      {allWords.length === 0 ? (
+        isLoading ? (
+          <ListComponent.EmptyView
+            title="Querying..."
+            icon={Icon.Cloud}
+            description="Please wait while we query the word..."
+          />
+        ) : (
+          <ListComponent.EmptyView
+            title="No Words Found"
+            description={searchText.trim() ? 
+              `No saved words match "${searchText}". Press Enter to query with AI.` :
+              "You haven't saved any words yet. Enter a word to query with AI."
+            }
+            actions={
+              searchText.trim() ? (
+                <ActionPanelComponent>
+                  <ActionComponent
+                    title={`Query "${searchText}" with AI`}
+                    icon="🤖"
+                    onAction={() => handleSearch(searchText.trim())}
+                  />
+                  <ActionComponent
+                    title="Refresh Word List"
+                    shortcut={{ modifiers: ["cmd"], key: "r" }}
+                    onAction={loadSavedWords}
+                  />
+                </ActionPanelComponent>
+              ) : (
+                <ActionPanelComponent>
+                  <ActionComponent
+                    title="Refresh Word List"
+                    shortcut={{ modifiers: ["cmd"], key: "r" }}
+                    onAction={loadSavedWords}
+                  />
+                </ActionPanelComponent>
+              )
+            }
+          />
+        )
       ) : (
         allWords.map((word, index) => {
           const isAiResult = aiResult && word.word === aiResult.word;
@@ -398,7 +429,7 @@ ${word.tip ? `\n💡*${word.tip}*` : ''}
             <ListComponent.Item
               key={`${word.word}-${isAiResult ? 'ai' : 'saved'}`}
               title={word.word}
-              subtitle={word.pronunciation || word.definition}
+              subtitle={word.chinese}
               accessories={[
                 isAiResult ? { text: "AI Result" } : { text: `${index + 1} of ${allWords.length}` }
               ]}

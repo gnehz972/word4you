@@ -12,12 +12,12 @@
   "license": "MIT",
   "commands": [
     {
-      "name": "query-word",
-      "title": "Query Word",
-      "subtitle": "Word4You",
-      "description": "Query English word with AI explanation and save to vocabulary",
+      "name": "word4you",
+      "title": "Word4You",
+      "subtitle": "Query & Learn Words",
+      "description": "Search saved words or query new words with AI explanations",
       "mode": "view",
-      "keywords": ["word", "query", "english", "vocabulary", "AI", "gemini"],
+      "keywords": ["word", "query", "learn", "english", "vocabulary", "AI", "gemini", "study", "search"],
       "arguments": [
         {
           "name": "word",
@@ -71,14 +71,6 @@
           "placeholder": "~/.ssh/id_ed25519.pub"
         }
       ]
-    },
-    {
-      "name": "learn-word",
-      "title": "Learn Word",
-      "subtitle": "Word4You",
-      "description": "Browse and learn saved words with card navigation",
-      "mode": "view",
-      "keywords": ["word", "learn", "vocabulary", "card", "browse", "study"]
     }
   ],
   "dependencies": {
