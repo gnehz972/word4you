@@ -12,9 +12,9 @@
   "license": "MIT",
   "commands": [
     {
-      "name": "word4you",
-      "title": "Word4You",
-      "subtitle": "Query & Learn Words",
+      "name": "learn-word",
+      "title": "Learn Word",
+      "subtitle": "Word4You",
       "description": "Search saved words or query new words with AI explanations",
       "mode": "view",
       "keywords": ["word", "query", "learn", "english", "vocabulary", "AI", "gemini", "study", "search"],

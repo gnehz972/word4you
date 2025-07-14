@@ -13,8 +13,8 @@ type ExtensionPreferences = {}
 declare type Preferences = ExtensionPreferences
 
 declare namespace Preferences {
-  /** Preferences accessible in the `query-word` command */
-  export type QueryWord = ExtensionPreferences & {
+  /** Preferences accessible in the `learn-word` command */
+  export type LearnWord = ExtensionPreferences & {
   /** Gemini API Key - Your Google Gemini API key for AI word explanations */
   "geminiApiKey": string,
   /** Vocabulary Base Directory - Base directory where 'word4you' subdirectory will be created (leave empty for default: home directory) */
@@ -26,17 +26,13 @@ declare namespace Preferences {
   /** SSH Public Key Path - Path to SSH public key file for Git authentication (leave empty for default: ~/.ssh/id_ed25519.pub) */
   "sshPublicKeyPath": string
 }
-  /** Preferences accessible in the `learn-word` command */
-  export type LearnWord = ExtensionPreferences & {}
 }
 
 declare namespace Arguments {
-  /** Arguments passed to the `query-word` command */
-  export type QueryWord = {
+  /** Arguments passed to the `learn-word` command */
+  export type LearnWord = {
   /** word */
   "word": string
 }
-  /** Arguments passed to the `learn-word` command */
-  export type LearnWord = {}
 }
 
