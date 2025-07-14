@@ -26,6 +26,8 @@ declare namespace Preferences {
   /** SSH Public Key Path - Path to SSH public key file for Git authentication (leave empty for default: ~/.ssh/id_ed25519.pub) */
   "sshPublicKeyPath": string
 }
+  /** Preferences accessible in the `learn-word` command */
+  export type LearnWord = ExtensionPreferences & {}
 }
 
 declare namespace Arguments {
@@ -34,5 +36,7 @@ declare namespace Arguments {
   /** word */
   "word": string
 }
+  /** Arguments passed to the `learn-word` command */
+  export type LearnWord = {}
 }
 

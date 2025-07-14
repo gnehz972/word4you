@@ -1,24 +1,15 @@
-import { Action, ActionPanel, Detail, List, Toast, showToast, getPreferenceValues, LaunchProps, useNavigation } from "@raycast/api";
+import { Action, ActionPanel, Detail, List, Toast, showToast, LaunchProps, useNavigation } from "@raycast/api";
 import { useState, useEffect } from "react";
 import { execSync, spawn } from "child_process";
 import { createInterface } from "readline";
-import path from "path";
-import os from "os";
 import React from "react";
+import { getPreferences, getVocabularyPath, ensureVocabularyDirectoryExists, getExecutablePath, createEnvironmentFromPreferences } from "./config";
 
 // Type assertion to bypass TypeScript errors with Raycast API
 const DetailComponent = Detail as any;
 const ListComponent = List as any;
 const ActionPanelComponent = ActionPanel as any;
 const ActionComponent = Action as any;
-
-interface Preferences {
-  geminiApiKey: string;
-  vocabularyBaseDir: string;
-  gitRemoteUrl: string;
-  sshPrivateKeyPath: string;
-  sshPublicKeyPath: string;
-}
 
 interface Arguments {
   word: string;
@@ -33,24 +24,6 @@ interface WordExplanation {
   example_zh: string;
   tip: string;
   raw_output: string;
-}
-
-// Cross-platform path resolution for vocabulary file
-function getVocabularyPath(baseDir?: string): string {
-  const vocabularyBaseDir = baseDir || os.homedir();
-  return path.join(vocabularyBaseDir, 'word4you', 'vocabulary_notebook.md');
-}
-
-// Ensure directory exists for vocabulary file
-function ensureVocabularyDirectoryExists(vocabularyPath: string): void {
-  try {
-    const dir = path.dirname(vocabularyPath);
-    if (!require('fs').existsSync(dir)) {
-      require('fs').mkdirSync(dir, { recursive: true });
-    }
-  } catch (error) {
-    console.error('Error creating vocabulary directory:', error);
-  }
 }
 
 function parseRawWordExplanation(output: string, word: string): WordExplanation | null {
@@ -124,14 +97,9 @@ function parseRawWordExplanation(output: string, word: string): WordExplanation 
 }
 
 
-function getExecutablePath(): string {
-  // Default to the executable in the extension project directory
-  return path.join(__dirname, 'assets/word4you');
-}
-
 async function getWordExplanation(word: string): Promise<WordExplanation | null> {
   try {
-    const preferences = getPreferenceValues<Preferences>();
+    const preferences = getPreferences();
     const executablePath = getExecutablePath();
     
     // Use cross-platform path resolution for vocabulary file
@@ -141,14 +109,7 @@ async function getWordExplanation(word: string): Promise<WordExplanation | null>
     ensureVocabularyDirectoryExists(vocabularyPath);
     
     // Create environment variables from preferences
-    const env = {
-      ...process.env,
-      GEMINI_API_KEY: preferences.geminiApiKey,
-      VOCABULARY_BASE_DIR: preferences.vocabularyBaseDir || os.homedir(),
-      ...(preferences.gitRemoteUrl && { GIT_REMOTE_URL: preferences.gitRemoteUrl }),
-      ...(preferences.sshPrivateKeyPath && { SSH_PRIVATE_KEY_PATH: preferences.sshPrivateKeyPath }),
-      ...(preferences.sshPublicKeyPath && { SSH_PUBLIC_KEY_PATH: preferences.sshPublicKeyPath })
-    };
+    const env = createEnvironmentFromPreferences();
     
     // Use --raw flag to get clean output without TTY interaction
     const command = `"${executablePath}" --raw "${word}"`;
@@ -156,7 +117,7 @@ async function getWordExplanation(word: string): Promise<WordExplanation | null>
     const output = execSync(command, {
       encoding: 'utf8',
       timeout: 30000,
-      cwd: path.dirname(executablePath),
+      cwd: require('path').dirname(executablePath),
       env: env
     });
     
@@ -170,7 +131,7 @@ async function getWordExplanation(word: string): Promise<WordExplanation | null>
 async function saveWordToVocabulary(word: string, content: string, onStatusUpdate?: (message: string) => void): Promise<boolean> {
   return new Promise((resolve) => {
     try {
-      const preferences = getPreferenceValues<Preferences>();
+      const preferences = getPreferences();
       const executablePath = getExecutablePath();
       
       // Use cross-platform path resolution for vocabulary file
@@ -180,18 +141,11 @@ async function saveWordToVocabulary(word: string, content: string, onStatusUpdat
       ensureVocabularyDirectoryExists(vocabularyPath);
       
       // Create environment variables from preferences
-      const env = {
-        ...process.env,
-        GEMINI_API_KEY: preferences.geminiApiKey,
-        VOCABULARY_BASE_DIR: preferences.vocabularyBaseDir || os.homedir(),
-        ...(preferences.gitRemoteUrl && { GIT_REMOTE_URL: preferences.gitRemoteUrl }),
-        ...(preferences.sshPrivateKeyPath && { SSH_PRIVATE_KEY_PATH: preferences.sshPrivateKeyPath }),
-        ...(preferences.sshPublicKeyPath && { SSH_PUBLIC_KEY_PATH: preferences.sshPublicKeyPath })
-      };
+      const env = createEnvironmentFromPreferences();
       
       // Use spawn to capture real-time output
       const child = spawn(executablePath, ['save', word, content], {
-        cwd: path.dirname(executablePath),
+        cwd: require('path').dirname(executablePath),
         env: env,
         stdio: ['pipe', 'pipe', 'pipe']
       });
