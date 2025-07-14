@@ -241,10 +241,18 @@ export default function Word4YouCommand(props: LaunchProps<{ arguments: Argument
 
   // Auto-trigger if word is provided as argument
   useEffect(() => {
-    if (argWord && argWord.trim()) {
+    if (argWord && argWord.trim() && !isLoadingSaved) {
+      setSearchText(argWord.trim());
       handleSearch(argWord.trim());
     }
-  }, [argWord, savedWordsMap]);
+  }, [argWord, isLoadingSaved]);
+
+  // Clear AI result when search text changes
+  useEffect(() => {
+    if (aiResult && searchText.trim() !== aiResult.word) {
+      setAiResult(null);
+    }
+  }, [searchText, aiResult]);
 
   const loadSavedWords = async () => {
     try {
@@ -286,6 +294,9 @@ export default function Word4YouCommand(props: LaunchProps<{ arguments: Argument
       return;
     }
 
+    // Clear previous AI result when starting a new search
+    setAiResult(null);
+    
     // Only query AI if word doesn't exist locally
     setIsLoading(true);
     
@@ -394,21 +405,8 @@ export default function Word4YouCommand(props: LaunchProps<{ arguments: Argument
                     icon="🤖"
                     onAction={() => handleSearch(searchText.trim())}
                   />
-                  <ActionComponent
-                    title="Refresh Word List"
-                    shortcut={{ modifiers: ["cmd"], key: "r" }}
-                    onAction={loadSavedWords}
-                  />
                 </ActionPanelComponent>
-              ) : (
-                <ActionPanelComponent>
-                  <ActionComponent
-                    title="Refresh Word List"
-                    shortcut={{ modifiers: ["cmd"], key: "r" }}
-                    onAction={loadSavedWords}
-                  />
-                </ActionPanelComponent>
-              )
+              ) : null
             }
           />
         )
@@ -445,11 +443,6 @@ ${word.tip ? `\n💡*${word.tip}*` : ''}
                       onAction={() => handleSave(word.word, word.raw_output)}
                     />
                   )}
-                  <ActionComponent
-                    title="Refresh Word List"
-                    shortcut={{ modifiers: ["cmd"], key: "r" }}
-                    onAction={loadSavedWords}
-                  />
                 </ActionPanelComponent>
               }
             />
