@@ -11,6 +11,7 @@ pub struct Config {
     pub ssh_private_key_path: Option<String>,
     pub ssh_public_key_path: Option<String>,
     pub gemini_prompt_template: String,
+    pub git_enabled: bool,
 }
 
 impl Config {
@@ -48,6 +49,11 @@ impl Config {
             .map(|path| expand_tilde_path(&path))
             .or_else(|| Some(format!("{}/.ssh/id_ed25519.pub", home_dir)));
 
+        // Git enabled control - default to false
+        let git_enabled = env::var("GIT_ENABLED")
+            .map(|val| val.to_lowercase() == "true" || val == "1" || val.to_lowercase() == "yes")
+            .unwrap_or(false);
+
         let gemini_prompt_template = r#"
 Please provide a comprehensive explanation for the English word "{word}" in the following format:
 
@@ -76,6 +82,7 @@ Important formatting rules:
             ssh_private_key_path,
             ssh_public_key_path,
             gemini_prompt_template,
+            git_enabled,
         })
     }
 }

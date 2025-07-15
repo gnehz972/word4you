@@ -141,11 +141,16 @@ impl WordProcessor {
         // Save to vocabulary notebook
         prepend_to_vocabulary_notebook(&self.config.vocabulary_notebook_file, content)?;
         
-        // Commit and push changes
+        // Commit and push changes only if git is enabled
         term.write_line("✅ Successfully saved word locally")?;
-        term.write_line("📝 Committing changes...")?;
-        let commit_message = format_commit_message(word);
-        commit_and_push_changes(&commit_message, &self.config.vocabulary_notebook_file, self.config.git_remote_url.as_deref(), self.config.ssh_private_key_path.as_deref(), self.config.ssh_public_key_path.as_deref())?;
+        
+        if self.config.git_enabled {
+            term.write_line("📝 Committing changes...")?;
+            let commit_message = format_commit_message(word);
+            commit_and_push_changes(&commit_message, &self.config.vocabulary_notebook_file, self.config.git_remote_url.as_deref(), self.config.ssh_private_key_path.as_deref(), self.config.ssh_public_key_path.as_deref())?;
+        } else {
+            term.write_line("ℹ️  Git operations disabled (GIT_ENABLED=false)")?;
+        }
 
         Ok(())
     }
@@ -159,11 +164,16 @@ impl WordProcessor {
         // Delete from vocabulary notebook, optionally with timestamp
         delete_from_vocabulary_notebook(&self.config.vocabulary_notebook_file, word, timestamp)?;
         
-        // Commit and push changes
+        // Commit and push changes only if git is enabled
         term.write_line("✅ Successfully deleted word locally")?;
-        term.write_line("📝 Committing changes...")?;
-        let _commit_message = format!("Delete word: {} - {}", word, chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"));
-        // commit_and_push_changes(&commit_message, &self.config.vocabulary_notebook_file, self.config.git_remote_url.as_deref(), self.config.ssh_private_key_path.as_deref(), self.config.ssh_public_key_path.as_deref())?;
+        
+        if self.config.git_enabled {
+            term.write_line("📝 Committing changes...")?;
+            let _commit_message = format!("Delete word: {} - {}", word, chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"));
+            commit_and_push_changes(&_commit_message, &self.config.vocabulary_notebook_file, self.config.git_remote_url.as_deref(), self.config.ssh_private_key_path.as_deref(), self.config.ssh_public_key_path.as_deref())?;
+        } else {
+            term.write_line("ℹ️  Git operations disabled (GIT_ENABLED=false)")?;
+        }
 
         Ok(())
     }
@@ -188,11 +198,16 @@ impl WordProcessor {
         term.write_line(&format!("💾 Saving updated content for '{}'...", word))?;
         prepend_to_vocabulary_notebook(&self.config.vocabulary_notebook_file, content)?;
         
-        // Commit and push changes
+        // Commit and push changes only if git is enabled
         term.write_line("✅ Successfully updated word locally")?;
-        term.write_line("📝 Committing changes...")?;
-        let _commit_message = format!("Update word: {} - {}", word, chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"));
-        commit_and_push_changes(&_commit_message, &self.config.vocabulary_notebook_file, self.config.git_remote_url.as_deref(), self.config.ssh_private_key_path.as_deref(), self.config.ssh_public_key_path.as_deref())?;
+        
+        if self.config.git_enabled {
+            term.write_line("📝 Committing changes...")?;
+            let _commit_message = format!("Update word: {} - {}", word, chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"));
+            commit_and_push_changes(&_commit_message, &self.config.vocabulary_notebook_file, self.config.git_remote_url.as_deref(), self.config.ssh_private_key_path.as_deref(), self.config.ssh_public_key_path.as_deref())?;
+        } else {
+            term.write_line("ℹ️  Git operations disabled (GIT_ENABLED=false)")?;
+        }
 
         Ok(())
     }

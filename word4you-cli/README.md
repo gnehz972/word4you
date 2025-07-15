@@ -85,6 +85,19 @@ VOCABULARY_BASE_DIR=~
 
 # Optional: Git remote URL for automatic pushing (SSH URLs only)
 GIT_REMOTE_URL=git@github.com:yourusername/your-repo.git
+
+# Optional: Control whether git operations should be performed
+# Default: false (git operations disabled)
+# Set to true, 1, or yes to enable git operations
+GIT_ENABLED=false
+
+# Optional: SSH private key path for git operations
+# Default: ~/.ssh/id_ed25519
+SSH_PRIVATE_KEY_PATH=~/.ssh/id_ed25519
+
+# Optional: SSH public key path for git operations
+# Default: ~/.ssh/id_ed25519.pub
+SSH_PUBLIC_KEY_PATH=~/.ssh/id_ed25519.pub
 ```
 
 ### Directory Structure
@@ -188,9 +201,10 @@ Words are saved in `{VOCABULARY_BASE_DIR}/word4you/vocabulary_notebook.md` with:
 
 ## Git Integration
 
-- **Automatic initialization**: Git repository is created in the `word4you` directory
+- **Configurable**: Git operations can be enabled/disabled via `GIT_ENABLED` environment variable (default: disabled)
+- **Automatic initialization**: Git repository is created in the `word4you` directory when enabled
 - **Safe operations**: Only tracks files within the dedicated `word4you` directory
-- **Auto-commit**: Each word addition is automatically committed
+- **Auto-commit**: Each word addition is automatically committed when git is enabled
 - **Optional push**: Configure `GIT_REMOTE_URL` for automatic pushing to remote repository
 
 ## Performance Benefits
