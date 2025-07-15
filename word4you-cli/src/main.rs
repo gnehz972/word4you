@@ -24,29 +24,32 @@ struct Cli {
     #[arg(long)]
     raw: bool,
 
-    #[command(subcommand)]
-    command: Option<Commands>,
+    /// Test the API connection
+    #[arg(long)]
+    test: bool,
+
+    /// Display application information
+    #[arg(long)]
+    info: bool,
+
+    /// Learn a specific word
+    #[arg(long)]
+    learn: Option<String>,
+
+    /// Save raw response to vocabulary notebook
+    #[arg(long)]
+    save: Option<String>,
+
+    /// The content to save (used with --save)
+    #[arg(long)]
+    content: Option<String>,
+
+    /// Delete a word from vocabulary notebook
+    #[arg(long)]
+    delete: Option<String>,
 }
 
-#[derive(Subcommand)]
-enum Commands {
-    /// Test the API connection
-    Test,
-    /// Display application information
-    Info,
-    /// Learn a specific word
-    Learn {
-        /// The word to learn
-        word: String,
-    },
-    /// Save raw response to vocabulary notebook
-    Save {
-        /// The word being saved
-        word: String,
-        /// The raw response content to save
-        content: String,
-    },
-}
+
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -54,39 +57,42 @@ async fn main() -> Result<()> {
     let cli = Cli::parse();
     let term = Term::stdout();
 
-    match cli.command {
-        Some(Commands::Test) => {
-            if let Err(e) = test_api_connection(&term).await {
-                eprintln!("❌ Error: {}", e);
-                return Ok(());
-            }
+    // Handle different arguments
+    if cli.test {
+        if let Err(e) = test_api_connection(&term).await {
+            eprintln!("❌ Error: {}", e);
+            return Ok(());
         }
-        Some(Commands::Info) => {
-            show_info(&term);
+    } else if cli.info {
+        show_info(&term);
+    } else if let Some(word) = cli.learn {
+        if let Err(e) = query_word(&term, &word, cli.raw).await {
+            eprintln!("❌ Error: {}", e);
+            return Ok(());
         }
-        Some(Commands::Learn { word }) => {
-            if let Err(e) = query_word(&term, &word, cli.raw).await {
-                eprintln!("❌ Error: {}", e);
-                return Ok(());
-            }
-        }
-        Some(Commands::Save { word, content }) => {
+    } else if let Some(word) = cli.save {
+        if let Some(content) = cli.content {
             if let Err(e) = save_word(&term, &word, &content).await {
                 eprintln!("❌ Error: {}", e);
                 return Ok(());
             }
+        } else {
+            eprintln!("❌ Error: --content is required when using --save");
+            return Ok(());
         }
-        None => {
-            if let Some(word) = cli.word {
-                if let Err(e) = query_word(&term, &word, cli.raw).await {
-                    eprintln!("❌ Error: {}", e);
-                    return Ok(());
-                }
-            } else {
-                // Show help if no word provided
-                let _ = clap::Command::new("word4you").print_help();
-            }
+    } else if let Some(word) = cli.delete {
+        if let Err(e) = delete_word(&term, &word).await {
+            eprintln!("❌ Error: {}", e);
+            return Ok(());
         }
+    } else if let Some(word) = cli.word {
+        if let Err(e) = query_word(&term, &word, cli.raw).await {
+            eprintln!("❌ Error: {}", e);
+            return Ok(());
+        }
+    } else {
+        // Show help if no arguments provided
+        let _ = clap::Command::new("word4you").print_help();
     }
 
     Ok(())
@@ -114,6 +120,19 @@ async fn save_word(term: &Term, word: &str, content: &str) -> anyhow::Result<()>
     
     // Save the word
     processor.save_word(term, word, content)?;
+    
+    Ok(())
+}
+
+async fn delete_word(term: &Term, word: &str) -> anyhow::Result<()> {
+    // Validate configuration
+    let config = Config::load()?;
+    
+    // Initialize word processor
+    let processor = WordProcessor::new(config);
+    
+    // Delete the word
+    processor.delete_word(term, word)?;
     
     Ok(())
 }
@@ -152,9 +171,12 @@ Features:
 • Markdown-formatted vocabulary notebook
 
 Usage:
-  word4you <word>           # Learn a new word
-  word4you test             # Test API connection
-  word4you info             # Show this information
+  word4you <word>                    # Learn a new word
+  word4you --test                    # Test API connection
+  word4you --info                    # Show this information
+  word4you --learn <word>            # Learn a specific word
+  word4you --save <word> --content <content>  # Save word to vocabulary
+  word4you --delete <word>           # Delete word from vocabulary
 "#;
 
     term.write_line(&style(info).cyan().to_string()).unwrap();

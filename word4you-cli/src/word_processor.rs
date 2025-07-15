@@ -3,7 +3,7 @@ use console::{style, Term};
 use dialoguer::Select;
 use termimad::*;
 use crate::gemini_client::GeminiClient;
-use crate::utils::{commit_and_push_changes, format_commit_message, prepend_to_vocabulary_notebook, validate_word};
+use crate::utils::{commit_and_push_changes, format_commit_message, prepend_to_vocabulary_notebook, delete_from_vocabulary_notebook, validate_word};
 use crate::config::Config;
 
 pub struct WordProcessor {
@@ -146,6 +146,24 @@ impl WordProcessor {
         term.write_line("📝 Committing changes...")?;
         let commit_message = format_commit_message(word);
         commit_and_push_changes(&commit_message, &self.config.vocabulary_notebook_file, self.config.git_remote_url.as_deref(), self.config.ssh_private_key_path.as_deref(), self.config.ssh_public_key_path.as_deref())?;
+
+        Ok(())
+    }
+
+    pub fn delete_word(&self, term: &Term, word: &str) -> Result<()> {
+        // Validate word
+        validate_word(word)?;
+        
+        term.write_line(&format!("🗑️  Deleting word '{}' from vocabulary notebook...", word))?;
+        
+        // Delete from vocabulary notebook
+        delete_from_vocabulary_notebook(&self.config.vocabulary_notebook_file, word)?;
+        
+        // Commit and push changes
+        term.write_line("✅ Successfully deleted word locally")?;
+        term.write_line("📝 Committing changes...")?;
+        let commit_message = format!("Delete word: {} - {}", word, chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"));
+        // commit_and_push_changes(&commit_message, &self.config.vocabulary_notebook_file, self.config.git_remote_url.as_deref(), self.config.ssh_private_key_path.as_deref(), self.config.ssh_public_key_path.as_deref())?;
 
         Ok(())
     }

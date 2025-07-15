@@ -5,6 +5,7 @@ use std::fs;
 use std::fs::File;
 use std::path::Path;
 use std::env;
+use std::io::{BufRead, BufReader, Write};
 
 fn perform_vocabulary_merge(repo: &Repository, vocabulary_file: &str, remote_oid: Oid, local_oid: Oid) -> Result<()> {
     // Get relative path for the vocabulary file within the repository
@@ -146,6 +147,70 @@ pub fn prepend_to_vocabulary_notebook(vocabulary_notebook_file: &str, content: &
     // Prepend new content
     let new_content = format!("{}\n\n---\n\n{}", content, existing_content);
     fs::write(vocabulary_notebook_file, new_content)?;
+    
+    Ok(())
+}
+
+pub fn delete_from_vocabulary_notebook(vocabulary_notebook_file: &str, word: &str) -> Result<()> {
+    ensure_vocabulary_notebook_exists(vocabulary_notebook_file)?;
+    
+    // Open the file for reading
+    let file = File::open(vocabulary_notebook_file)?;
+    let reader = BufReader::new(file);
+    
+    let mut in_target_section = false;
+    let mut found = false;
+    let mut skip_next_line = false;
+    let mut lines = reader.lines();
+    let mut filtered_content = String::new();
+    
+    // Process the file line by line and collect filtered content in memory
+    while let Some(line) = lines.next() {
+        let line = line?;
+        
+        // Check if this line starts a new word section
+        if line.starts_with("## ") {
+            let section_word = line[3..].trim(); // Remove "## " prefix
+            
+            // Check if this is the section we want to delete
+            if section_word.to_lowercase() == word.to_lowercase() {
+                in_target_section = true;
+                found = true;
+                // Skip writing this line and the entire section
+                continue;
+            }
+        }
+        
+        // If we're in the target section, skip writing lines
+        if in_target_section {
+            // Check if we've reached the separator (end of section)
+            if line.trim() == "---" {
+                in_target_section = false;
+                skip_next_line = true;
+            }
+            // Skip all lines in the target section
+            continue;
+        }
+        
+        // Skip the next line after the "---" separator
+        if skip_next_line {
+            skip_next_line = false;
+            continue;
+        }
+        
+        // Add the line to our filtered content
+        if !filtered_content.is_empty() {
+            filtered_content.push('\n');
+        }
+        filtered_content.push_str(&line);
+    }
+    
+    if !found {
+        return Err(anyhow!("Word '{}' not found in vocabulary notebook", word));
+    }
+    
+    // Only write to file if we found the word to delete
+    fs::write(vocabulary_notebook_file, filtered_content)?;
     
     Ok(())
 }
