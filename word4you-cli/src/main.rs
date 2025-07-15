@@ -28,8 +28,8 @@ Usage:
   word4you info                      # Show this information
   word4you learn <word>              # Learn a specific word
   word4you save <word> --content <content>  # Save word to vocabulary
-  word4you delete <word>             # Delete word from vocabulary
-  word4you update <word> --content <content>  # Update word (delete if exists, then save)
+  word4you delete <word> [--timestamp <timestamp>]  # Delete word from vocabulary, optionally by specific timestamp
+  word4you update <word> --content <content> [--timestamp <timestamp>]  # Update word (delete if exists, then save)
 
 Options:
   --raw                              # Output raw response from API without user interaction
@@ -89,6 +89,10 @@ enum Commands {
     Delete {
         /// The word to delete
         word: String,
+        
+        /// Optional timestamp for the specific word entry to delete
+        #[arg(long)]
+        timestamp: Option<String>,
     },
     
     /// Update a word: delete if exists, then save new content
@@ -99,6 +103,10 @@ enum Commands {
         /// The new content to save
         #[arg(long)]
         content: String,
+        
+        /// Optional timestamp for the specific word entry to update
+        #[arg(long)]
+        timestamp: Option<String>,
     },
 }
 
@@ -139,14 +147,14 @@ async fn main() -> Result<()> {
                 return Ok(());
             }
         }
-        Some(Commands::Delete { word }) => {
-            if let Err(e) = delete_word(&term, word).await {
+        Some(Commands::Delete { word, timestamp }) => {
+            if let Err(e) = delete_word(&term, word, timestamp.as_deref()).await {
                 eprintln!("❌ Error: {}", e);
                 return Ok(());
             }
         }
-        Some(Commands::Update { word, content }) => {
-            if let Err(e) = update_word(&term, word, content).await {
+        Some(Commands::Update { word, content, timestamp }) => {
+            if let Err(e) = update_word(&term, word, content, timestamp.as_deref()).await {
                 eprintln!("❌ Error: {}", e);
                 return Ok(());
             }
@@ -189,7 +197,7 @@ async fn save_word(term: &Term, word: &str, content: &str) -> anyhow::Result<()>
     Ok(())
 }
 
-async fn delete_word(term: &Term, word: &str) -> anyhow::Result<()> {
+async fn delete_word(term: &Term, word: &str, timestamp: Option<&str>) -> anyhow::Result<()> {
     // Validate configuration
     let config = Config::load()?;
     
@@ -197,12 +205,12 @@ async fn delete_word(term: &Term, word: &str) -> anyhow::Result<()> {
     let processor = WordProcessor::new(config);
     
     // Delete the word
-    processor.delete_word(term, word)?;
+    processor.delete_word(term, word, timestamp)?;
     
     Ok(())
 }
 
-async fn update_word(term: &Term, word: &str, content: &str) -> anyhow::Result<()> {
+async fn update_word(term: &Term, word: &str, content: &str, timestamp: Option<&str>) -> anyhow::Result<()> {
     // Validate configuration
     let config = Config::load()?;
     
@@ -210,7 +218,7 @@ async fn update_word(term: &Term, word: &str, content: &str) -> anyhow::Result<(
     let processor = WordProcessor::new(config);
     
     // Update the word (delete if exists, then save)
-    processor.update_word(term, word, content)?;
+    processor.update_word(term, word, content, timestamp)?;
     
     Ok(())
 }

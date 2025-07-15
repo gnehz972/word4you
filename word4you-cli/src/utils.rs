@@ -144,14 +144,17 @@ pub fn prepend_to_vocabulary_notebook(vocabulary_notebook_file: &str, content: &
     // Read existing content
     let existing_content = fs::read_to_string(vocabulary_notebook_file)?;
     
-    // Prepend new content
-    let new_content = format!("{}\n\n---\n\n{}", content, existing_content);
+    // Generate local timestamp in ISO 8601 format with 3-digit milliseconds
+    let local_timestamp = chrono::Local::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true);
+    
+    // Prepend new content with timestamp wrapped in HTML comment
+    let new_content = format!("{}\n\n<!-- timestamp={} -->\n---\n\n{}", content, local_timestamp, existing_content);
     fs::write(vocabulary_notebook_file, new_content)?;
     
     Ok(())
 }
 
-pub fn delete_from_vocabulary_notebook(vocabulary_notebook_file: &str, word: &str) -> Result<()> {
+pub fn delete_from_vocabulary_notebook(vocabulary_notebook_file: &str, word: &str, timestamp: Option<&str>) -> Result<()> {
     ensure_vocabulary_notebook_exists(vocabulary_notebook_file)?;
     
     // Open the file for reading
@@ -160,13 +163,12 @@ pub fn delete_from_vocabulary_notebook(vocabulary_notebook_file: &str, word: &st
     
     let mut in_target_section = false;
     let mut found = false;
-    let mut skip_next_line = false;
-    let mut lines = reader.lines();
-    let mut filtered_content = String::new();
+    let lines: Vec<String> = reader.lines().collect::<std::result::Result<_, _>>()?;
+    let mut filtered_content = Vec::new();
     
-    // Process the file line by line and collect filtered content in memory
-    while let Some(line) = lines.next() {
-        let line = line?;
+    let mut i = 0;
+    while i < lines.len() {
+        let line = &lines[i];
         
         // Check if this line starts a new word section
         if line.starts_with("## ") {
@@ -175,42 +177,69 @@ pub fn delete_from_vocabulary_notebook(vocabulary_notebook_file: &str, word: &st
             // Check if this is the section we want to delete
             if section_word.to_lowercase() == word.to_lowercase() {
                 in_target_section = true;
-                found = true;
-                // Skip writing this line and the entire section
-                continue;
-            }
-        }
-        
-        // If we're in the target section, skip writing lines
-        if in_target_section {
-            // Check if we've reached the separator (end of section)
-            if line.trim() == "---" {
+                
+                // If timestamp is specified, look for its exact match
+                if let Some(ts) = timestamp {
+                    // Search forward for the timestamp line within the current section
+                    let mut timestamp_found = false;
+                    let mut j = i + 1;
+                    
+                    // Look ahead to find the timestamp line before the section separator
+                    while j < lines.len() && lines[j].trim() != "---" {
+                        if lines[j].starts_with("<!-- timestamp=") && lines[j].contains(ts) {
+                            timestamp_found = true;
+                            found = true;
+                            break;
+                        }
+                        j += 1;
+                    }
+                    
+                    if !timestamp_found {
+                        in_target_section = false;
+                    }
+                } else {
+                    found = true;
+                }
+            } else {
                 in_target_section = false;
-                skip_next_line = true;
             }
-            // Skip all lines in the target section
-            continue;
         }
         
-        // Skip the next line after the "---" separator
-        if skip_next_line {
-            skip_next_line = false;
+        // Skip the entire section if it matches our criteria
+        if in_target_section {
+            // Look for the next separator or end of file
+            while i < lines.len() && lines[i].trim() != "---" {
+                i += 1;
+            }
+            
+            // Skip the separator line
+            if i < lines.len() && lines[i].trim() == "---" {
+                // Skip the line after separator (usually a blank line)
+                if i + 1 < lines.len() && lines[i + 1].trim().is_empty() {
+                    i += 1;
+                }
+            }
+            
+            in_target_section = false;
             continue;
         }
         
         // Add the line to our filtered content
-        if !filtered_content.is_empty() {
-            filtered_content.push('\n');
-        }
-        filtered_content.push_str(&line);
+        filtered_content.push(line.clone());
+        
+        i += 1;
     }
     
     if !found {
-        return Err(anyhow!("Word '{}' not found in vocabulary notebook", word));
+        return Err(anyhow!(
+            "Word '{}' {} not found in vocabulary notebook", 
+            word, 
+            timestamp.map_or("".to_string(), |ts| format!("with timestamp {}", ts))
+        ));
     }
     
-    // Only write to file if we found the word to delete
-    fs::write(vocabulary_notebook_file, filtered_content)?;
+    // Only write to file if we found the word
+    fs::write(vocabulary_notebook_file, filtered_content.join("\n"))?;
     
     Ok(())
 }
@@ -441,6 +470,30 @@ pub fn validate_word(word: &str) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use regex::Regex;
+
+    #[test]
+    fn test_prepend_to_vocabulary_notebook() {
+        // Create a temporary file
+        let temp_file = "/tmp/test_vocab_notebook.md";
+        
+        // Call the function to test
+        prepend_to_vocabulary_notebook(temp_file, "Test word content").unwrap();
+        
+        // Read the result
+        let result = fs::read_to_string(temp_file).unwrap();
+        
+        // Verify timestamp HTML comment exists with correct format
+        let timestamp_regex = Regex::new(r"<!-- timestamp=\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}[+-]\d{2}:\d{2} -->").unwrap();
+        assert!(timestamp_regex.is_match(&result), "Timestamp format is incorrect");
+        
+        // Verify the overall structure
+        assert!(result.contains("Test word content"), "Original content should be preserved");
+        assert!(result.contains("---"), "Separator line should be present");
+        
+        // Clean up
+        fs::remove_file(temp_file).unwrap();
+    }
 
     #[test]
     fn test_apply_local_additions_to_file() {
@@ -530,4 +583,71 @@ mod tests {
         assert!(validate_word(&long_word).is_err());
     }
 
+    #[test]
+    fn test_delete_with_timestamp() {
+        // Create a temporary file with multiple entries
+        let temp_file = "/tmp/test_vocab_delete.md";
+        
+        // First, add a word with a specific timestamp
+        fs::write(temp_file, "## hello\nHello content\n\n<!-- timestamp=2023-01-01T12:00:00.123+00:00 -->\n---\n\n## world\nWorld content\n\n<!-- timestamp=2023-01-02T12:00:00.456+00:00 -->\n---\n").unwrap();
+        
+        // Delete word with specific timestamp
+        delete_from_vocabulary_notebook(temp_file, "hello", Some("2023-01-01T12:00:00.123+00:00")).unwrap();
+        
+        // Read the result
+        let result = fs::read_to_string(temp_file).unwrap();
+        
+        // Print the result for debugging
+        println!("Resulting file contents:\n{}", result);
+        
+        // Verify other entries are preserved
+        assert!(result.contains("## world"));
+        assert!(!result.contains("## hello"));
+        
+        // Clean up
+        fs::remove_file(temp_file).unwrap();
+    }
+
+    #[test]
+    fn test_delete_without_timestamp() {
+        // Create a temporary file with multiple entries
+        let temp_file = "/tmp/test_vocab_delete_all.md";
+        
+        // First, add multiple entries of the same word
+        fs::write(temp_file, "## hello\nHello content 1\n\n<!-- timestamp=2023-01-01T12:00:00.123+00:00 -->\n---\n\n## hello\nHello content 2\n\n<!-- timestamp=2023-01-02T12:00:00.456+00:00 -->\n---\n").unwrap();
+        
+        // Delete all entries for a word
+        delete_from_vocabulary_notebook(temp_file, "hello", None).unwrap();
+        
+        // Read the result
+        let result = fs::read_to_string(temp_file).unwrap();
+        
+        // Verify no entries remain
+        assert!(!result.contains("## hello"));
+        
+        // Clean up
+        fs::remove_file(temp_file).unwrap();
+    }
+
+    #[test]
+    fn test_delete_nonexistent_word_with_timestamp() {
+        // Create a temporary file
+        let temp_file = "/tmp/test_vocab_delete_nonexistent.md";
+        
+        // First, add a word
+        fs::write(temp_file, "## hello\nHello content\n\n<!-- timestamp=2023-01-01T12:00:00.123+00:00 -->\n---\n").unwrap();
+        
+        // Try to delete a nonexistent word with a timestamp
+        let result = delete_from_vocabulary_notebook(temp_file, "world", Some("2023-01-01T12:00:00.123+00:00"));
+        
+        // Verify error is returned
+        assert!(result.is_err());
+        
+        // Verify file remains unchanged
+        let result_content = fs::read_to_string(temp_file).unwrap();
+        assert!(result_content.contains("## hello"));
+        
+        // Clean up
+        fs::remove_file(temp_file).unwrap();
+    }
 } 

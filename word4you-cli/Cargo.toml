@@ -11,7 +11,7 @@ name = "word4you"
 path = "src/main.rs"
 
 [dependencies]
-# CLI framework
+regex = "1.10.2"# CLI framework
 clap = { version = "4.4", features = ["derive"] }
 
 # HTTP client for Gemini API

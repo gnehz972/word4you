@@ -150,14 +150,14 @@ impl WordProcessor {
         Ok(())
     }
 
-    pub fn delete_word(&self, term: &Term, word: &str) -> Result<()> {
+    pub fn delete_word(&self, term: &Term, word: &str, timestamp: Option<&str>) -> Result<()> {
         // Validate word
         validate_word(word)?;
         
         term.write_line(&format!("🗑️  Deleting word '{}' from vocabulary notebook...", word))?;
         
-        // Delete from vocabulary notebook
-        delete_from_vocabulary_notebook(&self.config.vocabulary_notebook_file, word)?;
+        // Delete from vocabulary notebook, optionally with timestamp
+        delete_from_vocabulary_notebook(&self.config.vocabulary_notebook_file, word, timestamp)?;
         
         // Commit and push changes
         term.write_line("✅ Successfully deleted word locally")?;
@@ -168,14 +168,14 @@ impl WordProcessor {
         Ok(())
     }
 
-    pub fn update_word(&self, term: &Term, word: &str, content: &str) -> Result<()> {
+    pub fn update_word(&self, term: &Term, word: &str, content: &str, timestamp: Option<&str>) -> Result<()> {
         // Validate word
         validate_word(word)?;
         
         term.write_line(&format!("🔄 Updating word '{}' in vocabulary notebook...", word))?;
         
         // First, try to delete the word if it exists (ignore error if word doesn't exist)
-        match delete_from_vocabulary_notebook(&self.config.vocabulary_notebook_file, word) {
+        match delete_from_vocabulary_notebook(&self.config.vocabulary_notebook_file, word, timestamp) {
             Ok(_) => {
                 term.write_line(&format!("🗑️  Deleted existing entry for '{}'", word))?;
             }
@@ -191,8 +191,8 @@ impl WordProcessor {
         // Commit and push changes
         term.write_line("✅ Successfully updated word locally")?;
         term.write_line("📝 Committing changes...")?;
-        let commit_message = format!("Update word: {} - {}", word, chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"));
-        commit_and_push_changes(&commit_message, &self.config.vocabulary_notebook_file, self.config.git_remote_url.as_deref(), self.config.ssh_private_key_path.as_deref(), self.config.ssh_public_key_path.as_deref())?;
+        let _commit_message = format!("Update word: {} - {}", word, chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"));
+        commit_and_push_changes(&_commit_message, &self.config.vocabulary_notebook_file, self.config.git_remote_url.as_deref(), self.config.ssh_private_key_path.as_deref(), self.config.ssh_public_key_path.as_deref())?;
 
         Ok(())
     }
