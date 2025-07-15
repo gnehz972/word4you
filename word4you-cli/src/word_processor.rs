@@ -13,7 +13,7 @@ pub struct WordProcessor {
 
 impl WordProcessor {
     pub fn new(config: Config) -> Self {
-        let gemini_client = GeminiClient::new(config.gemini_api_key.clone());
+        let gemini_client = GeminiClient::new(config.gemini_api_key.clone(), config.gemini_model_name.clone());
         Self {
             gemini_client,
             config,

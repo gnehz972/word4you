@@ -78,6 +78,11 @@ Edit the `.env` file with your settings:
 # Required: Your Gemini API key
 GEMINI_API_KEY=your_api_key_here
 
+# Optional: Gemini model name to use
+# Default: gemini-2.0-flash-001
+# Other options: gemini-1.5-flash, gemini-1.5-pro, etc.
+GEMINI_MODEL_NAME=gemini-2.0-flash-001
+
 # Optional: Base directory where 'word4you' subdirectory will be created
 # Default: home directory (~)
 # The program will create: {VOCABULARY_BASE_DIR}/word4you/vocabulary_notebook.md

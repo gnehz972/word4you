@@ -12,6 +12,7 @@ pub struct Config {
     pub ssh_public_key_path: Option<String>,
     pub gemini_prompt_template: String,
     pub git_enabled: bool,
+    pub gemini_model_name: String,
 }
 
 impl Config {
@@ -54,6 +55,10 @@ impl Config {
             .map(|val| val.to_lowercase() == "true" || val == "1" || val.to_lowercase() == "yes")
             .unwrap_or(false);
 
+        // Gemini model name - default to gemini-2.0-flash-001
+        let gemini_model_name = env::var("GEMINI_MODEL_NAME")
+            .unwrap_or_else(|_| "gemini-2.0-flash-001".to_string());
+
         let gemini_prompt_template = r#"
 Please provide a comprehensive explanation for the English word "{word}" in the following format:
 
@@ -83,6 +88,7 @@ Important formatting rules:
             ssh_public_key_path,
             gemini_prompt_template,
             git_enabled,
+            gemini_model_name,
         })
     }
 }

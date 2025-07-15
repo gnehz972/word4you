@@ -44,11 +44,12 @@ pub struct GeminiClient {
 }
 
 impl GeminiClient {
-    pub fn new(api_key: String) -> Self {
+    pub fn new(api_key: String, model_name: String) -> Self {
+        let base_url = format!("https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent", model_name);
         Self {
             client: Client::new(),
             api_key,
-            base_url: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent".to_string(),
+            base_url,
         }
     }
 
