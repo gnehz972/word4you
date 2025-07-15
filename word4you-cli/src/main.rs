@@ -1,5 +1,5 @@
 use anyhow::Result;
-use clap::{Parser, Subcommand};
+use clap::Parser;
 use console::{style, Term};
 use word_processor::WordProcessor;
 
@@ -47,6 +47,10 @@ struct Cli {
     /// Delete a word from vocabulary notebook
     #[arg(long)]
     delete: Option<String>,
+
+    /// Update a word: delete if exists, then save new content
+    #[arg(long)]
+    update: Option<String>,
 }
 
 
@@ -83,6 +87,16 @@ async fn main() -> Result<()> {
     } else if let Some(word) = cli.delete {
         if let Err(e) = delete_word(&term, &word).await {
             eprintln!("❌ Error: {}", e);
+            return Ok(());
+        }
+    } else if let Some(word) = cli.update {
+        if let Some(content) = cli.content {
+            if let Err(e) = update_word(&term, &word, &content).await {
+                eprintln!("❌ Error: {}", e);
+                return Ok(());
+            }
+        } else {
+            eprintln!("❌ Error: --content is required when using --update");
             return Ok(());
         }
     } else if let Some(word) = cli.word {
@@ -137,6 +151,19 @@ async fn delete_word(term: &Term, word: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
+async fn update_word(term: &Term, word: &str, content: &str) -> anyhow::Result<()> {
+    // Validate configuration
+    let config = Config::load()?;
+    
+    // Initialize word processor
+    let processor = WordProcessor::new(config);
+    
+    // Update the word (delete if exists, then save)
+    processor.update_word(term, word, content)?;
+    
+    Ok(())
+}
+
 async fn test_api_connection(term: &Term) -> anyhow::Result<()> {
     let config = Config::load()?;
     let processor = WordProcessor::new(config);
@@ -169,6 +196,7 @@ Features:
 • Example sentences in both English and Chinese
 • Automatic Git integration for version control
 • Markdown-formatted vocabulary notebook
+• Word update functionality (delete and replace)
 
 Usage:
   word4you <word>                    # Learn a new word
@@ -177,6 +205,7 @@ Usage:
   word4you --learn <word>            # Learn a specific word
   word4you --save <word> --content <content>  # Save word to vocabulary
   word4you --delete <word>           # Delete word from vocabulary
+  word4you --update <word> --content <content>  # Update word (delete if exists, then save)
 "#;
 
     term.write_line(&style(info).cyan().to_string()).unwrap();

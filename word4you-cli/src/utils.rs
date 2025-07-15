@@ -5,7 +5,7 @@ use std::fs;
 use std::fs::File;
 use std::path::Path;
 use std::env;
-use std::io::{BufRead, BufReader, Write};
+use std::io::{BufRead, BufReader};
 
 fn perform_vocabulary_merge(repo: &Repository, vocabulary_file: &str, remote_oid: Oid, local_oid: Oid) -> Result<()> {
     // Get relative path for the vocabulary file within the repository

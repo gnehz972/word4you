@@ -162,8 +162,37 @@ impl WordProcessor {
         // Commit and push changes
         term.write_line("✅ Successfully deleted word locally")?;
         term.write_line("📝 Committing changes...")?;
-        let commit_message = format!("Delete word: {} - {}", word, chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"));
+        let _commit_message = format!("Delete word: {} - {}", word, chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"));
         // commit_and_push_changes(&commit_message, &self.config.vocabulary_notebook_file, self.config.git_remote_url.as_deref(), self.config.ssh_private_key_path.as_deref(), self.config.ssh_public_key_path.as_deref())?;
+
+        Ok(())
+    }
+
+    pub fn update_word(&self, term: &Term, word: &str, content: &str) -> Result<()> {
+        // Validate word
+        validate_word(word)?;
+        
+        term.write_line(&format!("🔄 Updating word '{}' in vocabulary notebook...", word))?;
+        
+        // First, try to delete the word if it exists (ignore error if word doesn't exist)
+        match delete_from_vocabulary_notebook(&self.config.vocabulary_notebook_file, word) {
+            Ok(_) => {
+                term.write_line(&format!("🗑️  Deleted existing entry for '{}'", word))?;
+            }
+            Err(_) => {
+                term.write_line(&format!("ℹ️  No existing entry found for '{}', creating new entry", word))?;
+            }
+        }
+        
+        // Then save the new content
+        term.write_line(&format!("💾 Saving updated content for '{}'...", word))?;
+        prepend_to_vocabulary_notebook(&self.config.vocabulary_notebook_file, content)?;
+        
+        // Commit and push changes
+        term.write_line("✅ Successfully updated word locally")?;
+        term.write_line("📝 Committing changes...")?;
+        let commit_message = format!("Update word: {} - {}", word, chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"));
+        commit_and_push_changes(&commit_message, &self.config.vocabulary_notebook_file, self.config.git_remote_url.as_deref(), self.config.ssh_private_key_path.as_deref(), self.config.ssh_public_key_path.as_deref())?;
 
         Ok(())
     }
