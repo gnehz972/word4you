@@ -1,5 +1,5 @@
 use anyhow::Result;
-use clap::Parser;
+use clap::{Parser, Subcommand};
 use console::{style, Term};
 use word_processor::WordProcessor;
 
@@ -10,47 +10,96 @@ mod word_processor;
 
 use config::Config;
 
+const INTRO: &str = r#"
+Word4You - English Word Learning Tool
+
+Features:
+• AI-powered word explanations using Google Gemini
+• Chinese translations and phonetic symbols
+• Example sentences in both English and Chinese
+• Automatic Git integration for version control
+• Markdown-formatted vocabulary notebook
+• Word update functionality (delete and replace)
+
+Usage:
+  word4you                           # Interactive mode (enter words one by one)
+  word4you query <word>              # Learn a new word
+  word4you test                      # Test API connection
+  word4you info                      # Show this information
+  word4you learn <word>              # Learn a specific word
+  word4you save <word> --content <content>  # Save word to vocabulary
+  word4you delete <word>             # Delete word from vocabulary
+  word4you update <word> --content <content>  # Update word (delete if exists, then save)
+
+Options:
+  --raw                              # Output raw response from API without user interaction
+"#;
+
 #[derive(Parser)]
 #[command(
     name = "word4you",
     about = "Learn English words with AI-powered explanations using Google Gemini",
+    long_about = INTRO,
     version = "1.0.0"
 )]
 struct Cli {
-    /// The word to learn
-    word: Option<String>,
+    #[command(subcommand)]
+    command: Option<Commands>,
+}
 
-    /// Output raw response from API without user interaction
-    #[arg(long)]
-    raw: bool,
-
+#[derive(Subcommand)]
+enum Commands {
+    /// Query a word for learning
+    Query {
+        /// The word to learn
+        word: String,
+        
+        /// Output raw response from API without user interaction
+        #[arg(long)]
+        raw: bool,
+    },
+    
     /// Test the API connection
-    #[arg(long)]
-    test: bool,
-
+    Test,
+    
     /// Display application information
-    #[arg(long)]
-    info: bool,
-
+    Info,
+    
     /// Learn a specific word
-    #[arg(long)]
-    learn: Option<String>,
-
-    /// Save raw response to vocabulary notebook
-    #[arg(long)]
-    save: Option<String>,
-
-    /// The content to save (used with --save)
-    #[arg(long)]
-    content: Option<String>,
-
+    Learn {
+        /// The word to learn
+        word: String,
+        
+        /// Output raw response from API without user interaction
+        #[arg(long)]
+        raw: bool,
+    },
+    
+    /// Save word to vocabulary notebook
+    Save {
+        /// The word to save
+        word: String,
+        
+        /// The content to save
+        #[arg(long)]
+        content: String,
+    },
+    
     /// Delete a word from vocabulary notebook
-    #[arg(long)]
-    delete: Option<String>,
-
+    Delete {
+        /// The word to delete
+        word: String,
+    },
+    
     /// Update a word: delete if exists, then save new content
-    #[arg(long)]
-    update: Option<String>,
+    Update {
+        /// The word to update
+        word: String,
+        
+        /// The new content to save
+        #[arg(long)]
+        content: String,
+    },
 }
 
 
@@ -61,52 +110,54 @@ async fn main() -> Result<()> {
     let cli = Cli::parse();
     let term = Term::stdout();
 
-    // Handle different arguments
-    if cli.test {
-        if let Err(e) = test_api_connection(&term).await {
-            eprintln!("❌ Error: {}", e);
-            return Ok(());
-        }
-    } else if cli.info {
-        show_info(&term);
-    } else if let Some(word) = cli.learn {
-        if let Err(e) = query_word(&term, &word, cli.raw).await {
-            eprintln!("❌ Error: {}", e);
-            return Ok(());
-        }
-    } else if let Some(word) = cli.save {
-        if let Some(content) = cli.content {
-            if let Err(e) = save_word(&term, &word, &content).await {
+    // Handle subcommands
+    match &cli.command {
+        Some(Commands::Query { word, raw }) => {
+            if let Err(e) = query_word(&term, word, *raw).await {
                 eprintln!("❌ Error: {}", e);
                 return Ok(());
             }
-        } else {
-            eprintln!("❌ Error: --content is required when using --save");
-            return Ok(());
         }
-    } else if let Some(word) = cli.delete {
-        if let Err(e) = delete_word(&term, &word).await {
-            eprintln!("❌ Error: {}", e);
-            return Ok(());
-        }
-    } else if let Some(word) = cli.update {
-        if let Some(content) = cli.content {
-            if let Err(e) = update_word(&term, &word, &content).await {
+        Some(Commands::Test) => {
+            if let Err(e) = test_api_connection(&term).await {
                 eprintln!("❌ Error: {}", e);
                 return Ok(());
             }
-        } else {
-            eprintln!("❌ Error: --content is required when using --update");
-            return Ok(());
         }
-    } else if let Some(word) = cli.word {
-        if let Err(e) = query_word(&term, &word, cli.raw).await {
-            eprintln!("❌ Error: {}", e);
-            return Ok(());
+        Some(Commands::Info) => {
+            show_info(&term);
         }
-    } else {
-        // Show help if no arguments provided
-        let _ = clap::Command::new("word4you").print_help();
+        Some(Commands::Learn { word, raw }) => {
+            if let Err(e) = query_word(&term, word, *raw).await {
+                eprintln!("❌ Error: {}", e);
+                return Ok(());
+            }
+        }
+        Some(Commands::Save { word, content }) => {
+            if let Err(e) = save_word(&term, word, content).await {
+                eprintln!("❌ Error: {}", e);
+                return Ok(());
+            }
+        }
+        Some(Commands::Delete { word }) => {
+            if let Err(e) = delete_word(&term, word).await {
+                eprintln!("❌ Error: {}", e);
+                return Ok(());
+            }
+        }
+        Some(Commands::Update { word, content }) => {
+            if let Err(e) = update_word(&term, word, content).await {
+                eprintln!("❌ Error: {}", e);
+                return Ok(());
+            }
+        }
+        None => {
+            // Enter interactive mode when no subcommand provided
+            if let Err(e) = interactive_mode(&term).await {
+                eprintln!("❌ Error: {}", e);
+                return Ok(());
+            }
+        }
     }
 
     Ok(())
@@ -187,28 +238,60 @@ async fn test_api_connection(term: &Term) -> anyhow::Result<()> {
 }
 
 fn show_info(term: &Term) {
-    let info = r#"
-Word4You - English Word Learning Tool
+    term.write_line(&style(INTRO).cyan().to_string()).unwrap();
+}
 
-Features:
-• AI-powered word explanations using Google Gemini
-• Chinese translations and phonetic symbols
-• Example sentences in both English and Chinese
-• Automatic Git integration for version control
-• Markdown-formatted vocabulary notebook
-• Word update functionality (delete and replace)
-
-Usage:
-  word4you <word>                    # Learn a new word
-  word4you --test                    # Test API connection
-  word4you --info                    # Show this information
-  word4you --learn <word>            # Learn a specific word
-  word4you --save <word> --content <content>  # Save word to vocabulary
-  word4you --delete <word>           # Delete word from vocabulary
-  word4you --update <word> --content <content>  # Update word (delete if exists, then save)
-"#;
-
-    term.write_line(&style(info).cyan().to_string()).unwrap();
+async fn interactive_mode(term: &Term) -> anyhow::Result<()> {
+    // Validate configuration first
+    let config = Config::load()?;
+    
+    // Initialize word processor
+    let processor = WordProcessor::new(config);
+    
+    term.write_line(&style("🎯 Welcome to Word4You Interactive Mode!").cyan().to_string())?;
+    term.write_line("Enter words to learn, or type 'exit' to quit.")?;
+    term.write_line("")?;
+    
+    loop {
+        // Get word input from user
+        let word = match dialoguer::Input::<String>::new()
+            .with_prompt("Enter a word to learn")
+            .allow_empty(false)
+            .interact_text()
+        {
+            Ok(input) => input.trim().to_lowercase(),
+            Err(_) => {
+                term.write_line("👋 Goodbye!")?;
+                break;
+            }
+        };
+        
+        // Check for exit command
+        if word == "exit" || word == "quit" || word == "q" {
+            term.write_line("👋 Goodbye!")?;
+            break;
+        }
+        
+        // Skip empty input
+        if word.is_empty() {
+            term.write_line("❌ Please enter a valid word.")?;
+            continue;
+        }
+        
+        // Process the word using existing functionality
+        if let Err(e) = processor.process_word(term, &word, false).await {
+            term.write_line(&format!("❌ Error processing word '{}': {}", word, e))?;
+            term.write_line("Please try another word.")?;
+            continue;
+        }
+        
+        // After processing (save/skip), continue to next word
+        term.write_line("")?;
+        term.write_line(&style("=".repeat(50)).blue().to_string())?;
+        term.write_line("")?;
+    }
+    
+    Ok(())
 }
 
  

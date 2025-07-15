@@ -107,22 +107,31 @@ The program automatically creates a dedicated `word4you` subdirectory:
 ## Commands
 
 ```bash
+# Interactive mode (enter words one by one)
+./target/release/word4you
+
 # Learn a new word
 ./target/release/word4you beautiful
 
 # Test API connection
-./target/release/word4you test
+./target/release/word4you --test
 
 # Show app info
-./target/release/word4you info
+./target/release/word4you --info
 
 # Show help
 ./target/release/word4you --help
 ```
 
-## Example Output
+## Interactive Mode
+
+When you run `word4you` without any arguments, it enters interactive mode:
 
 ```
+🎯 Welcome to Word4You Interactive Mode!
+Enter words to learn, or type 'exit' to quit.
+
+Enter a word to learn: beautiful
 🔍 Processing word: beautiful
 🤖 Querying Gemini API...
 
@@ -150,8 +159,23 @@ r - Regenerate explanation
 p - Preview what will be saved
 k - Skip this word
 
-Enter your choice (s/r/p/k):
+Enter your choice: k
+❌ Word explanation skipped.
+
+==================================================
+
+Enter a word to learn: exit
+👋 Goodbye!
 ```
+
+**Interactive Mode Features:**
+- 🔄 **Continuous learning**: Enter words one by one without restarting the program
+- 💾 **Save or skip**: Choose to save words to your vocabulary notebook or skip them
+- 🔄 **Regenerate**: Get a new explanation if you're not satisfied with the current one
+- 👀 **Preview**: See what will be saved before committing
+- 🚪 **Easy exit**: Type 'exit', 'quit', or 'q' to leave
+
+## Example Output
 
 ## Vocabulary Notebook
 
