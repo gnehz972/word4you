@@ -18,7 +18,9 @@ Learn English words with AI-powered explanations using Google Gemini.
    - This will start the Raycast development server and open the extension in Raycast
 2. Configure your settings in Raycast extension preferences:
    - **Gemini API Key** (required): Your Google Gemini API key
+   - **Gemini Model Name** (optional): Gemini model name to use for AI explanations (defaults to gemini-2.0-flash-001)
    - **Vocabulary Base Directory** (optional): Base directory where 'word4you' subdirectory will be created (defaults to home directory)
+   - **Enable Git Operations** (optional): Enable automatic Git commit and push operations when saving words (defaults to false)
    - **Git Remote URL** (optional): Git repository for vocabulary backup (SSH URLs only, e.g., git@github.com:username/repo.git)
    - **SSH Private Key Path** (optional): Path to SSH private key file for Git authentication (defaults to ~/.ssh/id_ed25519)
    - **SSH Public Key Path** (optional): Path to SSH public key file for Git authentication (defaults to ~/.ssh/id_ed25519.pub)

@@ -8,6 +8,8 @@ export interface Preferences {
   gitRemoteUrl: string;
   sshPrivateKeyPath: string;
   sshPublicKeyPath: string;
+  geminiModelName: string;
+  gitEnabled: boolean;
 }
 
 // Cross-platform path resolution for vocabulary file
@@ -45,6 +47,8 @@ export function createEnvironmentFromPreferences(): NodeJS.ProcessEnv {
     ...process.env,
     GEMINI_API_KEY: preferences.geminiApiKey,
     VOCABULARY_BASE_DIR: preferences.vocabularyBaseDir || os.homedir(),
+    GEMINI_MODEL_NAME: preferences.geminiModelName || "gemini-2.0-flash-001",
+    GIT_ENABLED: preferences.gitEnabled ? "true" : "false",
     ...(preferences.gitRemoteUrl && {
       GIT_REMOTE_URL: preferences.gitRemoteUrl,
     }),
