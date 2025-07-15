@@ -1,9 +1,24 @@
-import { Action, ActionPanel, List, Toast, showToast, LaunchProps, useNavigation, Icon } from "@raycast/api";
+import {
+  Action,
+  ActionPanel,
+  List,
+  Toast,
+  showToast,
+  LaunchProps,
+  useNavigation,
+  Icon,
+} from "@raycast/api";
 import { useState, useEffect } from "react";
 import { execSync, spawn } from "child_process";
 import React from "react";
 import fs from "fs";
-import { getPreferences, getVocabularyPath, ensureVocabularyDirectoryExists, getExecutablePath, createEnvironmentFromPreferences } from "./config";
+import {
+  getPreferences,
+  getVocabularyPath,
+  ensureVocabularyDirectoryExists,
+  getExecutablePath,
+  createEnvironmentFromPreferences,
+} from "./config";
 
 // Type assertion to bypass TypeScript errors with Raycast API
 const ListComponent = List as any;
@@ -34,153 +49,181 @@ interface SavedWord {
   example_zh: string;
   tip: string;
   raw_output: string;
+  timestamp?: string;
 }
 
-function parseRawWordExplanation(output: string, word: string): WordExplanation | null {
+function parseRawWordExplanation(
+  output: string,
+  word: string,
+): WordExplanation | null {
   try {
-    const lines = output.split('\n').map(line => line.trim()).filter(line => line);
-    
-    let pronunciation = '';
-    let definition = '';
-    let chinese = '';
-    let example_en = '';
-    let example_zh = '';
-    let tip = '';
-    
+    const lines = output
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line);
+
+    let pronunciation = "";
+    let definition = "";
+    let chinese = "";
+    let example_en = "";
+    let example_zh = "";
+    let tip = "";
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      
+
       // Pronunciation: */pronunciation/*
       if (line.match(/^\*\/.*\/\*$/)) {
-        pronunciation = line.replace(/^\*\//, '').replace(/\/\*$/, '');
+        pronunciation = line.replace(/^\*\//, "").replace(/\/\*$/, "");
       }
-      
+
       // Definition: > Definition text
-      else if (line.startsWith('> ')) {
-        definition = line.replace(/^> /, '');
+      else if (line.startsWith("> ")) {
+        definition = line.replace(/^> /, "");
       }
-      
+
       // Chinese: **Chinese text**
       else if (line.match(/^\*\*.*\*\*$/)) {
-        chinese = line.replace(/^\*\*/, '').replace(/\*\*$/, '');
+        chinese = line.replace(/^\*\*/, "").replace(/\*\*$/, "");
       }
-      
+
       // Examples: - Example text
-      else if (line.startsWith('- ')) {
-        const exampleText = line.replace(/^- /, '');
+      else if (line.startsWith("- ")) {
+        const exampleText = line.replace(/^- /, "");
         if (!/[\u4e00-\u9fa5]/.test(exampleText) && !example_en) {
           example_en = exampleText;
         } else if (/[\u4e00-\u9fa5]/.test(exampleText) && !example_zh) {
           example_zh = exampleText;
         }
       }
-      
+
       // Tip: *Tip text* (but not pronunciation format)
       else if (line.match(/^\*.*\*$/) && !line.match(/^\*\/.*\/\*$/)) {
-        tip = line.replace(/^\*/, '').replace(/\*$/, '');
+        tip = line.replace(/^\*/, "").replace(/\*$/, "");
       }
     }
-    
+
     return {
       word: word,
-      pronunciation: pronunciation || '',
-      definition: definition || '',
-      chinese: chinese || '',
-      example_en: example_en || '',
-      example_zh: example_zh || '',
-      tip: tip || '',
-      raw_output: output
+      pronunciation: pronunciation || "",
+      definition: definition || "",
+      chinese: chinese || "",
+      example_en: example_en || "",
+      example_zh: example_zh || "",
+      tip: tip || "",
+      raw_output: output,
     };
   } catch (error) {
-    console.error('Error parsing raw word explanation:', error);
+    console.error("Error parsing raw word explanation:", error);
     return null;
   }
 }
 
-async function getWordExplanation(word: string): Promise<WordExplanation | null> {
+async function getWordExplanation(
+  word: string,
+): Promise<WordExplanation | null> {
   try {
     const preferences = getPreferences();
     const executablePath = getExecutablePath();
-    
+
     // Use cross-platform path resolution for vocabulary file
     const vocabularyPath = getVocabularyPath(preferences.vocabularyBaseDir);
-    
+
     // Ensure the directory exists
     ensureVocabularyDirectoryExists(vocabularyPath);
-    
+
     // Create environment variables from preferences
     const env = createEnvironmentFromPreferences();
-    
+
     // Use --raw flag to get clean output without TTY interaction
-    const command = `"${executablePath}" --raw "${word}"`;
-    
+    const command = `"${executablePath}" query "${word}" --raw`;
+
     const output = execSync(command, {
-      encoding: 'utf8',
+      encoding: "utf8",
       timeout: 30000,
-      cwd: require('path').dirname(executablePath),
-      env: env
+      cwd: require("path").dirname(executablePath),
+      env: env,
     });
-    
+
     return parseRawWordExplanation(output, word);
   } catch (error) {
-    console.error('Error getting word explanation:', error);
+    console.error("Error getting word explanation:", error);
     return null;
   }
 }
 
-async function saveWordToVocabulary(word: string, content: string, onStatusUpdate?: (message: string) => void): Promise<boolean> {
+async function saveWordToVocabulary(
+  word: string,
+  content: string,
+  onStatusUpdate?: (message: string) => void,
+): Promise<boolean> {
   return new Promise((resolve) => {
     try {
       const preferences = getPreferences();
       const executablePath = getExecutablePath();
-      
+
       // Use cross-platform path resolution for vocabulary file
       const vocabularyPath = getVocabularyPath(preferences.vocabularyBaseDir);
-      
+
       // Ensure the directory exists
       ensureVocabularyDirectoryExists(vocabularyPath);
-      
+
       // Create environment variables from preferences
       const env = createEnvironmentFromPreferences();
-      
+
       // Use spawn to capture real-time output
-      const child = spawn(executablePath, ['save', word, content], {
-        cwd: require('path').dirname(executablePath),
-        env: env,
-        stdio: ['pipe', 'pipe', 'pipe']
-      });
-      
-      let fullOutput = '';
+      const child = spawn(
+        executablePath,
+        ["save", word, "--content", content],
+        {
+          cwd: require("path").dirname(executablePath),
+          env: env,
+          stdio: ["pipe", "pipe", "pipe"],
+        },
+      );
+
+      let fullOutput = "";
+      let errorOutput = "";
       let success = false;
-      
-      child.stdout.on('data', (data) => {
+
+      child.stdout.on("data", (data) => {
         const message = data.toString();
         fullOutput += message;
         if (onStatusUpdate) {
           onStatusUpdate(message.trim());
         }
       });
-      
-      child.stderr.on('data', (data) => {
+
+      child.stderr.on("data", (data) => {
         const message = data.toString();
+        errorOutput += message;
         fullOutput += message;
         if (onStatusUpdate) {
           onStatusUpdate(message.trim());
         }
       });
-      
-      child.on('close', (code) => {
+
+      child.on("close", (code) => {
+        console.log(`Process closed with code: ${code}`);
+        console.log(`Full output: ${fullOutput}`);
+        console.log(`Error output: ${errorOutput}`);
+
+        if (code !== 0) {
+          console.error(`Save failed for word: ${word}`);
+          console.error(`content: ${content}`);
+          console.error(`Error details: ${errorOutput}`);
+        }
+
         success = code === 0;
         resolve(success);
       });
-      
-      child.on('error', (error) => {
-        console.error('Error spawning process:', error);
+
+      child.on("error", (error) => {
+        console.error("Error spawning process:", error);
         resolve(false);
       });
-      
     } catch (error) {
-      console.error('Error in saveWordToVocabulary:', error);
+      console.error("Error in saveWordToVocabulary:", error);
       resolve(false);
     }
   });
@@ -193,39 +236,51 @@ function parseSavedWords(vocabularyPath: string): SavedWord[] {
       return [];
     }
 
-    const content = fs.readFileSync(vocabularyPath, 'utf8');
+    const content = fs.readFileSync(vocabularyPath, "utf8");
     const words: SavedWord[] = [];
-    
+
     // Split content by word sections (## word)
     const sections = content.split(/(?=^## )/m);
-    
+
     for (const section of sections) {
       if (!section.trim()) continue;
-      
-      const lines = section.split('\n');
+
+      const lines = section.split("\n");
       const wordLine = lines[0];
       const wordMatch = wordLine.match(/^## (.+)$/);
-      
+
       if (!wordMatch) continue;
-      
+
       const word = wordMatch[1].trim();
-      const wordContent = lines.slice(1).join('\n');
-      
+      const wordContent = lines.slice(1).join("\n");
+
+      // Check for timestamp in the first two lines
+      let timestamp = "";
+      const timestampMatch = lines[1] && lines[1].match(/^Timestamp: (.+)$/);
+      if (timestampMatch) {
+        timestamp = timestampMatch[1];
+      }
+
       // Parse the word content similar to the original parser
       const parsed = parseRawWordExplanation(wordContent, word);
       if (parsed) {
-        words.push(parsed);
+        words.push({
+          ...parsed,
+          timestamp: timestamp,
+        });
       }
     }
-    
+
     return words;
   } catch (error) {
-    console.error('Error parsing saved words:', error);
+    console.error("Error parsing saved words:", error);
     return [];
   }
 }
 
-export default function Word4YouCommand(props: LaunchProps<{ arguments: Arguments }>): JSX.Element {
+export default function Word4YouCommand(
+  props: LaunchProps<{ arguments: Arguments }>,
+): JSX.Element {
   const { word: argWord } = props.arguments;
   const [searchText, setSearchText] = useState(argWord || "");
   const [savedWords, setSavedWords] = useState<SavedWord[]>([]);
@@ -233,7 +288,9 @@ export default function Word4YouCommand(props: LaunchProps<{ arguments: Argument
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingSaved, setIsLoadingSaved] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [savedWordsMap, setSavedWordsMap] = useState<Map<string, SavedWord>>(new Map());
+  const [savedWordsMap, setSavedWordsMap] = useState<Map<string, SavedWord>>(
+    new Map(),
+  );
 
   useEffect(() => {
     loadSavedWords();
@@ -260,17 +317,17 @@ export default function Word4YouCommand(props: LaunchProps<{ arguments: Argument
       const vocabularyPath = getVocabularyPath(preferences.vocabularyBaseDir);
       const words = parseSavedWords(vocabularyPath);
       setSavedWords(words);
-      
+
       // Create a map for quick lookup
       const wordsMap = new Map<string, SavedWord>();
-      words.forEach(word => wordsMap.set(word.word.toLowerCase(), word));
+      words.forEach((word) => wordsMap.set(word.word.toLowerCase(), word));
       setSavedWordsMap(wordsMap);
     } catch (error) {
-      console.error('Error loading saved words:', error);
+      console.error("Error loading saved words:", error);
       await showToast({
         style: Toast.Style.Failure,
         title: "Error",
-        message: "Failed to load saved words"
+        message: "Failed to load saved words",
       });
     } finally {
       setIsLoadingSaved(false);
@@ -284,10 +341,10 @@ export default function Word4YouCommand(props: LaunchProps<{ arguments: Argument
     }
 
     const searchLower = searchTerm.toLowerCase();
-    
+
     // Check if word exists locally
     const localWord = savedWordsMap.get(searchLower);
-    
+
     if (localWord) {
       // Word exists locally, no need to query AI
       setAiResult(null);
@@ -296,10 +353,10 @@ export default function Word4YouCommand(props: LaunchProps<{ arguments: Argument
 
     // Clear previous AI result when starting a new search
     setAiResult(null);
-    
+
     // Only query AI if word doesn't exist locally
     setIsLoading(true);
-    
+
     const toast = await showToast({
       style: Toast.Style.Animated,
       title: `Querying "${searchTerm}"...`,
@@ -307,7 +364,7 @@ export default function Word4YouCommand(props: LaunchProps<{ arguments: Argument
 
     try {
       const result = await getWordExplanation(searchTerm.trim());
-      
+
       if (result) {
         toast.style = Toast.Style.Success;
         toast.title = "Query completed!";
@@ -328,11 +385,144 @@ export default function Word4YouCommand(props: LaunchProps<{ arguments: Argument
     }
   };
 
+  async function deleteWordFromVocabulary(
+    word: string,
+    timestamp?: string,
+    onStatusUpdate?: (message: string) => void,
+  ): Promise<boolean> {
+    return new Promise((resolve) => {
+      try {
+        const preferences = getPreferences();
+        const executablePath = getExecutablePath();
+
+        // Use cross-platform path resolution for vocabulary file
+        const vocabularyPath = getVocabularyPath(preferences.vocabularyBaseDir);
+
+        // Ensure the directory exists
+        ensureVocabularyDirectoryExists(vocabularyPath);
+
+        // Create environment variables from preferences
+        const env = createEnvironmentFromPreferences();
+
+        // Prepare delete command arguments
+        const args = timestamp
+          ? ["delete", word, "--timestamp", timestamp]
+          : ["delete", word];
+
+        // Use spawn to capture real-time output
+        const child = spawn(executablePath, args, {
+          cwd: require("path").dirname(executablePath),
+          env: env,
+          stdio: ["pipe", "pipe", "pipe"],
+        });
+
+        let fullOutput = "";
+        let success = false;
+
+        child.stdout.on("data", (data) => {
+          const message = data.toString();
+          fullOutput += message;
+          if (onStatusUpdate) {
+            onStatusUpdate(message.trim());
+          }
+        });
+
+        child.stderr.on("data", (data) => {
+          const message = data.toString();
+          fullOutput += message;
+          if (onStatusUpdate) {
+            onStatusUpdate(message.trim());
+          }
+        });
+
+        child.on("close", (code) => {
+          success = code === 0;
+          resolve(success);
+        });
+
+        child.on("error", (error) => {
+          console.error("Error spawning process:", error);
+          resolve(false);
+        });
+      } catch (error) {
+        console.error("Error in deleteWordFromVocabulary:", error);
+        resolve(false);
+      }
+    });
+  }
+
+  async function updateWordInVocabulary(
+    word: string,
+    content: string,
+    timestamp?: string,
+    onStatusUpdate?: (message: string) => void,
+  ): Promise<boolean> {
+    return new Promise((resolve) => {
+      try {
+        const preferences = getPreferences();
+        const executablePath = getExecutablePath();
+
+        // Use cross-platform path resolution for vocabulary file
+        const vocabularyPath = getVocabularyPath(preferences.vocabularyBaseDir);
+
+        // Ensure the directory exists
+        ensureVocabularyDirectoryExists(vocabularyPath);
+
+        // Create environment variables from preferences
+        const env = createEnvironmentFromPreferences();
+
+        // Prepare update command arguments
+        const args = timestamp
+          ? ["update", word, "--content", content, "--timestamp", timestamp]
+          : ["update", word, "--content", content];
+
+        // Use spawn to capture real-time output
+        const child = spawn(executablePath, args, {
+          cwd: require("path").dirname(executablePath),
+          env: env,
+          stdio: ["pipe", "pipe", "pipe"],
+        });
+
+        let fullOutput = "";
+        let success = false;
+
+        child.stdout.on("data", (data) => {
+          const message = data.toString();
+          fullOutput += message;
+          if (onStatusUpdate) {
+            onStatusUpdate(message.trim());
+          }
+        });
+
+        child.stderr.on("data", (data) => {
+          const message = data.toString();
+          fullOutput += message;
+          if (onStatusUpdate) {
+            onStatusUpdate(message.trim());
+          }
+        });
+
+        child.on("close", (code) => {
+          success = code === 0;
+          resolve(success);
+        });
+
+        child.on("error", (error) => {
+          console.error("Error spawning process:", error);
+          resolve(false);
+        });
+      } catch (error) {
+        console.error("Error in updateWordInVocabulary:", error);
+        resolve(false);
+      }
+    });
+  }
+
   const handleSave = async (word: string, content: string) => {
     if (isSaving) return;
-    
+
     setIsSaving(true);
-    
+
     const toast = await showToast({
       style: Toast.Style.Animated,
       title: "Saving word to vocabulary...",
@@ -342,14 +532,14 @@ export default function Word4YouCommand(props: LaunchProps<{ arguments: Argument
       const success = await saveWordToVocabulary(word, content, (message) => {
         toast.message = message;
       });
-      
+
       if (success) {
         toast.style = Toast.Style.Success;
         toast.title = "Word saved successfully!";
-        
+
         // Reload saved words to include the new word
         await loadSavedWords();
-        
+
         // Clear AI result since it's now saved
         setAiResult(null);
       } else {
@@ -367,16 +557,19 @@ export default function Word4YouCommand(props: LaunchProps<{ arguments: Argument
   };
 
   // Filter saved words based on search text
-  const filteredSavedWords = savedWords.filter(word => 
-    searchText.trim() === '' || 
-    word.word.toLowerCase().includes(searchText.toLowerCase())
+  const filteredSavedWords = savedWords.filter(
+    (word) =>
+      searchText.trim() === "" ||
+      word.word.toLowerCase().includes(searchText.toLowerCase()),
   );
 
   // Combine AI result with saved words
-  const allWords = aiResult ? [aiResult, ...filteredSavedWords] : filteredSavedWords;
+  const allWords = aiResult
+    ? [aiResult, ...filteredSavedWords]
+    : filteredSavedWords;
 
   return (
-    <ListComponent 
+    <ListComponent
       isLoading={isLoadingSaved || isLoading}
       searchBarPlaceholder="Search words or enter new word to query"
       onSearchTextChange={setSearchText}
@@ -393,9 +586,10 @@ export default function Word4YouCommand(props: LaunchProps<{ arguments: Argument
         ) : (
           <ListComponent.EmptyView
             title="No Words Found"
-            description={searchText.trim() ? 
-              `No saved words match "${searchText}". Press Enter to query with AI.` :
-              "You haven't saved any words yet. Enter a word to query with AI."
+            description={
+              searchText.trim()
+                ? `No saved words match "${searchText}". Press Enter to query with AI.`
+                : "You haven't saved any words yet. Enter a word to query with AI."
             }
             actions={
               searchText.trim() ? (
@@ -415,25 +609,25 @@ export default function Word4YouCommand(props: LaunchProps<{ arguments: Argument
           const isAiResult = aiResult && word.word === aiResult.word;
           const markdown = `
 # ${word.word}
-${word.pronunciation ? `\n*/${word.pronunciation}/*` : ''}
-${word.definition ? `\n*${word.definition}*` : ''}
-${word.chinese ? `\n*${word.chinese}*` : ''}
-${word.example_en ? `\n> _${word.example_en}_` : ''}
-${word.example_zh ? `\n> _${word.example_zh}_` : ''}
-${word.tip ? `\n💡*${word.tip}*` : ''}
+${word.pronunciation ? `\n*/${word.pronunciation}/*` : ""}
+${word.definition ? `\n*${word.definition}*` : ""}
+${word.chinese ? `\n*${word.chinese}*` : ""}
+${word.example_en ? `\n> _${word.example_en}_` : ""}
+${word.example_zh ? `\n> _${word.example_zh}_` : ""}
+${word.tip ? `\n💡*${word.tip}*` : ""}
 `;
 
           return (
             <ListComponent.Item
-              key={`${word.word}-${isAiResult ? 'ai' : 'saved'}`}
+              key={`${word.word}-${isAiResult ? "ai" : "saved"}`}
               title={word.word}
               subtitle={word.chinese}
               accessories={[
-                isAiResult ? { text: "AI Result" } : { text: `${index + 1} of ${allWords.length}` }
+                isAiResult
+                  ? { text: "AI Result" }
+                  : { text: `${index + 1} of ${allWords.length}` },
               ]}
-              detail={
-                <ListComponent.Item.Detail markdown={markdown} />
-              }
+              detail={<ListComponent.Item.Detail markdown={markdown} />}
               actions={
                 <ActionPanelComponent>
                   {isAiResult && (
@@ -443,6 +637,79 @@ ${word.tip ? `\n💡*${word.tip}*` : ''}
                       onAction={() => handleSave(word.word, word.raw_output)}
                     />
                   )}
+                  {!isAiResult && (
+                    <>
+                      <ActionComponent
+                        title="Delete Word"
+                        icon="🗑️"
+                        onAction={async () => {
+                          const toast = await showToast({
+                            style: Toast.Style.Animated,
+                            title: `Deleting "${word.word}"...`,
+                          });
+
+                          try {
+                            const success = await deleteWordFromVocabulary(
+                              word.word,
+                              undefined,
+                              (message) => {
+                                toast.message = message;
+                              },
+                            );
+
+                            if (success) {
+                              toast.style = Toast.Style.Success;
+                              toast.title = "Word deleted successfully!";
+                              await loadSavedWords();
+                            } else {
+                              toast.style = Toast.Style.Failure;
+                              toast.title = "Failed to delete word";
+                              toast.message = "Please check your configuration";
+                            }
+                          } catch (error) {
+                            toast.style = Toast.Style.Failure;
+                            toast.title = "Error deleting word";
+                            toast.message = String(error);
+                          }
+                        }}
+                      />
+                      <ActionComponent
+                        title="Update Word"
+                        icon="📝"
+                        onAction={async () => {
+                          const toast = await showToast({
+                            style: Toast.Style.Animated,
+                            title: `Updating "${word.word}"...`,
+                          });
+
+                          try {
+                            const success = await updateWordInVocabulary(
+                              word.word,
+                              word.raw_output,
+                              undefined,
+                              (message) => {
+                                toast.message = message;
+                              },
+                            );
+
+                            if (success) {
+                              toast.style = Toast.Style.Success;
+                              toast.title = "Word updated successfully!";
+                              await loadSavedWords();
+                            } else {
+                              toast.style = Toast.Style.Failure;
+                              toast.title = "Failed to update word";
+                              toast.message = "Please check your configuration";
+                            }
+                          } catch (error) {
+                            toast.style = Toast.Style.Failure;
+                            toast.title = "Error updating word";
+                            toast.message = String(error);
+                          }
+                        }}
+                      />
+                    </>
+                  )}
                 </ActionPanelComponent>
               }
             />
@@ -451,4 +718,4 @@ ${word.tip ? `\n💡*${word.tip}*` : ''}
       )}
     </ListComponent>
   );
-} 
+}
