@@ -212,10 +212,12 @@ pub fn delete_from_vocabulary_notebook(vocabulary_notebook_file: &str, word: &st
                 i += 1;
             }
             
-            // Skip the separator line
+            // Skip the separator line and the blank line after it
             if i < lines.len() && lines[i].trim() == "---" {
-                // Skip the line after separator (usually a blank line)
-                if i + 1 < lines.len() && lines[i + 1].trim().is_empty() {
+                i += 1; // Skip the separator line
+                
+                // Skip the blank line after separator
+                if i < lines.len() && lines[i].trim().is_empty() {
                     i += 1;
                 }
             }

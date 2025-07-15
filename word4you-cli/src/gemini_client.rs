@@ -78,7 +78,7 @@ impl GeminiClient {
         
         if let Some(candidate) = gemini_response.candidates.first() {
             if let Some(part) = candidate.content.parts.first() {
-                return Ok(part.text.clone());
+                return Ok(part.text.clone().trim().to_string());
             }
         }
 
