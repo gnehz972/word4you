@@ -3,7 +3,8 @@ use console::{style, Term};
 use dialoguer::Select;
 use termimad::*;
 use crate::gemini_client::GeminiClient;
-use crate::utils::{commit_and_push_changes, format_commit_message, prepend_to_vocabulary_notebook, delete_from_vocabulary_notebook, validate_word};
+use crate::git_utils::commit_and_push_changes;
+use crate::utils::{format_commit_message, prepend_to_vocabulary_notebook, delete_from_vocabulary_notebook, validate_word};
 use crate::config::Config;
 
 pub struct WordProcessor {

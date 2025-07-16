@@ -7,6 +7,7 @@ mod config;
 mod gemini_client;
 mod utils;
 mod word_processor;
+mod git_utils;
 
 use config::Config;
 

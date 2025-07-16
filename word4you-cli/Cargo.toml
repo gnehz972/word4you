@@ -33,9 +33,6 @@ termimad = "0.28"
 # File and path handling
 anyhow = "1.0"
 
-# Git integration
-git2 = "0.20.2"
-
 # Date and time
 chrono = { version = "0.4", features = ["serde"] }
 
