@@ -28,6 +28,10 @@ pub fn init_git_repo(vocabulary_notebook_file: &str) -> Result<()> {
     if !work_dir.join(".git").exists() {
         run_git_command(&["init"], work_dir)?;
         run_git_command(&["config", "init.defaultBranch", "main"], work_dir)?;
+        run_git_command(&["config", "user.name", "word4you"], work_dir)?;
+        run_git_command(&["config", "user.email", "word4you@example.com"], work_dir)?;
+        run_git_command(&["config", "merge.union.name", "Union merge driver for text files"], work_dir)?;
+        run_git_command(&["config", "merge.union.driver", "git merge-file --union %A %O %B"], work_dir)?;
         println!("🔧 Initialized git repository with main branch in: {}", work_dir.display());
     }
     Ok(())
@@ -46,10 +50,6 @@ pub fn commit_and_push_changes(commit_message: &str, vocabulary_notebook_file: &
         if !remotes.lines().any(|line| line == "origin") {
             run_git_command(&["remote", "add", "origin", remote_url], work_dir)?;
         }
-
-        // Configure the union merge driver
-        run_git_command(&["config", "merge.union.name", "Union merge driver for text files"], work_dir)?;
-        run_git_command(&["config", "merge.union.driver", "git merge-file --union %A %O %B"], work_dir)?;
 
         // Create .gitattributes if it doesn't exist
         let gitattributes_path = work_dir.join(".gitattributes");
