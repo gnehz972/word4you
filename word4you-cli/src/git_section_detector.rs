@@ -6,6 +6,7 @@ use crate::git_utils::run_git_command;
 pub struct SectionChange {
     pub change_type: ChangeType,
     pub word: String,
+    #[allow(dead_code)]
     pub old_content: Option<String>,
     pub new_content: Option<String>,
     pub old_timestamp: Option<String>,
