@@ -14,11 +14,29 @@ pub fn run_git_command(args: &[&str], work_dir: &Path) -> Result<String> {
     if output.status.success() {
         Ok(String::from_utf8_lossy(&output.stdout).to_string())
     } else {
-        Err(anyhow!(
-            "Git command failed: {:?}\nStderr: {}",
-            args,
-            String::from_utf8_lossy(&output.stderr)
-        ))
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        
+        // Provide more context for debugging
+        let error_msg = if stderr.trim().is_empty() && stdout.trim().is_empty() {
+            format!(
+                "Git command failed: {:?}\nExit code: {}\nWorking directory: {}\nLikely cause: Nothing to commit or repository state issue",
+                args,
+                output.status.code().unwrap_or(-1),
+                work_dir.display()
+            )
+        } else {
+            format!(
+                "Git command failed: {:?}\nExit code: {}\nWorking directory: {}\nStderr: {}\nStdout: {}",
+                args,
+                output.status.code().unwrap_or(-1),
+                work_dir.display(),
+                stderr,
+                stdout
+            )
+        };
+        
+        Err(anyhow!(error_msg))
     }
 }
 
@@ -79,8 +97,14 @@ pub fn commit_and_push_changes(commit_message: &str, vocabulary_notebook_file: &
             println!("Warning: Could not fetch from remote. This might be due to network issues or an empty remote repository. {}", e);
         }
 
-        let branch_name = run_git_command(&["rev-parse", "--abbrev-ref", "HEAD"], work_dir)?;
-        let branch_name = branch_name.trim();
+        // Get current branch name, handling case where HEAD doesn't exist yet (new repo)
+        let branch_name = match run_git_command(&["rev-parse", "--abbrev-ref", "HEAD"], work_dir) {
+            Ok(name) => name.trim().to_string(),
+            Err(_) => {
+                // HEAD doesn't exist yet, assume main branch (matches init config)
+                "main".to_string()
+            }
+        };
 
         // Set upstream branch to track origin/main.
         if branch_name == "main" {
@@ -90,11 +114,11 @@ pub fn commit_and_push_changes(commit_message: &str, vocabulary_notebook_file: &
         }
 
         // Pull changes using the union merge strategy, allowing unrelated histories
-        if let Err(e) = run_git_command(&["pull", "--rebase=false", "origin", branch_name, "--allow-unrelated-histories"], work_dir) {
+        if let Err(e) = run_git_command(&["pull", "--rebase=false", "origin", &branch_name, "--allow-unrelated-histories"], work_dir) {
              println!("Pull failed, but continuing to push. This might fail if there are conflicts not handled by the union merge driver. Error: {}", e);
         }
 
-        match run_git_command(&["push", "origin", branch_name], work_dir) {
+        match run_git_command(&["push", "origin", &branch_name], work_dir) {
             Ok(_) => println!("✅ Successfully pushed word to remote"),
             Err(e) => {
                 println!("⚠️  Cannot push. Please resolve conflicts manually and push.");
@@ -120,9 +144,12 @@ pub fn sync_with_section_awareness(
     // Initialize git repo if needed
     init_git_repo(vocabulary_file)?;
     
+    // Always commit local changes first, before any sync operations
+    commit_local_changes("Update vocabulary", vocabulary_file)?;
+    
     if git_remote_url.is_none() {
-        // Local-only mode - just commit any pending changes
-        return commit_local_changes("Update vocabulary", vocabulary_file);
+        // Local-only mode - we're done after committing
+        return Ok(());
     }
     
     // Create config for section synchronizer
@@ -174,6 +201,8 @@ fn commit_local_changes(message: &str, vocabulary_file: &str) -> Result<()> {
     if !status.trim().is_empty() {
         run_git_command(&["commit", "-m", message], work_dir)?;
         println!("✅ Successfully committed changes locally");
+    } else {
+        println!("ℹ️  No local changes to commit");
     }
     
     Ok(())

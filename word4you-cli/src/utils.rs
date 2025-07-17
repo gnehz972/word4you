@@ -33,8 +33,22 @@ pub fn prepend_to_vocabulary_notebook(vocabulary_notebook_file: &str, content: &
     // Generate local timestamp in ISO 8601 format with 3-digit milliseconds
     let local_timestamp = chrono::Local::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true);
     
-    // Prepend new content with timestamp wrapped in HTML comment
-    let new_content = format!("{}\n\n<!-- timestamp={} -->\n---\n\n{}", content, local_timestamp, existing_content);
+    // Check if content already has timestamp and separator
+    let formatted_content = if content.contains("<!-- timestamp=") && content.contains("---") {
+        // Content is already formatted (e.g., from git sync), use as-is
+        content.to_string()
+    } else {
+        // Add timestamp and separator for new content
+        format!("{}\n\n<!-- timestamp={} -->\n---", content, local_timestamp)
+    };
+    
+    // Prepend new content, ensuring proper spacing
+    let new_content = if existing_content.trim().is_empty() {
+        format!("{}\n", formatted_content)
+    } else {
+        format!("{}\n\n{}", formatted_content, existing_content)
+    };
+    
     fs::write(vocabulary_notebook_file, new_content)?;
     
     Ok(())

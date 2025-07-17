@@ -259,8 +259,13 @@ impl WordProcessor {
             }
             
             // Set up upstream tracking for main branch
-            let current_branch = run_git_command(&["rev-parse", "--abbrev-ref", "HEAD"], work_dir)?;
-            let current_branch = current_branch.trim();
+            let current_branch = match run_git_command(&["rev-parse", "--abbrev-ref", "HEAD"], work_dir) {
+                Ok(name) => name.trim().to_string(),
+                Err(_) => {
+                    // HEAD doesn't exist yet, assume main branch (matches init config)
+                    "main".to_string()
+                }
+            };
             
             // Set upstream branch to track origin/main (ignore errors if remote doesn't exist yet)
             if current_branch == "main" {
