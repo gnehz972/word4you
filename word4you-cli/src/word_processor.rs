@@ -3,7 +3,7 @@ use console::{style, Term};
 use dialoguer::Select;
 use termimad::*;
 use crate::gemini_client::GeminiClient;
-use crate::git_utils::{sync_with_section_awareness, run_git_command};
+use crate::git_utils::{sync_with_section_awareness, run_git_command, init_git_repo};
 use crate::utils::{prepend_to_vocabulary_notebook, delete_from_vocabulary_notebook, validate_word};
 use std::path::Path;
 use crate::config::Config;
@@ -246,6 +246,27 @@ impl WordProcessor {
         let work_dir = Path::new(&self.config.vocabulary_notebook_file)
             .parent()
             .ok_or_else(|| anyhow::anyhow!("Invalid vocabulary file path"))?;
+        
+        // Initialize git repo if it doesn't exist
+        init_git_repo(&self.config.vocabulary_notebook_file)?;
+        
+        // Configure git remote if remote URL is available
+        if let Some(ref remote_url) = self.config.git_remote_url {
+            // Check if remote 'origin' exists, if not add it
+            let remotes = run_git_command(&["remote"], work_dir)?;
+            if !remotes.lines().any(|line| line == "origin") {
+                run_git_command(&["remote", "add", "origin", remote_url], work_dir)?;
+            }
+            
+            // Set up upstream tracking for main branch
+            let current_branch = run_git_command(&["rev-parse", "--abbrev-ref", "HEAD"], work_dir)?;
+            let current_branch = current_branch.trim();
+            
+            // Set upstream branch to track origin/main (ignore errors if remote doesn't exist yet)
+            if current_branch == "main" {
+                let _ = run_git_command(&["branch", "--set-upstream-to=origin/main", "main"], work_dir);
+            }
+        }
         
         // Add all changes
         run_git_command(&["add", "."], work_dir)?;
