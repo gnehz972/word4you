@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use chrono::Utc;
+
 use std::fs;
 use std::fs::File;
 use std::path::Path;
@@ -146,10 +146,7 @@ pub fn delete_from_vocabulary_notebook(vocabulary_notebook_file: &str, word: &st
     Ok(())
 }
 
-pub fn format_commit_message(word: &str) -> String {
-    let timestamp = Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
-    format!("Add word: {} - {}", word, timestamp)
-}
+
 
 pub fn validate_word(word: &str) -> Result<()> {
     if word.trim().is_empty() {

@@ -21,8 +21,7 @@ pub enum ChangeType {
 
 pub struct SectionChanges {
     pub local_changes: Vec<SectionChange>,
-    pub has_common_parent: bool,
-    pub common_parent_hash: Option<String>,
+    pub remote_changes: Vec<SectionChange>,
 }
 
 pub struct GitSectionDetector {
@@ -51,10 +50,10 @@ impl GitSectionDetector {
             Some(commit_hash) => {
                 // Compare with common parent
                 let local_changes = self.get_changes_since_commit(&commit_hash)?;
+                let remote_changes = self.get_remote_changes_since_commit(&commit_hash)?;
                 Ok(SectionChanges {
                     local_changes,
-                    has_common_parent: true,
-                    common_parent_hash: Some(commit_hash),
+                    remote_changes,
                 })
             }
             None => {
@@ -62,33 +61,13 @@ impl GitSectionDetector {
                 let local_changes = self.get_all_local_sections_as_new()?;
                 Ok(SectionChanges {
                     local_changes,
-                    has_common_parent: false,
-                    common_parent_hash: None,
+                    remote_changes: Vec::new(),
                 })
             }
         }
     }
     
-    pub fn detect_remote_changes(&self, common_parent: Option<&str>) -> Result<Vec<SectionChange>> {
-        match common_parent {
-            Some(commit_hash) => {
-                // Get diff from common parent to remote
-                let diff_output = run_git_command(&[
-                    "diff", 
-                    commit_hash, 
-                    "origin/main", 
-                    "--", 
-                    &self.get_relative_vocabulary_path()?
-                ], &self.work_dir)?;
-                
-                self.parse_diff_for_sections(&diff_output)
-            }
-            None => {
-                // No common parent - get all remote sections as new
-                self.get_all_remote_sections_as_new()
-            }
-        }
-    }
+
     
     fn find_common_parent(&self) -> Result<Option<String>> {
         // Try to find merge base with remote
@@ -123,37 +102,23 @@ impl GitSectionDetector {
         self.parse_diff_for_sections(&diff_output)
     }
     
+    fn get_remote_changes_since_commit(&self, commit_hash: &str) -> Result<Vec<SectionChange>> {
+        // Get git diff from common parent to origin/main
+        let diff_output = run_git_command(&[
+            "diff", 
+            commit_hash, 
+            "origin/main", 
+            "--", 
+            &self.get_relative_vocabulary_path()?
+        ], &self.work_dir)?;
+        
+        // Parse the diff to identify changed sections
+        self.parse_diff_for_sections(&diff_output)
+    }
+    
     fn get_all_local_sections_as_new(&self) -> Result<Vec<SectionChange>> {
         // Parse current vocabulary file and treat all sections as new
         let sections = self.parse_current_vocabulary_file()?;
-        
-        Ok(sections.into_iter().map(|(word, content, timestamp)| {
-            SectionChange {
-                change_type: ChangeType::Added,
-                word,
-                old_content: None,
-                new_content: Some(content),
-                old_timestamp: None,
-                new_timestamp: Some(timestamp),
-            }
-        }).collect())
-    }
-    
-    fn get_all_remote_sections_as_new(&self) -> Result<Vec<SectionChange>> {
-        // Get remote version of vocabulary file
-        let remote_content = match run_git_command(&[
-            "show", 
-            "origin/main:vocabulary_notebook.md"
-        ], &self.work_dir) {
-            Ok(content) => content,
-            Err(_) => {
-                // Remote file doesn't exist or can't be accessed
-                return Ok(Vec::new());
-            }
-        };
-        
-        // Parse remote sections
-        let sections = self.parse_vocabulary_content(&remote_content)?;
         
         Ok(sections.into_iter().map(|(word, content, timestamp)| {
             SectionChange {

@@ -78,13 +78,13 @@ impl GitSectionSynchronizer {
         
         // 3. Detect remote section changes
         self.term.write_line("🔍 Analyzing remote section changes...")?;
-        let remote_changes = self.detector.detect_remote_changes(section_changes.common_parent_hash.as_deref())?;
+        let remote_changes = &section_changes.remote_changes;
         
         if remote_changes.is_empty() {
             self.term.write_line("ℹ️  No remote changes detected")?;
         } else {
             self.term.write_line(&format!("📥 Found {} remote section changes", remote_changes.len()))?;
-            for change in &remote_changes {
+            for change in remote_changes {
                 match change.change_type {
                     ChangeType::Added => self.term.write_line(&format!("  + Remote added: {}", change.word))?,
                     ChangeType::Modified => self.term.write_line(&format!("  ~ Remote modified: {}", change.word))?,
@@ -287,35 +287,7 @@ impl GitSectionSynchronizer {
         }
     }
     
-    fn reposition_local_section_to_top(&self, local_change: &SectionChange) -> Result<()> {
-        // Extract the current content of the local section and move it to the top
-        match local_change.change_type {
-            ChangeType::Added | ChangeType::Modified => {
-                if let Some(ref content) = local_change.new_content {
-                    // First, delete the existing version from its current position
-                    let _ = crate::utils::delete_from_vocabulary_notebook(
-                        &self.config.vocabulary_notebook_file,
-                        &local_change.word,
-                        local_change.new_timestamp.as_deref()
-                            .or(local_change.old_timestamp.as_deref())
-                    );
-                    
-                    // Then prepend it to the top (newer content goes on top)
-                    crate::utils::prepend_to_vocabulary_notebook(
-                        &self.config.vocabulary_notebook_file,
-                        content
-                    )?;
-                    
-                    self.term.write_line(&format!("📝 Repositioned '{}' to top based on newer timestamp", local_change.word))?;
-                }
-            }
-            ChangeType::Deleted => {
-                // Nothing to reposition for deleted content
-            }
-        }
-        
-        Ok(())
-    }
+
 
     fn resolve_git_merge_conflicts(&self, conflict_resolutions: &std::collections::HashMap<String, ConflictResolution>) -> Result<()> {
         // Read the conflicted file
@@ -497,79 +469,7 @@ impl GitSectionSynchronizer {
         Ok(final_content.trim_end().to_string())
     }
 
-    fn resolve_conflict_markers(&self, content: &str, conflict_resolutions: &std::collections::HashMap<String, ConflictResolution>) -> Result<String> {
-        let mut resolved_content = String::new();
-        let mut lines = content.lines();
-        
-        while let Some(line) = lines.next() {
-            if line.starts_with("<<<<<<< HEAD") {
-                // Start of conflict - collect local and remote versions
-                let mut local_section = Vec::new();
-                let mut remote_section = Vec::new();
-                let mut in_remote = false;
-                
-                // Collect conflict content
-                while let Some(conflict_line) = lines.next() {
-                    if conflict_line.starts_with("=======") {
-                        in_remote = true;
-                    } else if conflict_line.starts_with(">>>>>>> origin/main") {
-                        break;
-                    } else if in_remote {
-                        remote_section.push(conflict_line);
-                    } else {
-                        local_section.push(conflict_line);
-                    }
-                }
-                
-                // Determine which section this conflict is about
-                let word = self.extract_word_from_section(&local_section, &remote_section)?;
-                let word_key = word.to_lowercase();
-                
-                // Apply resolution based on our conflict analysis
-                match conflict_resolutions.get(&word_key) {
-                    Some(ConflictResolution::UseLocal) => {
-                        self.term.write_line(&format!("🎯 Resolving conflict for '{}': using local version", word))?;
-                        resolved_content.push_str(&local_section.join("\n"));
-                        if !local_section.is_empty() {
-                            resolved_content.push('\n');
-                        }
-                    }
-                    Some(ConflictResolution::UseRemote) => {
-                        self.term.write_line(&format!("🎯 Resolving conflict for '{}': using remote version", word))?;
-                        resolved_content.push_str(&remote_section.join("\n"));
-                        if !remote_section.is_empty() {
-                            resolved_content.push('\n');
-                        }
-                    }
-                    _ => {
-                        // No resolution found - default to timestamp comparison
-                        let local_timestamp = self.extract_timestamp_from_lines(&local_section);
-                        let remote_timestamp = self.extract_timestamp_from_lines(&remote_section);
-                        
-                        if self.is_timestamp_newer(&local_timestamp, &remote_timestamp)? {
-                            self.term.write_line(&format!("🎯 Resolving conflict for '{}': local has newer timestamp", word))?;
-                            resolved_content.push_str(&local_section.join("\n"));
-                            if !local_section.is_empty() {
-                                resolved_content.push('\n');
-                            }
-                        } else {
-                            self.term.write_line(&format!("🎯 Resolving conflict for '{}': remote has newer timestamp", word))?;
-                            resolved_content.push_str(&remote_section.join("\n"));
-                            if !remote_section.is_empty() {
-                                resolved_content.push('\n');
-                            }
-                        }
-                    }
-                }
-            } else {
-                // Regular line - keep as is
-                resolved_content.push_str(line);
-                resolved_content.push('\n');
-            }
-        }
-        
-        Ok(resolved_content)
-    }
+
     
     fn extract_word_from_section(&self, local_section: &[&str], remote_section: &[&str]) -> Result<String> {
         // Try to find a word header (## word) in either section
@@ -690,107 +590,9 @@ impl GitSectionSynchronizer {
         Ok(sections)
     }
 
-    fn replace_local_with_remote_base(&self) -> Result<()> {
-        let work_dir = Path::new(&self.config.vocabulary_notebook_file)
-            .parent()
-            .unwrap();
-        
-        // Get remote version of vocabulary file
-        match run_git_command(&["show", "origin/main:vocabulary_notebook.md"], work_dir) {
-            Ok(remote_content) => {
-                // Replace local file with remote content
-                std::fs::write(&self.config.vocabulary_notebook_file, remote_content)?;
-                self.term.write_line("📋 Replaced local file with remote base")?;
-            }
-            Err(_) => {
-                // Remote file doesn't exist or can't be accessed - keep local as is
-                self.term.write_line("ℹ️  Remote base not available, using local as base")?;
-            }
-        }
-        
-        Ok(())
-    }
-    
-    fn apply_local_change_on_remote_base(&self, local_change: &SectionChange) -> Result<()> {
-        match local_change.change_type {
-            ChangeType::Added | ChangeType::Modified => {
-                if let Some(ref content) = local_change.new_content {
-                    // Check if this word already exists in the remote base (conflict scenario)
-                    if let Ok(_) = crate::utils::delete_from_vocabulary_notebook(
-                        &self.config.vocabulary_notebook_file,
-                        &local_change.word,
-                        None
-                    ) {
-                        self.term.write_line(&format!("🔄 Replacing remote version of '{}' with local changes", local_change.word))?;
-                    } else {
-                        self.term.write_line(&format!("➕ Adding local change '{}' to remote base", local_change.word))?;
-                    }
-                    
-                    // Apply local change on top
-                    crate::utils::prepend_to_vocabulary_notebook(
-                        &self.config.vocabulary_notebook_file,
-                        content
-                    )?;
-                }
-            }
-            ChangeType::Deleted => {
-                // Delete from remote base if it exists
-                if let Ok(_) = crate::utils::delete_from_vocabulary_notebook(
-                    &self.config.vocabulary_notebook_file,
-                    &local_change.word,
-                    local_change.old_timestamp.as_deref()
-                ) {
-                    self.term.write_line(&format!("🗑️  Deleted '{}' from remote base (local deletion)", local_change.word))?;
-                }
-            }
-        }
-        
-        Ok(())
-    }
 
-    fn apply_remote_section(&self, remote_change: &SectionChange) -> Result<()> {
-        // Apply remote section change to local file
-        match remote_change.change_type {
-            ChangeType::Added | ChangeType::Modified => {
-                if let Some(ref content) = remote_change.new_content {
-                    // First, delete any existing version of this word
-                    let _ = crate::utils::delete_from_vocabulary_notebook(
-                        &self.config.vocabulary_notebook_file,
-                        &remote_change.word,
-                        None
-                    );
-                    
-                    // Ensure remote content has proper formatting
-                    let formatted_content = if !content.ends_with("---") && !content.contains("<!-- timestamp=") {
-                        // Remote content missing timestamp/separator, add them
-                        let timestamp = remote_change.new_timestamp.as_ref()
-                            .or(remote_change.old_timestamp.as_ref())
-                            .cloned()
-                            .unwrap_or_else(|| chrono::Local::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true));
-                        format!("{}\n\n<!-- timestamp={} -->\n---", content, timestamp)
-                    } else {
-                        content.clone()
-                    };
-                    
-                    // Then add the remote version
-                    crate::utils::prepend_to_vocabulary_notebook(
-                        &self.config.vocabulary_notebook_file,
-                        &formatted_content
-                    )?;
-                }
-            }
-            ChangeType::Deleted => {
-                // Delete the section
-                crate::utils::delete_from_vocabulary_notebook(
-                    &self.config.vocabulary_notebook_file,
-                    &remote_change.word,
-                    remote_change.old_timestamp.as_deref()
-                )?;
-            }
-        }
-        
-        Ok(())
-    }
+    
+
     
     fn perform_git_merge_with_section_awareness(&self, _local_changes: &SectionChanges, _remote_changes: &[SectionChange], conflict_resolutions: &std::collections::HashMap<String, ConflictResolution>) -> Result<()> {
         let work_dir = Path::new(&self.config.vocabulary_notebook_file)
@@ -851,70 +653,9 @@ impl GitSectionSynchronizer {
         Ok(())
     }
 
-    fn perform_section_aware_merge(&self, local_changes: &SectionChanges, remote_changes: &[SectionChange]) -> Result<()> {
-        // Apply remote changes that don't conflict with local changes
-        let local_words: std::collections::HashSet<String> = local_changes.local_changes.iter()
-            .map(|c| c.word.to_lowercase())
-            .collect();
-        
-        // Collect non-conflicting remote changes and sort by timestamp (newest first)
-        let mut non_conflicting_remote: Vec<&SectionChange> = remote_changes.iter()
-            .filter(|change| !local_words.contains(&change.word.to_lowercase()))
-            .collect();
-        
-        // Sort by timestamp, newest first (for proper positioning at top)
-        non_conflicting_remote.sort_by(|a, b| {
-            let a_timestamp = a.new_timestamp.as_ref().or(a.old_timestamp.as_ref());
-            let b_timestamp = b.new_timestamp.as_ref().or(b.old_timestamp.as_ref());
-            
-            match (a_timestamp, b_timestamp) {
-                (Some(a_ts), Some(b_ts)) => {
-                    match (chrono::DateTime::parse_from_rfc3339(a_ts), 
-                           chrono::DateTime::parse_from_rfc3339(b_ts)) {
-                        (Ok(a_time), Ok(b_time)) => b_time.cmp(&a_time), // Reverse for newest first
-                        _ => std::cmp::Ordering::Equal,
-                    }
-                }
-                (Some(_), None) => std::cmp::Ordering::Less,    // A has timestamp, B doesn't
-                (None, Some(_)) => std::cmp::Ordering::Greater, // B has timestamp, A doesn't  
-                (None, None) => std::cmp::Ordering::Equal,      // Neither has timestamp
-            }
-        });
-        
-        // Apply remote changes in timestamp order (newest first)
-        for remote_change in non_conflicting_remote {
-            self.apply_remote_section(remote_change)?;
-        }
-        
-        Ok(())
-    }
+
     
-    fn complete_section_merge(&self) -> Result<()> {
-        // Finalize the merge process
-        let work_dir = Path::new(&self.config.vocabulary_notebook_file)
-            .parent()
-            .unwrap();
-        
-        // Add all changes
-        run_git_command(&["add", "."], work_dir)?;
-        
-        // Check if there are changes to commit after merge
-        let status = run_git_command(&["status", "--porcelain"], work_dir)?;
-        if !status.trim().is_empty() {
-            // Commit the merge results
-            let commit_message = "Section-aware merge - no conflicts";
-            if let Err(e) = run_git_command(&["commit", "-m", commit_message], work_dir) {
-                self.term.write_line(&format!("⚠️  Could not commit merge: {}", e))?;
-                self.term.write_line("💡 You may need to commit changes manually")?;
-            } else {
-                self.term.write_line("✅ Committed section merge successfully")?;
-            }
-        } else {
-            self.term.write_line("ℹ️  No changes to commit after merge")?;
-        }
-        
-        Ok(())
-    }
+
     
     fn commit_changes_if_needed(&self) -> Result<()> {
         let work_dir = Path::new(&self.config.vocabulary_notebook_file)
