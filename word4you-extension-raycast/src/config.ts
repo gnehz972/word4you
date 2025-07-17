@@ -5,11 +5,11 @@ import os from "os";
 export interface Preferences {
   geminiApiKey: string;
   vocabularyBaseDir: string;
+  gitEnabled: boolean;
   gitRemoteUrl: string;
   sshPrivateKeyPath: string;
   sshPublicKeyPath: string;
   geminiModelName: string;
-  gitEnabled: boolean;
 }
 
 // Cross-platform path resolution for vocabulary file
