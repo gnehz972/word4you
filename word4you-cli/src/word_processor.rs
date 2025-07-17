@@ -3,8 +3,9 @@ use console::{style, Term};
 use dialoguer::Select;
 use termimad::*;
 use crate::gemini_client::GeminiClient;
-use crate::git_utils::commit_and_push_changes;
-use crate::utils::{format_commit_message, prepend_to_vocabulary_notebook, delete_from_vocabulary_notebook, validate_word};
+use crate::git_utils::{sync_with_section_awareness, run_git_command};
+use crate::utils::{prepend_to_vocabulary_notebook, delete_from_vocabulary_notebook, validate_word};
+use std::path::Path;
 use crate::config::Config;
 
 pub struct WordProcessor {
@@ -146,9 +147,18 @@ impl WordProcessor {
         term.write_line("✅ Successfully saved word locally")?;
         
         if self.config.git_enabled {
-            term.write_line("📝 Committing changes...")?;
-            let commit_message = format_commit_message(word);
-            commit_and_push_changes(&commit_message, &self.config.vocabulary_notebook_file, self.config.git_remote_url.as_deref(), self.config.ssh_private_key_path.as_deref(), self.config.ssh_public_key_path.as_deref())?;
+            // First commit changes locally
+            term.write_line("📝 Committing changes locally...")?;
+            self.commit_local_changes(word, "Add")?;
+            
+            // Then perform section-aware sync
+            term.write_line("🔄 Synchronizing with section awareness...")?;
+            sync_with_section_awareness(
+                &self.config.vocabulary_notebook_file,
+                self.config.git_remote_url.as_deref(),
+                self.config.ssh_private_key_path.as_deref(),
+                self.config.ssh_public_key_path.as_deref()
+            )?;
         } else {
             term.write_line("ℹ️  Git operations disabled (GIT_ENABLED=false)")?;
         }
@@ -169,9 +179,18 @@ impl WordProcessor {
         term.write_line("✅ Successfully deleted word locally")?;
         
         if self.config.git_enabled {
-            term.write_line("📝 Committing changes...")?;
-            let _commit_message = format!("Delete word: {} - {}", word, chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"));
-            commit_and_push_changes(&_commit_message, &self.config.vocabulary_notebook_file, self.config.git_remote_url.as_deref(), self.config.ssh_private_key_path.as_deref(), self.config.ssh_public_key_path.as_deref())?;
+            // First commit changes locally
+            term.write_line("📝 Committing changes locally...")?;
+            self.commit_local_changes(word, "Delete")?;
+            
+            // Then perform section-aware sync
+            term.write_line("🔄 Synchronizing with section awareness...")?;
+            sync_with_section_awareness(
+                &self.config.vocabulary_notebook_file,
+                self.config.git_remote_url.as_deref(),
+                self.config.ssh_private_key_path.as_deref(),
+                self.config.ssh_public_key_path.as_deref()
+            )?;
         } else {
             term.write_line("ℹ️  Git operations disabled (GIT_ENABLED=false)")?;
         }
@@ -203,13 +222,48 @@ impl WordProcessor {
         term.write_line("✅ Successfully updated word locally")?;
         
         if self.config.git_enabled {
-            term.write_line("📝 Committing changes...")?;
-            let _commit_message = format!("Update word: {} - {}", word, chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"));
-            commit_and_push_changes(&_commit_message, &self.config.vocabulary_notebook_file, self.config.git_remote_url.as_deref(), self.config.ssh_private_key_path.as_deref(), self.config.ssh_public_key_path.as_deref())?;
+            // First commit changes locally
+            term.write_line("📝 Committing changes locally...")?;
+            self.commit_local_changes(word, "Update")?;
+            
+            // Then perform section-aware sync
+            term.write_line("🔄 Synchronizing with section awareness...")?;
+            sync_with_section_awareness(
+                &self.config.vocabulary_notebook_file,
+                self.config.git_remote_url.as_deref(),
+                self.config.ssh_private_key_path.as_deref(),
+                self.config.ssh_public_key_path.as_deref()
+            )?;
         } else {
             term.write_line("ℹ️  Git operations disabled (GIT_ENABLED=false)")?;
         }
 
+        Ok(())
+    }
+    
+    /// Helper method to commit local changes before sync
+    fn commit_local_changes(&self, word: &str, operation: &str) -> Result<()> {
+        let work_dir = Path::new(&self.config.vocabulary_notebook_file)
+            .parent()
+            .ok_or_else(|| anyhow::anyhow!("Invalid vocabulary file path"))?;
+        
+        // Add all changes
+        run_git_command(&["add", "."], work_dir)?;
+        
+        // Check if there are changes to commit
+        let status = run_git_command(&["status", "--porcelain"], work_dir)?;
+        if !status.trim().is_empty() {
+            // Create commit message
+            let commit_message = format!("{} word: {} - {}", 
+                operation, 
+                word, 
+                chrono::Utc::now().format("%Y-%m-%d %H:%M:%S")
+            );
+            
+            // Commit changes
+            run_git_command(&["commit", "-m", &commit_message], work_dir)?;
+        }
+        
         Ok(())
     }
 }

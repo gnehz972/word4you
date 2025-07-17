@@ -8,6 +8,8 @@ mod gemini_client;
 mod utils;
 mod word_processor;
 mod git_utils;
+mod git_section_detector;
+mod git_section_sync;
 
 use config::Config;
 
@@ -109,6 +111,13 @@ enum Commands {
         #[arg(long)]
         timestamp: Option<String>,
     },
+    
+    /// Synchronize vocabulary with remote using section-based logic
+    Sync {
+        /// Force sync even if there are conflicts
+        #[arg(long)]
+        force: bool,
+    },
 }
 
 
@@ -156,6 +165,12 @@ async fn main() -> Result<()> {
         }
         Some(Commands::Update { word, content, timestamp }) => {
             if let Err(e) = update_word(&term, word, content, timestamp.as_deref()).await {
+                eprintln!("❌ Error: {}", e);
+                return Ok(());
+            }
+        }
+        Some(Commands::Sync { force }) => {
+            if let Err(e) = sync_vocabulary(&term, *force).await {
                 eprintln!("❌ Error: {}", e);
                 return Ok(());
             }
@@ -248,6 +263,23 @@ async fn test_api_connection(term: &Term) -> anyhow::Result<()> {
 
 fn show_info(term: &Term) {
     term.write_line(&style(INTRO).cyan().to_string()).unwrap();
+}
+
+async fn sync_vocabulary(term: &Term, _force: bool) -> anyhow::Result<()> {
+    // Validate configuration
+    let config = Config::load()?;
+    
+    term.write_line("🔄 Starting section-aware vocabulary synchronization...")?;
+    
+    // Use section-aware synchronization
+    git_utils::sync_with_section_awareness(
+        &config.vocabulary_notebook_file,
+        config.git_remote_url.as_deref(),
+        config.ssh_private_key_path.as_deref(),
+        config.ssh_public_key_path.as_deref()
+    )?;
+    
+    Ok(())
 }
 
 async fn interactive_mode(term: &Term) -> anyhow::Result<()> {
