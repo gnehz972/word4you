@@ -12,8 +12,8 @@
 *Avoid overusing "nice" as it can be vague. Use more descriptive words to express your specific meaning.*
 
 <!-- timestamp=2025-07-17T14:43:47.940+08:00 -->
----
 
+---
 ## three
 
 /*θriː/*
@@ -28,4 +28,5 @@
 *Note that "three" can also be used as an adjective describing something that has three parts or elements.*
 
 <!-- timestamp=2025-07-17T13:07:19.315+08:00 -->
+
 ---

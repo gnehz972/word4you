@@ -39,7 +39,7 @@ pub fn prepend_to_vocabulary_notebook(vocabulary_notebook_file: &str, content: &
         content.to_string()
     } else {
         // Add timestamp and separator for new content
-        format!("{}\n\n<!-- timestamp={} -->\n---", content, local_timestamp)
+        format!("{}\n\n<!-- timestamp={} -->\n\n---", content, local_timestamp)
     };
     
     // Prepend new content, ensuring proper spacing
