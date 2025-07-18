@@ -1,13 +1,12 @@
 use crate::config::Config;
 use crate::gemini_client::GeminiClient;
-use crate::git_utils::{init_git_repo_with_remote, run_git_command};
+use crate::git_utils::{commit, sync_with_remote};
 use crate::utils::{
-    delete_from_vocabulary_notebook, prepend_to_vocabulary_notebook, validate_word,
+    delete_from_vocabulary_notebook, prepend_to_vocabulary_notebook, validate_word
 };
 use anyhow::Result;
 use console::{style, Term};
 use dialoguer::Select;
-use std::path::Path;
 use termimad::*;
 
 pub struct WordProcessor {
@@ -179,6 +178,14 @@ impl WordProcessor {
             // Commit changes locally
             term.write_line("📝 Committing changes locally...")?;
             self.commit_local_changes(word, "Add")?;
+
+            // Then perform section-aware sync
+            term.write_line("🔄 Synchronizing with section awareness...")?;
+            sync_with_remote(
+                &self.config.vocabulary_notebook_file,
+                self.config.git_remote_url.as_deref(),
+            )?;
+
         } else {
             term.write_line("ℹ️  Git operations disabled (GIT_ENABLED=false)")?;
         }
@@ -205,6 +212,13 @@ impl WordProcessor {
             // Commit changes locally
             term.write_line("📝 Committing changes locally...")?;
             self.commit_local_changes(word, "Delete")?;
+
+            // Then perform section-aware sync
+            term.write_line("🔄 Synchronizing with section awareness...")?;
+            sync_with_remote(
+                &self.config.vocabulary_notebook_file,
+                self.config.git_remote_url.as_deref(),
+            )?;
         } else {
             term.write_line("ℹ️  Git operations disabled (GIT_ENABLED=false)")?;
         }
@@ -255,6 +269,13 @@ impl WordProcessor {
             // Commit changes locally
             term.write_line("📝 Committing changes locally...")?;
             self.commit_local_changes(word, "Update")?;
+
+            // Then perform section-aware sync
+            term.write_line("🔄 Synchronizing with section awareness...")?;
+            sync_with_remote(
+                &self.config.vocabulary_notebook_file,
+                self.config.git_remote_url.as_deref(),
+            )?;
         } else {
             term.write_line("ℹ️  Git operations disabled (GIT_ENABLED=false)")?;
         }
@@ -264,60 +285,16 @@ impl WordProcessor {
 
     /// Helper method to commit local changes before sync
     fn commit_local_changes(&self, word: &str, operation: &str) -> Result<()> {
-        let work_dir = Path::new(&self.config.vocabulary_notebook_file)
-            .parent()
-            .ok_or_else(|| anyhow::anyhow!("Invalid vocabulary file path"))?;
-
-        // Initialize git repo if it doesn't exist
-        init_git_repo_with_remote(
+        let commit_message = format!(
+            "{} word: {} - {}",
+            operation,
+            word,
+            chrono::Utc::now().format("%Y-%m-%d %H:%M:%S")
+        );
+        commit(
+            &commit_message,
             &self.config.vocabulary_notebook_file,
-            self.config.git_remote_url.as_deref(),
         )?;
-
-        // Configure git remote if remote URL is available
-        if let Some(ref remote_url) = self.config.git_remote_url {
-            // Check if remote 'origin' exists, if not add it
-            let remotes = run_git_command(&["remote"], work_dir)?;
-            if !remotes.lines().any(|line| line == "origin") {
-                run_git_command(&["remote", "add", "origin", remote_url], work_dir)?;
-            }
-
-            // Set up upstream tracking for main branch
-            let current_branch =
-                match run_git_command(&["rev-parse", "--abbrev-ref", "HEAD"], work_dir) {
-                    Ok(name) => name.trim().to_string(),
-                    Err(_) => {
-                        // HEAD doesn't exist yet, assume main branch (matches init config)
-                        "main".to_string()
-                    }
-                };
-
-            // Set upstream branch to track origin/main (ignore errors if remote doesn't exist yet)
-            if current_branch == "main" {
-                let _ = run_git_command(
-                    &["branch", "--set-upstream-to=origin/main", "main"],
-                    work_dir,
-                );
-            }
-        }
-
-        // Add all changes
-        run_git_command(&["add", "."], work_dir)?;
-
-        // Check if there are changes to commit
-        let status = run_git_command(&["status", "--porcelain"], work_dir)?;
-        if !status.trim().is_empty() {
-            // Create commit message
-            let commit_message = format!(
-                "{} word: {} - {}",
-                operation,
-                word,
-                chrono::Utc::now().format("%Y-%m-%d %H:%M:%S")
-            );
-
-            // Commit changes
-            run_git_command(&["commit", "-m", &commit_message], work_dir)?;
-        }
 
         Ok(())
     }

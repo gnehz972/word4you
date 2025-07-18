@@ -5,6 +5,7 @@ use word_processor::WordProcessor;
 
 mod config;
 mod gemini_client;
+mod git_section_sync;
 mod git_utils;
 mod utils;
 mod word_processor;
