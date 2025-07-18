@@ -284,8 +284,6 @@ async fn sync_vocabulary(term: &Term, _force: bool) -> anyhow::Result<()> {
     git_utils::sync_with_section_awareness(
         &config.vocabulary_notebook_file,
         config.git_remote_url.as_deref(),
-        config.ssh_private_key_path.as_deref(),
-        config.ssh_public_key_path.as_deref(),
     )?;
 
     Ok(())

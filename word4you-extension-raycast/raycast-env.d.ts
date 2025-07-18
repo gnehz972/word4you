@@ -21,12 +21,8 @@ declare namespace Preferences {
   "vocabularyBaseDir": string,
   /** Enable Git Operations - Enable automatic Git commit and push operations when saving words */
   "gitEnabled": boolean,
-  /** Git Remote URL - Git repository URL for vocabulary notebook backup (SSH URLs only) */
+  /** Git Remote URL - Git repository URL for vocabulary notebook backup */
   "gitRemoteUrl"?: string,
-  /** SSH Private Key Path - Path to SSH private key file for Git authentication (leave empty for default: ~/.ssh/id_ed25519) */
-  "sshPrivateKeyPath": string,
-  /** SSH Public Key Path - Path to SSH public key file for Git authentication (leave empty for default: ~/.ssh/id_ed25519.pub) */
-  "sshPublicKeyPath": string,
   /** Gemini Model Name - Gemini model name to use for AI explanations (leave empty for default: gemini-2.0-flash-001) */
   "geminiModelName": string
 }

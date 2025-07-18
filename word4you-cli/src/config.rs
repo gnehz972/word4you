@@ -8,8 +8,6 @@ pub struct Config {
     pub gemini_api_key: String,
     pub vocabulary_notebook_file: String,
     pub git_remote_url: Option<String>,
-    pub ssh_private_key_path: Option<String>,
-    pub ssh_public_key_path: Option<String>,
     pub gemini_prompt_template: String,
     pub git_enabled: bool,
     pub gemini_model_name: String,
@@ -41,18 +39,6 @@ impl Config {
 
         let vocabulary_notebook_file = vocabulary_notebook_file.to_string_lossy().to_string();
         let git_remote_url = env::var("GIT_REMOTE_URL").ok();
-
-        // SSH key paths with defaults
-        let home_dir = env::var("HOME")
-            .unwrap_or_else(|_| env::var("USERPROFILE").unwrap_or_else(|_| ".".to_string()));
-        let ssh_private_key_path = env::var("SSH_PRIVATE_KEY_PATH")
-            .ok()
-            .map(|path| expand_tilde_path(&path))
-            .or_else(|| Some(format!("{}/.ssh/id_ed25519", home_dir)));
-        let ssh_public_key_path = env::var("SSH_PUBLIC_KEY_PATH")
-            .ok()
-            .map(|path| expand_tilde_path(&path))
-            .or_else(|| Some(format!("{}/.ssh/id_ed25519.pub", home_dir)));
 
         // Git enabled control - default to false
         let git_enabled = env::var("GIT_ENABLED")
@@ -89,8 +75,6 @@ Important formatting rules:
             gemini_api_key,
             vocabulary_notebook_file,
             git_remote_url,
-            ssh_private_key_path,
-            ssh_public_key_path,
             gemini_prompt_template,
             git_enabled,
             gemini_model_name,

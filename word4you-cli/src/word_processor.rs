@@ -185,8 +185,6 @@ impl WordProcessor {
             sync_with_section_awareness(
                 &self.config.vocabulary_notebook_file,
                 self.config.git_remote_url.as_deref(),
-                self.config.ssh_private_key_path.as_deref(),
-                self.config.ssh_public_key_path.as_deref(),
             )?;
         } else {
             term.write_line("ℹ️  Git operations disabled (GIT_ENABLED=false)")?;
@@ -220,8 +218,6 @@ impl WordProcessor {
             sync_with_section_awareness(
                 &self.config.vocabulary_notebook_file,
                 self.config.git_remote_url.as_deref(),
-                self.config.ssh_private_key_path.as_deref(),
-                self.config.ssh_public_key_path.as_deref(),
             )?;
         } else {
             term.write_line("ℹ️  Git operations disabled (GIT_ENABLED=false)")?;
@@ -279,8 +275,6 @@ impl WordProcessor {
             sync_with_section_awareness(
                 &self.config.vocabulary_notebook_file,
                 self.config.git_remote_url.as_deref(),
-                self.config.ssh_private_key_path.as_deref(),
-                self.config.ssh_public_key_path.as_deref(),
             )?;
         } else {
             term.write_line("ℹ️  Git operations disabled (GIT_ENABLED=false)")?;

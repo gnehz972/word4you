@@ -7,8 +7,6 @@ export interface Preferences {
   vocabularyBaseDir: string;
   gitEnabled: boolean;
   gitRemoteUrl: string;
-  sshPrivateKeyPath: string;
-  sshPublicKeyPath: string;
   geminiModelName: string;
 }
 
@@ -52,11 +50,6 @@ export function createEnvironmentFromPreferences(): NodeJS.ProcessEnv {
     ...(preferences.gitRemoteUrl && {
       GIT_REMOTE_URL: preferences.gitRemoteUrl,
     }),
-    ...(preferences.sshPrivateKeyPath && {
-      SSH_PRIVATE_KEY_PATH: preferences.sshPrivateKeyPath,
-    }),
-    ...(preferences.sshPublicKeyPath && {
-      SSH_PUBLIC_KEY_PATH: preferences.sshPublicKeyPath,
-    }),
+
   };
 }

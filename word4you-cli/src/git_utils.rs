@@ -100,8 +100,6 @@ pub fn init_git_repo_with_remote(
 pub fn sync_with_section_awareness(
     vocabulary_file: &str,
     git_remote_url: Option<&str>,
-    ssh_private_key_path: Option<&str>,
-    ssh_public_key_path: Option<&str>,
 ) -> Result<()> {
     let _work_dir = Path::new(vocabulary_file)
         .parent()
@@ -122,8 +120,6 @@ pub fn sync_with_section_awareness(
     let config = Config {
         vocabulary_notebook_file: vocabulary_file.to_string(),
         git_remote_url: git_remote_url.map(String::from),
-        ssh_private_key_path: ssh_private_key_path.map(String::from),
-        ssh_public_key_path: ssh_public_key_path.map(String::from),
         git_enabled: true,
         // These fields would normally come from actual config, but we'll use defaults
         gemini_api_key: String::new(),

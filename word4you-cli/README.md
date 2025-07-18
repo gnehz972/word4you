@@ -88,21 +88,13 @@ GEMINI_MODEL_NAME=gemini-2.0-flash-001
 # The program will create: {VOCABULARY_BASE_DIR}/word4you/vocabulary_notebook.md
 VOCABULARY_BASE_DIR=~
 
-# Optional: Git remote URL for automatic pushing (SSH URLs only)
+# Optional: Git remote URL for automatic pushing
 GIT_REMOTE_URL=git@github.com:yourusername/your-repo.git
 
 # Optional: Control whether git operations should be performed
 # Default: false (git operations disabled)
 # Set to true, 1, or yes to enable git operations
 GIT_ENABLED=false
-
-# Optional: SSH private key path for git operations
-# Default: ~/.ssh/id_ed25519
-SSH_PRIVATE_KEY_PATH=~/.ssh/id_ed25519
-
-# Optional: SSH public key path for git operations
-# Default: ~/.ssh/id_ed25519.pub
-SSH_PUBLIC_KEY_PATH=~/.ssh/id_ed25519.pub
 ```
 
 ### Directory Structure
