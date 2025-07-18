@@ -27,8 +27,6 @@ Usage:
   word4you                           # Interactive mode (enter words one by one)
   word4you query <word>              # Learn a new word
   word4you test                      # Test API connection
-  word4you info                      # Show this information
-  word4you learn <word>              # Learn a specific word
   word4you save <word> --content <content>  # Save word to vocabulary
   word4you delete <word> [--timestamp <timestamp>]  # Delete word from vocabulary, optionally by specific timestamp
   word4you update <word> --content <content> [--timestamp <timestamp>]  # Update word (delete if exists, then save)
@@ -63,19 +61,6 @@ enum Commands {
 
     /// Test the API connection
     Test,
-
-    /// Display application information
-    Info,
-
-    /// Learn a specific word
-    Learn {
-        /// The word to learn
-        word: String,
-
-        /// Output raw response from API without user interaction
-        #[arg(long)]
-        raw: bool,
-    },
 
     /// Save word to vocabulary notebook
     Save {
@@ -134,15 +119,6 @@ async fn main() -> Result<()> {
         }
         Some(Commands::Test) => {
             if let Err(e) = test_api_connection(&term).await {
-                eprintln!("❌ Error: {}", e);
-                return Ok(());
-            }
-        }
-        Some(Commands::Info) => {
-            show_info(&term);
-        }
-        Some(Commands::Learn { word, raw }) => {
-            if let Err(e) = query_word(&term, word, *raw).await {
                 eprintln!("❌ Error: {}", e);
                 return Ok(());
             }
@@ -270,9 +246,6 @@ async fn test_api_connection(term: &Term) -> anyhow::Result<()> {
     }
 }
 
-fn show_info(term: &Term) {
-    term.write_line(&style(INTRO).cyan().to_string()).unwrap();
-}
 
 async fn sync_vocabulary(term: &Term, _force: bool) -> anyhow::Result<()> {
     // Validate configuration

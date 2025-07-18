@@ -91,13 +91,11 @@ pub fn delete_from_vocabulary_notebook(
                 // If timestamp is specified, look for its exact match
                 if let Some(ts) = timestamp {
                     // Search forward for the timestamp line within the current section
-                    let mut timestamp_found = false;
                     let mut j = i + 1;
 
                     // Look ahead to find the timestamp line before the section separator
                     while j < lines.len() && lines[j].trim() != "---" {
                         if lines[j].starts_with("<!-- timestamp=") && lines[j].contains(ts) {
-                            timestamp_found = true;
                             found = true;
                             break;
                         }

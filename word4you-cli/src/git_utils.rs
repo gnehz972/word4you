@@ -40,10 +40,6 @@ pub fn run_git_command(args: &[&str], work_dir: &Path) -> Result<String> {
     }
 }
 
-pub fn init_git_repo(vocabulary_notebook_file: &str) -> Result<()> {
-    init_git_repo_with_remote(vocabulary_notebook_file, None)
-}
-
 pub fn init_git_repo_with_remote(
     vocabulary_notebook_file: &str,
     remote_url: Option<&str>,
