@@ -1,12 +1,14 @@
+use crate::config::Config;
+use crate::gemini_client::GeminiClient;
+use crate::git_utils::{init_git_repo_with_remote, run_git_command, sync_with_section_awareness};
+use crate::utils::{
+    delete_from_vocabulary_notebook, prepend_to_vocabulary_notebook, validate_word,
+};
 use anyhow::Result;
 use console::{style, Term};
 use dialoguer::Select;
-use termimad::*;
-use crate::gemini_client::GeminiClient;
-use crate::git_utils::{sync_with_section_awareness, run_git_command, init_git_repo};
-use crate::utils::{prepend_to_vocabulary_notebook, delete_from_vocabulary_notebook, validate_word};
 use std::path::Path;
-use crate::config::Config;
+use termimad::*;
 
 pub struct WordProcessor {
     gemini_client: GeminiClient,
@@ -15,7 +17,10 @@ pub struct WordProcessor {
 
 impl WordProcessor {
     pub fn new(config: Config) -> Self {
-        let gemini_client = GeminiClient::new(config.gemini_api_key.clone(), config.gemini_model_name.clone());
+        let gemini_client = GeminiClient::new(
+            config.gemini_api_key.clone(),
+            config.gemini_model_name.clone(),
+        );
         Self {
             gemini_client,
             config,
@@ -25,52 +30,72 @@ impl WordProcessor {
     pub async fn process_word(&self, term: &Term, word: &str, raw: bool) -> Result<()> {
         // Validate word
         validate_word(word)?;
-        
+
         if !raw {
             term.write_line(&format!("🔍 Processing word: {}", word))?;
             term.write_line("🤖 Querying Gemini API...")?;
         }
-        
+
         // Get explanation from Gemini
-        let mut explanation = Box::new(self.gemini_client
-            .get_word_explanation(word, &self.config.gemini_prompt_template)
-            .await?);
-        
+        let mut explanation = Box::new(
+            self.gemini_client
+                .get_word_explanation(word, &self.config.gemini_prompt_template)
+                .await?,
+        );
+
         // If raw mode, just print the response and return
         if raw {
             println!("{}", explanation);
             return Ok(());
         }
-        
+
         // Display the explanation with beautiful markdown rendering
         term.write_line("\n📖 Word Explanation:")?;
         term.write_line(&style("=".repeat(50)).blue().to_string())?;
-        
+
         // Create a markdown skin for beautiful rendering
         let skin = make_skin();
-        
+
         // Render the markdown
         let text = FmtText::from(&skin, &explanation, None);
         term.write_line(&text.to_string())?;
-        
+
         term.write_line(&style("=".repeat(50)).blue().to_string())?;
-        
+
         // Ask for user confirmation with options
         loop {
             term.write_line("\nChoose an action:")?;
-            term.write_line(format!("{} - Save to vocabulary notebook", style("s").green().to_string()).as_str())?;
-            term.write_line(format!("{} - Regenerate explanation", style("r").yellow().to_string()).as_str())?;
-            term.write_line(format!("{} - Preview what will be saved", style("p").blue().to_string()).as_str())?;
+            term.write_line(
+                format!(
+                    "{} - Save to vocabulary notebook",
+                    style("s").green().to_string()
+                )
+                .as_str(),
+            )?;
+            term.write_line(
+                format!(
+                    "{} - Regenerate explanation",
+                    style("r").yellow().to_string()
+                )
+                .as_str(),
+            )?;
+            term.write_line(
+                format!(
+                    "{} - Preview what will be saved",
+                    style("p").blue().to_string()
+                )
+                .as_str(),
+            )?;
             term.write_line(format!("{} - Skip this word", style("k").red().to_string()).as_str())?;
             term.write_line("")?;
-            
+
             let choices = vec!["s", "r", "p", "k"];
             let selection = Select::new()
                 .with_prompt("Enter your choice")
                 .items(&choices)
                 .default(0)
                 .interact()?;
-            
+
             match selection {
                 0 => {
                     // Save to vocabulary notebook using the shared method
@@ -80,18 +105,19 @@ impl WordProcessor {
                 1 => {
                     // Regenerate explanation
                     term.write_line("🔄 Regenerating explanation...")?;
-                    let new_explanation = self.gemini_client
+                    let new_explanation = self
+                        .gemini_client
                         .get_word_explanation(word, &self.config.gemini_prompt_template)
                         .await?;
                     explanation = Box::new(new_explanation);
-                    
+
                     term.write_line("\n📖 New Word Explanation:")?;
                     term.write_line(&style("=".repeat(50)).blue().to_string())?;
-                    
+
                     // Render the new markdown
                     let text = FmtText::from(&skin, &explanation, None);
                     term.write_line(&text.to_string())?;
-                    
+
                     term.write_line(&style("=".repeat(50)).blue().to_string())?;
                     continue; // Ask again
                 }
@@ -99,22 +125,22 @@ impl WordProcessor {
                     // Preview
                     term.write_line("\n📋 Preview of what will be saved:")?;
                     term.write_line(&style("=".repeat(50)).blue().to_string())?;
-                    
+
                     let lines: Vec<&str> = explanation.lines().collect();
                     let preview_lines = if lines.len() > 10 {
                         &lines[..10]
                     } else {
                         &lines
                     };
-                    
+
                     for line in preview_lines {
                         term.write_line(line)?;
                     }
-                    
+
                     if lines.len() > 10 {
                         term.write_line(&format!("\n... and {} more lines", lines.len() - 10))?;
                     }
-                    
+
                     term.write_line(&style("=".repeat(50)).blue().to_string())?;
                     continue;
                 }
@@ -138,26 +164,29 @@ impl WordProcessor {
     pub fn save_word(&self, term: &Term, word: &str, content: &str) -> Result<()> {
         // Validate word
         validate_word(word)?;
-        
-        term.write_line(&format!("💾 Saving word '{}' to vocabulary notebook...", word))?;
+
+        term.write_line(&format!(
+            "💾 Saving word '{}' to vocabulary notebook...",
+            word
+        ))?;
         // Save to vocabulary notebook
         prepend_to_vocabulary_notebook(&self.config.vocabulary_notebook_file, content)?;
-        
+
         // Commit and push changes only if git is enabled
         term.write_line("✅ Successfully saved word locally")?;
-        
+
         if self.config.git_enabled {
             // First commit changes locally
             term.write_line("📝 Committing changes locally...")?;
             self.commit_local_changes(word, "Add")?;
-            
+
             // Then perform section-aware sync
             term.write_line("🔄 Synchronizing with section awareness...")?;
             sync_with_section_awareness(
                 &self.config.vocabulary_notebook_file,
                 self.config.git_remote_url.as_deref(),
                 self.config.ssh_private_key_path.as_deref(),
-                self.config.ssh_public_key_path.as_deref()
+                self.config.ssh_public_key_path.as_deref(),
             )?;
         } else {
             term.write_line("ℹ️  Git operations disabled (GIT_ENABLED=false)")?;
@@ -169,27 +198,30 @@ impl WordProcessor {
     pub fn delete_word(&self, term: &Term, word: &str, timestamp: Option<&str>) -> Result<()> {
         // Validate word
         validate_word(word)?;
-        
-        term.write_line(&format!("🗑️  Deleting word '{}' from vocabulary notebook...", word))?;
-        
+
+        term.write_line(&format!(
+            "🗑️  Deleting word '{}' from vocabulary notebook...",
+            word
+        ))?;
+
         // Delete from vocabulary notebook, optionally with timestamp
         delete_from_vocabulary_notebook(&self.config.vocabulary_notebook_file, word, timestamp)?;
-        
+
         // Commit and push changes only if git is enabled
         term.write_line("✅ Successfully deleted word locally")?;
-        
+
         if self.config.git_enabled {
             // First commit changes locally
             term.write_line("📝 Committing changes locally...")?;
             self.commit_local_changes(word, "Delete")?;
-            
+
             // Then perform section-aware sync
             term.write_line("🔄 Synchronizing with section awareness...")?;
             sync_with_section_awareness(
                 &self.config.vocabulary_notebook_file,
                 self.config.git_remote_url.as_deref(),
                 self.config.ssh_private_key_path.as_deref(),
-                self.config.ssh_public_key_path.as_deref()
+                self.config.ssh_public_key_path.as_deref(),
             )?;
         } else {
             term.write_line("ℹ️  Git operations disabled (GIT_ENABLED=false)")?;
@@ -198,41 +230,57 @@ impl WordProcessor {
         Ok(())
     }
 
-    pub fn update_word(&self, term: &Term, word: &str, content: &str, timestamp: Option<&str>) -> Result<()> {
+    pub fn update_word(
+        &self,
+        term: &Term,
+        word: &str,
+        content: &str,
+        timestamp: Option<&str>,
+    ) -> Result<()> {
         // Validate word
         validate_word(word)?;
-        
-        term.write_line(&format!("🔄 Updating word '{}' in vocabulary notebook...", word))?;
-        
+
+        term.write_line(&format!(
+            "🔄 Updating word '{}' in vocabulary notebook...",
+            word
+        ))?;
+
         // First, try to delete the word if it exists (ignore error if word doesn't exist)
-        match delete_from_vocabulary_notebook(&self.config.vocabulary_notebook_file, word, timestamp) {
+        match delete_from_vocabulary_notebook(
+            &self.config.vocabulary_notebook_file,
+            word,
+            timestamp,
+        ) {
             Ok(_) => {
                 term.write_line(&format!("🗑️  Deleted existing entry for '{}'", word))?;
             }
             Err(_) => {
-                term.write_line(&format!("ℹ️  No existing entry found for '{}', creating new entry", word))?;
+                term.write_line(&format!(
+                    "ℹ️  No existing entry found for '{}', creating new entry",
+                    word
+                ))?;
             }
         }
-        
+
         // Then save the new content
         term.write_line(&format!("💾 Saving updated content for '{}'...", word))?;
         prepend_to_vocabulary_notebook(&self.config.vocabulary_notebook_file, content)?;
-        
+
         // Commit and push changes only if git is enabled
         term.write_line("✅ Successfully updated word locally")?;
-        
+
         if self.config.git_enabled {
             // First commit changes locally
             term.write_line("📝 Committing changes locally...")?;
             self.commit_local_changes(word, "Update")?;
-            
+
             // Then perform section-aware sync
             term.write_line("🔄 Synchronizing with section awareness...")?;
             sync_with_section_awareness(
                 &self.config.vocabulary_notebook_file,
                 self.config.git_remote_url.as_deref(),
                 self.config.ssh_private_key_path.as_deref(),
-                self.config.ssh_public_key_path.as_deref()
+                self.config.ssh_public_key_path.as_deref(),
             )?;
         } else {
             term.write_line("ℹ️  Git operations disabled (GIT_ENABLED=false)")?;
@@ -240,16 +288,19 @@ impl WordProcessor {
 
         Ok(())
     }
-    
+
     /// Helper method to commit local changes before sync
     fn commit_local_changes(&self, word: &str, operation: &str) -> Result<()> {
         let work_dir = Path::new(&self.config.vocabulary_notebook_file)
             .parent()
             .ok_or_else(|| anyhow::anyhow!("Invalid vocabulary file path"))?;
-        
+
         // Initialize git repo if it doesn't exist
-        init_git_repo(&self.config.vocabulary_notebook_file)?;
-        
+        init_git_repo_with_remote(
+            &self.config.vocabulary_notebook_file,
+            self.config.git_remote_url.as_deref(),
+        )?;
+
         // Configure git remote if remote URL is available
         if let Some(ref remote_url) = self.config.git_remote_url {
             // Check if remote 'origin' exists, if not add it
@@ -257,46 +308,51 @@ impl WordProcessor {
             if !remotes.lines().any(|line| line == "origin") {
                 run_git_command(&["remote", "add", "origin", remote_url], work_dir)?;
             }
-            
+
             // Set up upstream tracking for main branch
-            let current_branch = match run_git_command(&["rev-parse", "--abbrev-ref", "HEAD"], work_dir) {
-                Ok(name) => name.trim().to_string(),
-                Err(_) => {
-                    // HEAD doesn't exist yet, assume main branch (matches init config)
-                    "main".to_string()
-                }
-            };
-            
+            let current_branch =
+                match run_git_command(&["rev-parse", "--abbrev-ref", "HEAD"], work_dir) {
+                    Ok(name) => name.trim().to_string(),
+                    Err(_) => {
+                        // HEAD doesn't exist yet, assume main branch (matches init config)
+                        "main".to_string()
+                    }
+                };
+
             // Set upstream branch to track origin/main (ignore errors if remote doesn't exist yet)
             if current_branch == "main" {
-                let _ = run_git_command(&["branch", "--set-upstream-to=origin/main", "main"], work_dir);
+                let _ = run_git_command(
+                    &["branch", "--set-upstream-to=origin/main", "main"],
+                    work_dir,
+                );
             }
         }
-        
+
         // Add all changes
         run_git_command(&["add", "."], work_dir)?;
-        
+
         // Check if there are changes to commit
         let status = run_git_command(&["status", "--porcelain"], work_dir)?;
         if !status.trim().is_empty() {
             // Create commit message
-            let commit_message = format!("{} word: {} - {}", 
-                operation, 
-                word, 
+            let commit_message = format!(
+                "{} word: {} - {}",
+                operation,
+                word,
                 chrono::Utc::now().format("%Y-%m-%d %H:%M:%S")
             );
-            
+
             // Commit changes
             run_git_command(&["commit", "-m", &commit_message], work_dir)?;
         }
-        
+
         Ok(())
     }
 }
 
 fn make_skin() -> MadSkin {
     let mut skin = MadSkin::default();
-    
+
     // Configure colors for different markdown elements
     skin.set_headers_fg(rgb(255, 187, 0));
     skin.bold.set_fg(rgb(255, 187, 0));
@@ -308,6 +364,6 @@ fn make_skin() -> MadSkin {
     skin.inline_code.set_bg(rgb(40, 44, 52));
     skin.code_block.set_bg(rgb(40, 44, 52));
     skin.code_block.set_fg(rgb(255, 119, 119));
-    
+
     skin
-} 
+}

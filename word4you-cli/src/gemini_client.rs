@@ -45,7 +45,10 @@ pub struct GeminiClient {
 
 impl GeminiClient {
     pub fn new(api_key: String, model_name: String) -> Self {
-        let base_url = format!("https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent", model_name);
+        let base_url = format!(
+            "https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent",
+            model_name
+        );
         Self {
             client: Client::new(),
             api_key,
@@ -55,7 +58,7 @@ impl GeminiClient {
 
     pub async fn get_word_explanation(&self, word: &str, prompt_template: &str) -> Result<String> {
         let prompt = prompt_template.replace("{word}", &word.to_lowercase());
-        
+
         let request = GeminiRequest {
             contents: vec![Content {
                 parts: vec![Part { text: prompt }],
@@ -63,12 +66,8 @@ impl GeminiClient {
         };
 
         let url = format!("{}?key={}", self.base_url, self.api_key);
-        
-        let response = self.client
-            .post(&url)
-            .json(&request)
-            .send()
-            .await?;
+
+        let response = self.client.post(&url).json(&request).send().await?;
 
         if !response.status().is_success() {
             let error_text = response.text().await?;
@@ -76,7 +75,7 @@ impl GeminiClient {
         }
 
         let gemini_response: GeminiResponse = response.json().await?;
-        
+
         if let Some(candidate) = gemini_response.candidates.first() {
             if let Some(part) = candidate.content.parts.first() {
                 return Ok(part.text.clone().trim().to_string());
@@ -89,17 +88,15 @@ impl GeminiClient {
     pub async fn test_connection(&self) -> Result<bool> {
         let request = GeminiRequest {
             contents: vec![Content {
-                parts: vec![Part { text: "Hello".to_string() }],
+                parts: vec![Part {
+                    text: "Hello".to_string(),
+                }],
             }],
         };
 
         let url = format!("{}?key={}", self.base_url, self.api_key);
-        
-        let response = self.client
-            .post(&url)
-            .json(&request)
-            .send()
-            .await;
+
+        let response = self.client.post(&url).json(&request).send().await;
 
         match response {
             Ok(resp) => {
@@ -112,4 +109,4 @@ impl GeminiClient {
             Err(_) => Ok(false),
         }
     }
-} 
+}

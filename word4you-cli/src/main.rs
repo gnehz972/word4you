@@ -5,11 +5,10 @@ use word_processor::WordProcessor;
 
 mod config;
 mod gemini_client;
+mod git_section_sync;
+mod git_utils;
 mod utils;
 mod word_processor;
-mod git_utils;
-mod git_section_detector;
-mod git_section_sync;
 
 use config::Config;
 
@@ -56,62 +55,62 @@ enum Commands {
     Query {
         /// The word to learn
         word: String,
-        
+
         /// Output raw response from API without user interaction
         #[arg(long)]
         raw: bool,
     },
-    
+
     /// Test the API connection
     Test,
-    
+
     /// Display application information
     Info,
-    
+
     /// Learn a specific word
     Learn {
         /// The word to learn
         word: String,
-        
+
         /// Output raw response from API without user interaction
         #[arg(long)]
         raw: bool,
     },
-    
+
     /// Save word to vocabulary notebook
     Save {
         /// The word to save
         word: String,
-        
+
         /// The content to save
         #[arg(long)]
         content: String,
     },
-    
+
     /// Delete a word from vocabulary notebook
     Delete {
         /// The word to delete
         word: String,
-        
+
         /// Optional timestamp for the specific word entry to delete
         #[arg(long)]
         timestamp: Option<String>,
     },
-    
+
     /// Update a word: delete if exists, then save new content
     Update {
         /// The word to update
         word: String,
-        
+
         /// The new content to save
         #[arg(long)]
         content: String,
-        
+
         /// Optional timestamp for the specific word entry to update
         #[arg(long)]
         timestamp: Option<String>,
     },
-    
+
     /// Synchronize vocabulary with remote using section-based logic
     Sync {
         /// Force sync even if there are conflicts
@@ -120,11 +119,8 @@ enum Commands {
     },
 }
 
-
-
 #[tokio::main]
 async fn main() -> Result<()> {
-
     let cli = Cli::parse();
     let term = Term::stdout();
 
@@ -163,7 +159,11 @@ async fn main() -> Result<()> {
                 return Ok(());
             }
         }
-        Some(Commands::Update { word, content, timestamp }) => {
+        Some(Commands::Update {
+            word,
+            content,
+            timestamp,
+        }) => {
             if let Err(e) = update_word(&term, word, content, timestamp.as_deref()).await {
                 eprintln!("❌ Error: {}", e);
                 return Ok(());
@@ -190,64 +190,73 @@ async fn main() -> Result<()> {
 async fn query_word(term: &Term, word: &str, raw: bool) -> anyhow::Result<()> {
     // Validate configuration
     let config = Config::load()?;
-    
+
     // Initialize word processor
     let processor = WordProcessor::new(config);
-    
+
     // Process the word
     processor.process_word(term, word, raw).await?;
-    
+
     Ok(())
 }
 
 async fn save_word(term: &Term, word: &str, content: &str) -> anyhow::Result<()> {
     // Validate configuration
     let config = Config::load()?;
-    
+
     // Initialize word processor
     let processor = WordProcessor::new(config);
-    
+
     // Save the word
     processor.save_word(term, word, content)?;
-    
+
     Ok(())
 }
 
 async fn delete_word(term: &Term, word: &str, timestamp: Option<&str>) -> anyhow::Result<()> {
     // Validate configuration
     let config = Config::load()?;
-    
+
     // Initialize word processor
     let processor = WordProcessor::new(config);
-    
+
     // Delete the word
     processor.delete_word(term, word, timestamp)?;
-    
+
     Ok(())
 }
 
-async fn update_word(term: &Term, word: &str, content: &str, timestamp: Option<&str>) -> anyhow::Result<()> {
+async fn update_word(
+    term: &Term,
+    word: &str,
+    content: &str,
+    timestamp: Option<&str>,
+) -> anyhow::Result<()> {
     // Validate configuration
     let config = Config::load()?;
-    
+
     // Initialize word processor
     let processor = WordProcessor::new(config);
-    
+
     // Update the word (delete if exists, then save)
     processor.update_word(term, word, content, timestamp)?;
-    
+
     Ok(())
 }
 
 async fn test_api_connection(term: &Term) -> anyhow::Result<()> {
     let config = Config::load()?;
     let processor = WordProcessor::new(config);
-    
+
     term.write_line("🔍 Testing Gemini API connection...")?;
-    
+
     match processor.test_api_connection().await {
         Ok(true) => {
-            term.write_line(&style("✅ Gemini API connection successful").green().to_string())?;
+            term.write_line(
+                &style("✅ Gemini API connection successful")
+                    .green()
+                    .to_string(),
+            )?;
             Ok(())
         }
         Ok(false) => {
@@ -268,31 +277,35 @@ fn show_info(term: &Term) {
 async fn sync_vocabulary(term: &Term, _force: bool) -> anyhow::Result<()> {
     // Validate configuration
     let config = Config::load()?;
-    
+
     term.write_line("🔄 Starting section-aware vocabulary synchronization...")?;
-    
+
     // Use section-aware synchronization
     git_utils::sync_with_section_awareness(
         &config.vocabulary_notebook_file,
         config.git_remote_url.as_deref(),
         config.ssh_private_key_path.as_deref(),
-        config.ssh_public_key_path.as_deref()
+        config.ssh_public_key_path.as_deref(),
     )?;
-    
+
     Ok(())
 }
 
 async fn interactive_mode(term: &Term) -> anyhow::Result<()> {
     // Validate configuration first
     let config = Config::load()?;
-    
+
     // Initialize word processor
     let processor = WordProcessor::new(config);
-    
-    term.write_line(&style("🎯 Welcome to Word4You Interactive Mode!").cyan().to_string())?;
+
+    term.write_line(
+        &style("🎯 Welcome to Word4You Interactive Mode!")
+            .cyan()
+            .to_string(),
+    )?;
     term.write_line("Enter words to learn, or type 'exit' to quit.")?;
     term.write_line("")?;
-    
+
     loop {
         // Get word input from user
         let word = match dialoguer::Input::<String>::new()
@@ -306,33 +319,31 @@ async fn interactive_mode(term: &Term) -> anyhow::Result<()> {
                 break;
             }
         };
-        
+
         // Check for exit command
         if word == "exit" || word == "quit" || word == "q" {
             term.write_line("👋 Goodbye!")?;
             break;
         }
-        
+
         // Skip empty input
         if word.is_empty() {
             term.write_line("❌ Please enter a valid word.")?;
             continue;
         }
-        
+
         // Process the word using existing functionality
         if let Err(e) = processor.process_word(term, &word, false).await {
             term.write_line(&format!("❌ Error processing word '{}': {}", word, e))?;
             term.write_line("Please try another word.")?;
             continue;
         }
-        
+
         // After processing (save/skip), continue to next word
         term.write_line("")?;
         term.write_line(&style("=".repeat(50)).blue().to_string())?;
         term.write_line("")?;
     }
-    
+
     Ok(())
 }
-
- 
