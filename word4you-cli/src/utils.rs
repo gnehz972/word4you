@@ -71,7 +71,6 @@ pub fn delete_from_vocabulary_notebook(
     let file = File::open(vocabulary_notebook_file)?;
     let reader = BufReader::new(file);
 
-    let mut in_target_section = false;
     let mut found = false;
     let lines: Vec<String> = reader.lines().collect::<std::result::Result<_, _>>()?;
     let mut filtered_content = Vec::new();
@@ -79,14 +78,15 @@ pub fn delete_from_vocabulary_notebook(
     let mut i = 0;
     while i < lines.len() {
         let line = &lines[i];
+        println!("Processing line {}: {}", i + 1, line);
 
         // Check if this line starts a new word section
-        if line.starts_with("## ") {
+        if !found && line.starts_with("## ") {
             let section_word = line[3..].trim(); // Remove "## " prefix
+
 
             // Check if this is the section we want to delete
             if section_word.to_lowercase() == word.to_lowercase() {
-                in_target_section = true;
 
                 // If timestamp is specified, look for its exact match
                 if let Some(ts) = timestamp {
@@ -103,37 +103,26 @@ pub fn delete_from_vocabulary_notebook(
                         }
                         j += 1;
                     }
-
-                    if !timestamp_found {
-                        in_target_section = false;
-                    }
                 } else {
                     found = true;
                 }
-            } else {
-                in_target_section = false;
-            }
-        }
-
-        // Skip the entire section if it matches our criteria
-        if in_target_section {
-            // Look for the next separator or end of file
-            while i < lines.len() && lines[i].trim() != "---" {
-                i += 1;
             }
 
-            // Skip the separator line and the blank line after it
-            if i < lines.len() && lines[i].trim() == "---" {
-                i += 1; // Skip the separator line
-
-                // Skip the blank line after separator
-                if i < lines.len() && lines[i].trim().is_empty() {
+            // Skip the entire section if it matches our criteria
+            if found {
+                // Look for the next separator or end of file
+                while i < lines.len() && lines[i].trim() != "---" {
                     i += 1;
                 }
+
+                // Skip the separator line and the blank line after it
+                if i < lines.len() && lines[i].trim() == "---" {
+                    i += 1; // Skip the separator line
+                }
+
+                continue;
             }
 
-            in_target_section = false;
-            continue;
         }
 
         // Add the line to our filtered content
@@ -223,12 +212,13 @@ mod tests {
         let file_path = dir.path().join("test_vocab_delete.md");
         let temp_file = file_path.to_str().unwrap();
 
-        fs::write(temp_file, "## hello\nHello content\n\n<!-- timestamp=2023-01-01T12:00:00.123+00:00 -->\n---\n\n## world\nWorld content\n\n<!-- timestamp=2023-01-02T12:00:00.456+00:00 -->\n---\n").unwrap();
+        fs::write(temp_file, "## hello\nHello content\n\n<!-- timestamp=2023-01-01T12:00:00.123+00:00 -->\n\n---\n## world\nWorld content\n\n<!-- timestamp=2023-01-02T12:00:00.456+00:00 -->\n\n---").unwrap();
 
         delete_from_vocabulary_notebook(temp_file, "hello", Some("2023-01-01T12:00:00.123+00:00"))
             .unwrap();
 
         let result = fs::read_to_string(temp_file).unwrap();
+        println!("Result after deletion:\n{}", result);
 
         assert!(result.contains("## world"));
         assert!(!result.contains("## hello"));
@@ -240,7 +230,7 @@ mod tests {
         let file_path = dir.path().join("test_vocab_delete_all.md");
         let temp_file = file_path.to_str().unwrap();
 
-        fs::write(temp_file, "## hello\nHello content 1\n\n<!-- timestamp=2023-01-01T12:00:00.123+00:00 -->\n---\n\n## hello\nHello content 2\n\n<!-- timestamp=2023-01-02T12:00:00.456+00:00 -->\n---\n").unwrap();
+        fs::write(temp_file, "## hello\nHello content 1\n\n<!-- timestamp=2023-01-01T12:00:00.123+00:00 -->\n---\n\n## word\nHello content 2\n\n<!-- timestamp=2023-01-02T12:00:00.456+00:00 -->\n---\n").unwrap();
 
         delete_from_vocabulary_notebook(temp_file, "hello", None).unwrap();
 
