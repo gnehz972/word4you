@@ -39,20 +39,20 @@ pub fn prepend_to_vocabulary_notebook(vocabulary_notebook_file: &str, content: &
     // Check if content already has timestamp and separator
     let formatted_content = if content.contains("<!-- timestamp=") && content.contains("---") {
         // Content is already formatted (e.g., from git sync), use as-is
-        content.to_string()
+        content.trim().to_string()
     } else {
         // Add timestamp and separator for new content
         format!(
             "{}\n\n<!-- timestamp={} -->\n\n---",
-            content, local_timestamp
+            content.trim(), local_timestamp
         )
     };
 
     // Prepend new content, ensuring proper spacing
     let new_content = if existing_content.trim().is_empty() {
-        format!("{}\n", formatted_content)
+        formatted_content
     } else {
-        format!("{}\n\n{}", formatted_content, existing_content)
+        format!("{}\n{}", formatted_content, existing_content)
     };
 
     fs::write(vocabulary_notebook_file, new_content)?;

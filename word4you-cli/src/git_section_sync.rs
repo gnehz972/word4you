@@ -177,105 +177,53 @@ impl GitSectionSynchronizer {
         }
     }
 
-    /// Handle first-time sync by prepending local content to remote file
+    /// Handle first-time sync - much simpler approach
     fn handle_first_time_sync(&self) -> Result<()> {
         let work_dir = Path::new(&self.config.vocabulary_notebook_file)
             .parent()
             .ok_or_else(|| anyhow!("Invalid vocabulary file path"))?;
 
-        // Read current local content
-        self.term.write_line("📝 Reading local content...")?;
+        // Read local content before merge (if any)
         let local_content = std::fs::read_to_string(&self.config.vocabulary_notebook_file)
-            .unwrap_or_else(|_| String::new());
+            ?.trim().to_string();
 
-        // Get remote file content
-        self.term.write_line("📥 Getting remote content...")?;
-        let vocab_filename = Path::new(&self.config.vocabulary_notebook_file)
-            .file_name()
-            .and_then(|name| name.to_str())
-            .unwrap_or("vocabulary_notebook.md");
-
-        // First check if remote branch exists
+        // Check if remote branch exists
         let remote_exists =
             run_git_command(&["rev-parse", "--verify", "origin/main"], work_dir).is_ok();
 
-        let remote_content = if remote_exists {
-            let remote_ref = format!("origin/main:{}", vocab_filename);
-            run_git_command(&["show", &remote_ref], work_dir).unwrap_or_else(|e| {
-                self.term
-                    .write_line(&format!(
-                        "ℹ️  Remote file '{}' not found: {} - using empty remote content",
-                        vocab_filename, e
-                    ))
-                    .ok();
-                String::new()
-            })
-        } else {
-            self.term
-                .write_line("ℹ️  Remote branch not available - using empty remote content")?;
-            String::new()
-        };
-
-        // Merge content: prepend local content to remote content
-        self.term
-            .write_line("🔄 Merging local and remote content...")?;
-        let has_local_content = !local_content.trim().is_empty();
-        let merged_content = if local_content.trim().is_empty() {
-            // No local content, just use remote
-            remote_content
-        } else if remote_content.trim().is_empty() {
-            // No remote content, just use local
-            local_content.clone()
-        } else {
-            // Both have content - prepend local to remote with separator
-            format!(
-                "{}\n{}",
-                local_content.trim(),
-                remote_content.trim()
-            )
-        };
-
-        // Simplified approach: merge first, then adjust content
         if remote_exists {
+            // Just let Git handle the merge completely
             self.term.write_line("🔗 Merging with remote history...")?;
             
-            // First, merge with remote using theirs strategy to preserve remote history
             match run_git_command(&["merge", "origin/main", "--allow-unrelated-histories", "-X", "theirs"], work_dir) {
                 Ok(_) => {
                     self.term.write_line("✅ Successfully merged with remote history")?;
                     
-                    // Now prepend local content to the file and commit
-                    if has_local_content {
+                    // If we had local content, prepend it to the merged file
+                    if !local_content.is_empty() {
                         self.term.write_line("📝 Prepending local content...")?;
-                        std::fs::write(&self.config.vocabulary_notebook_file, merged_content)?;
                         
-                        // Stage and commit the prepended content
+                        // Use our existing prepend utility function
+                        crate::utils::prepend_to_vocabulary_notebook(&self.config.vocabulary_notebook_file, &local_content)?;
+                        
+                        // Commit the prepended content
                         run_git_command(&["add", "."], work_dir)?;
-                        
-                        let status = run_git_command(&["status", "--porcelain"], work_dir)?;
-                        if !status.trim().is_empty() {
-                            run_git_command(&["commit", "-m", "Prepend local content after initial sync"], work_dir)?;
-                            self.term.write_line("✅ Successfully prepended local content")?;
-                        }
-                    } else {
-                        self.term.write_line("ℹ️  No local content to prepend")?;
+                        run_git_command(&["commit", "-m", "Prepend local content after initial sync"], work_dir)?;
+                        self.term.write_line("✅ Successfully prepended local content")?;
                     }
                 }
                 Err(e) => {
                     self.term.write_line(&format!("⚠️  Merge failed: {}", e))?;
-                    // Fallback to writing merged content directly
-                    std::fs::write(&self.config.vocabulary_notebook_file, merged_content)?;
-                    run_git_command(&["add", "."], work_dir)?;
-                    run_git_command(&["commit", "-m", "Initial sync: merge local and remote content"], work_dir)?;
-                    self.term.write_line("✅ Successfully committed initial sync (fallback)")?;
+                    return Err(e);
                 }
             }
         } else {
-            // No remote exists, just commit local content
-            std::fs::write(&self.config.vocabulary_notebook_file, merged_content)?;
-            run_git_command(&["add", "."], work_dir)?;
-            run_git_command(&["commit", "-m", "Initial sync: local content only"], work_dir)?;
-            self.term.write_line("✅ Successfully committed initial sync")?;
+            // No remote exists, just commit local content if any
+            if !local_content.is_empty() {
+                run_git_command(&["add", "."], work_dir)?;
+                run_git_command(&["commit", "-m", "Initial sync: local content only"], work_dir)?;
+                self.term.write_line("✅ Successfully committed local content")?;
+            }
         }
 
         Ok(())
