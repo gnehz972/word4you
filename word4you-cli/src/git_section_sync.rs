@@ -48,7 +48,18 @@ impl GitSectionSynchronizer {
             // Commit local changes first
             self.commit_changes_if_needed()?;
         } else {
-            self.term.write_line("ℹ️  No local changes detected")?;
+            self.term.write_line("ℹ️  No uncommitted changes detected")?;
+        }
+
+        // 2.5. Check if we have unpushed commits
+        let mut has_unpushed_commits = false;
+        if let Ok(output) = run_git_command(&["rev-list", "--count", "origin/main..HEAD"], work_dir) {
+            if let Ok(count) = output.trim().parse::<i32>() {
+                has_unpushed_commits = count > 0;
+                if has_unpushed_commits {
+                    self.term.write_line(&format!("📝 {} unpushed commits detected", count))?;
+                }
+            }
         }
 
         // 3. Check if this is a first-time sync (no common history)
@@ -61,56 +72,25 @@ impl GitSectionSynchronizer {
             self.handle_first_time_sync()?;
         } else {
             // Normal sync with existing history
-            self.term.write_line("🔍 Checking for merge conflicts...")?;
-            let merge_result = run_git_command(
-                &["merge", "--no-commit", "--no-ff", "origin/main"],
-                work_dir,
-            );
-
-            match merge_result {
-                Ok(_) => {
-                    // No conflicts - complete the merge
-                    self.term
-                        .write_line("✅ No conflicts detected - completing merge...")?;
-                    run_git_command(&["commit", "-m", "Merge remote changes"], work_dir)?;
-                    self.term
-                        .write_line("✅ Successfully merged remote changes")?;
+            // First check if we're ahead of remote (only have unpushed commits)
+            if has_unpushed_commits {
+                // Check if remote has new commits
+                let remote_ahead = run_git_command(&["rev-list", "--count", "HEAD..origin/main"], work_dir)
+                    .map(|output| output.trim().parse::<i32>().unwrap_or(0) > 0)
+                    .unwrap_or(false);
+                
+                if !remote_ahead {
+                    // We're ahead and remote has no new commits - skip merge, go straight to push
+                    self.term.write_line("ℹ️  Only local commits, no remote changes - skipping merge")?;
+                } else {
+                    // Both sides have commits - need to merge
+                    self.term.write_line("🔍 Both local and remote changes detected - merging...")?;
+                    self.perform_merge(work_dir)?;
                 }
-                Err(e) => {
-                    let error_msg = e.to_string();
-
-                    if error_msg.contains("CONFLICT")
-                        || error_msg.contains("Automatic merge failed")
-                    {
-                        self.term.write_line(
-                            "⚠️  Merge conflicts detected - resolving with theirs strategy...",
-                        )?;
-
-                        // Reset to clean state
-                        let _ = run_git_command(&["merge", "--abort"], work_dir);
-
-                        // Apply our enhanced conflict resolution
-                        self.resolve_conflicts_with_theirs_strategy()?;
-
-                        self.term
-                            .write_line("✅ Conflicts resolved and changes applied")?;
-                    } else if error_msg.contains("Already up to date") {
-                        self.term.write_line("ℹ️  Already up to date with remote")?;
-                        return Ok(SyncResult::NoChanges);
-                    } else if error_msg.contains("not something we can merge") {
-                        self.term.write_line(
-                            "ℹ️  Remote branch not found - this may be an empty repository",
-                        )?;
-                        self.term
-                            .write_line("✅ Continuing with local-only operation")?;
-                    } else {
-                        self.term.write_line(&format!(
-                            "❌ Merge failed with unexpected error: {}",
-                            error_msg
-                        ))?;
-                        return Err(e);
-                    }
-                }
+            } else {
+                // No unpushed commits - check for merge conflicts
+                self.term.write_line("🔍 Checking for merge conflicts...")?;
+                self.perform_merge(work_dir)?;
             }
         }
 
@@ -133,6 +113,71 @@ impl GitSectionSynchronizer {
         self.term
             .write_line("✅ Synchronization completed successfully")?;
         Ok(SyncResult::Success)
+    }
+
+    /// Perform merge with conflict resolution
+    fn perform_merge(&self, work_dir: &Path) -> Result<()> {
+        let merge_result = run_git_command(
+            &["merge", "--no-commit", "--no-ff", "origin/main"],
+            work_dir,
+        );
+
+        match merge_result {
+            Ok(_) => {
+                // No conflicts - complete the merge
+                self.term
+                    .write_line("✅ No conflicts detected - completing merge...")?;
+                
+                // Check if there are actually changes to commit
+                let status = run_git_command(&["status", "--porcelain"], work_dir)?;
+                if !status.trim().is_empty() {
+                    run_git_command(&["commit", "-m", "Merge remote changes"], work_dir)?;
+                    self.term
+                        .write_line("✅ Successfully merged remote changes")?;
+                } else {
+                    // No file changes but merge is needed - complete the merge
+                    // This happens when remote has commits that don't change files
+                    run_git_command(&["commit", "-m", "Merge remote changes (no file changes)"], work_dir)?;
+                    self.term
+                        .write_line("✅ Successfully merged remote changes (no file changes)")?;
+                }
+            }
+            Err(e) => {
+                let error_msg = e.to_string();
+
+                if error_msg.contains("CONFLICT")
+                    || error_msg.contains("Automatic merge failed")
+                {
+                    self.term.write_line(
+                        "⚠️  Merge conflicts detected - resolving with theirs strategy...",
+                    )?;
+
+                    // Reset to clean state
+                    let _ = run_git_command(&["merge", "--abort"], work_dir);
+
+                    // Apply our enhanced conflict resolution
+                    self.resolve_conflicts_with_manual_theirs()?;
+
+                    self.term
+                        .write_line("✅ Conflicts resolved and changes applied")?;
+                } else if error_msg.contains("Already up to date") {
+                    self.term.write_line("ℹ️  Already up to date with remote")?;
+                } else if error_msg.contains("not something we can merge") {
+                    self.term.write_line(
+                        "ℹ️  Remote branch not found - this may be an empty repository",
+                    )?;
+                    self.term
+                        .write_line("✅ Continuing with local-only operation")?;
+                } else {
+                    self.term.write_line(&format!(
+                        "❌ Merge failed with unexpected error: {}",
+                        error_msg
+                    ))?;
+                    return Err(e);
+                }
+            }
+        }
+        Ok(())
     }
 
     /// Check if this is a first-time sync (no common history with remote)
@@ -229,55 +274,6 @@ impl GitSectionSynchronizer {
         Ok(())
     }
 
-    /// Simplified merge conflict resolution:
-    /// 1. Use git merge --strategy=theirs to accept remote version
-    /// 2. Merge is complete - conflicts resolved automatically
-    fn resolve_conflicts_with_theirs_strategy(&self) -> Result<()> {
-        let work_dir = Path::new(&self.config.vocabulary_notebook_file)
-            .parent()
-            .ok_or_else(|| anyhow!("Invalid vocabulary file path"))?;
-
-        // Step 1: Use git merge --strategy=theirs to accept remote version
-        self.term
-            .write_line("📥 Accepting remote version with --strategy=theirs...")?;
-
-        // First, abort any existing merge state
-        let _ = run_git_command(&["merge", "--abort"], work_dir);
-
-        // Perform merge with theirs strategy
-        match run_git_command(
-            &[
-                "merge",
-                "--strategy=theirs",
-                "--allow-unrelated-histories",
-                "origin/main",
-            ],
-            work_dir,
-        ) {
-            Ok(_) => {
-                self.term
-                    .write_line("✅ Successfully merged with theirs strategy")?;
-                self.term
-                    .write_line("ℹ️  Remote version accepted, local changes discarded")?;
-            }
-            Err(e) => {
-                let error_msg = e.to_string();
-
-                if error_msg.contains("unrelated histories") {
-                    self.term.write_line("ℹ️  Theirs strategy cannot handle unrelated histories - using manual resolution")?;
-                } else {
-                    self.term
-                        .write_line(&format!("⚠️  Theirs strategy failed: {}", error_msg))?;
-                }
-
-                self.term
-                    .write_line("🔄 Falling back to manual resolution...")?;
-                return self.resolve_conflicts_with_manual_theirs();
-            }
-        }
-
-        Ok(())
-    }
 
     /// Fallback manual resolution when theirs strategy fails
     fn resolve_conflicts_with_manual_theirs(&self) -> Result<()> {
