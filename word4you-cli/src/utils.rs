@@ -163,6 +163,14 @@ pub fn validate_word(word: &str) -> Result<()> {
     Ok(())
 }
 
+pub fn get_work_dir(vocabulary_notebook_file: &str) -> Result<&Path> {
+    let notebook_path = Path::new(vocabulary_notebook_file);
+    let work_dir = notebook_path
+        .parent()
+        .ok_or_else(|| anyhow!("Invalid vocabulary notebook file path"))?;
+    Ok(work_dir)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

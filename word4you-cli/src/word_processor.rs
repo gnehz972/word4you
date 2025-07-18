@@ -1,13 +1,12 @@
 use crate::config::Config;
 use crate::gemini_client::GeminiClient;
-use crate::git_utils::{commit, sync_with_remote};
-use crate::utils::{
-    delete_from_vocabulary_notebook, prepend_to_vocabulary_notebook, validate_word
-};
+use crate::git_utils::{commit, init_git_repo};
+use crate::utils::{delete_from_vocabulary_notebook, get_work_dir, prepend_to_vocabulary_notebook, validate_word};
 use anyhow::Result;
 use console::{style, Term};
 use dialoguer::Select;
 use termimad::*;
+use crate::git_section_sync::{GitSectionSynchronizer, SyncResult};
 
 pub struct WordProcessor {
     gemini_client: GeminiClient,
@@ -164,31 +163,15 @@ impl WordProcessor {
         // Validate word
         validate_word(word)?;
 
-        term.write_line(&format!(
-            "💾 Saving word '{}' to vocabulary notebook...",
-            word
-        ))?;
+        term.write_line(&format!("💾 Saving word '{}' to vocabulary notebook...", word))?;
+
         // Save to vocabulary notebook
         prepend_to_vocabulary_notebook(&self.config.vocabulary_notebook_file, content)?;
 
         // Commit changes only if git is enabled
         term.write_line("✅ Successfully saved word locally")?;
 
-        if self.config.git_enabled {
-            // Commit changes locally
-            term.write_line("📝 Committing changes locally...")?;
-            self.commit_local_changes(word, "Add")?;
-
-            // Then perform section-aware sync
-            term.write_line("🔄 Synchronizing with section awareness...")?;
-            sync_with_remote(
-                &self.config.vocabulary_notebook_file,
-                self.config.git_remote_url.as_deref(),
-            )?;
-
-        } else {
-            term.write_line("ℹ️  Git operations disabled (GIT_ENABLED=false)")?;
-        }
+        self.commit_and_push(term, word, "Save")?;
 
         Ok(())
     }
@@ -197,10 +180,7 @@ impl WordProcessor {
         // Validate word
         validate_word(word)?;
 
-        term.write_line(&format!(
-            "🗑️  Deleting word '{}' from vocabulary notebook...",
-            word
-        ))?;
+        term.write_line(&format!("🗑️  Deleting word '{}' from vocabulary notebook...", word))?;
 
         // Delete from vocabulary notebook, optionally with timestamp
         delete_from_vocabulary_notebook(&self.config.vocabulary_notebook_file, word, timestamp)?;
@@ -208,20 +188,7 @@ impl WordProcessor {
         // Commit changes only if git is enabled
         term.write_line("✅ Successfully deleted word locally")?;
 
-        if self.config.git_enabled {
-            // Commit changes locally
-            term.write_line("📝 Committing changes locally...")?;
-            self.commit_local_changes(word, "Delete")?;
-
-            // Then perform section-aware sync
-            term.write_line("🔄 Synchronizing with section awareness...")?;
-            sync_with_remote(
-                &self.config.vocabulary_notebook_file,
-                self.config.git_remote_url.as_deref(),
-            )?;
-        } else {
-            term.write_line("ℹ️  Git operations disabled (GIT_ENABLED=false)")?;
-        }
+        self.commit_and_push(term, word, "Delete")?;
 
         Ok(())
     }
@@ -236,46 +203,38 @@ impl WordProcessor {
         // Validate word
         validate_word(word)?;
 
-        term.write_line(&format!(
-            "🔄 Updating word '{}' in vocabulary notebook...",
-            word
-        ))?;
+        term.write_line(&format!("🔄 Updating word '{}' in vocabulary notebook...", word))?;
 
         // First, try to delete the word if it exists (ignore error if word doesn't exist)
-        match delete_from_vocabulary_notebook(
-            &self.config.vocabulary_notebook_file,
-            word,
-            timestamp,
-        ) {
-            Ok(_) => {
-                term.write_line(&format!("🗑️  Deleted existing entry for '{}'", word))?;
-            }
-            Err(_) => {
-                term.write_line(&format!(
-                    "ℹ️  No existing entry found for '{}', creating new entry",
-                    word
-                ))?;
-            }
-        }
+        delete_from_vocabulary_notebook(&self.config.vocabulary_notebook_file, word, timestamp, )?;
 
         // Then save the new content
-        term.write_line(&format!("💾 Saving updated content for '{}'...", word))?;
         prepend_to_vocabulary_notebook(&self.config.vocabulary_notebook_file, content)?;
 
         // Commit changes only if git is enabled
         term.write_line("✅ Successfully updated word locally")?;
 
-        if self.config.git_enabled {
-            // Commit changes locally
-            term.write_line("📝 Committing changes locally...")?;
-            self.commit_local_changes(word, "Update")?;
+        self.commit_and_push(term, word, "Update")?;
 
-            // Then perform section-aware sync
-            term.write_line("🔄 Synchronizing with section awareness...")?;
-            sync_with_remote(
-                &self.config.vocabulary_notebook_file,
+        Ok(())
+    }
+
+    fn commit_and_push(&self, term: &Term, word: &str, operation: &str) -> Result<()> {
+        if self.config.git_enabled {
+            let work_dir = get_work_dir(&self.config.vocabulary_notebook_file)?;
+            // Initialize git repository if it doesn't exist
+            init_git_repo(
+                &work_dir,
                 self.config.git_remote_url.as_deref(),
             )?;
+            // Commit changes locally
+            term.write_line("📝 Committing changes locally...")?;
+            self.commit_local_changes(word, operation)?;
+
+            if self.config.git_remote_url.is_some() {
+                // Then perform section-aware sync
+                self.sync_with_remote()?;
+            }
         } else {
             term.write_line("ℹ️  Git operations disabled (GIT_ENABLED=false)")?;
         }
@@ -297,6 +256,27 @@ impl WordProcessor {
         )?;
 
         Ok(())
+    }
+
+    /// Section-aware synchronization that uses git's change detection
+    fn sync_with_remote(
+        &self,
+    ) -> Result<()> {
+        // Create section synchronizer
+         let synchronizer = GitSectionSynchronizer::new(self.config.clone())?;
+
+        // Perform section-aware sync
+        match synchronizer.sync_with_remote() {
+            Ok(SyncResult::Success) => {
+                println!("✅ Successfully synchronized vocabulary with section awareness");
+                Ok(())
+            }
+            Ok(SyncResult::NoChanges) => {
+                println!("ℹ️  No changes to synchronize");
+                Ok(())
+            }
+            Err(e) => Err(e),
+        }
     }
 }
 

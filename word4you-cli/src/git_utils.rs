@@ -1,8 +1,6 @@
 use anyhow::{anyhow, Result};
 use std::path::Path;
 use std::process::Command;
-use crate::config::Config;
-use crate::git_section_sync::{GitSectionSynchronizer, SyncResult};
 
 pub fn run_git_command(args: &[&str], work_dir: &Path) -> Result<String> {
     let output = Command::new("git")
@@ -40,13 +38,9 @@ pub fn run_git_command(args: &[&str], work_dir: &Path) -> Result<String> {
 }
 
 pub fn init_git_repo(
-    vocabulary_notebook_file: &str,
+    work_dir: &Path,
     remote_url: Option<&str>,
 ) -> Result<()> {
-    let notebook_path = Path::new(vocabulary_notebook_file);
-    let work_dir = notebook_path
-        .parent()
-        .ok_or_else(|| anyhow!("Invalid vocabulary notebook file path"))?;
 
     if !work_dir.join(".git").exists() {
         run_git_command(&["init"], work_dir)?;
@@ -67,58 +61,9 @@ pub fn init_git_repo(
             run_git_command(&["remote", "add", "origin", url], work_dir)?;
             println!("🔧 Added remote origin: {}", url);
         }
-        run_git_command(&["branch", "--set-upstream-to=origin/main", "main"], work_dir)?;
     }
 
     Ok(())
-}
-
-/// Section-aware synchronization that uses git's change detection
-pub fn sync_with_remote(
-    vocabulary_file: &str,
-    git_remote_url: Option<&str>,
-) -> Result<()> {
-    let _work_dir = Path::new(vocabulary_file)
-        .parent()
-        .ok_or_else(|| anyhow!("Invalid vocabulary file path"))?;
-
-    // Initialize git repo if needed with remote URL
-    init_git_repo(vocabulary_file, git_remote_url)?;
-
-    // Always commit local changes first, before any sync operations
-    commit("Update vocabulary", vocabulary_file)?;
-
-    if git_remote_url.is_none() {
-        // Local-only mode - we're done after committing
-        return Ok(());
-    }
-
-    // Create config for section synchronizer
-    let config = Config {
-        vocabulary_notebook_file: vocabulary_file.to_string(),
-        git_remote_url: git_remote_url.map(String::from),
-        git_enabled: true,
-        // These fields would normally come from actual config, but we'll use defaults
-        gemini_api_key: String::new(),
-        gemini_model_name: "gemini-pro".to_string(),
-        gemini_prompt_template: String::new(),
-    };
-
-    // Create section synchronizer
-    let synchronizer = GitSectionSynchronizer::new(config)?;
-
-    // Perform section-aware sync
-    match synchronizer.sync_with_remote() {
-        Ok(SyncResult::Success) => {
-            println!("✅ Successfully synchronized vocabulary with section awareness");
-            Ok(())
-        }
-        Ok(SyncResult::NoChanges) => {
-            println!("ℹ️  No changes to synchronize");
-            Ok(())
-        }
-        Err(e) => Err(e),
-    }
 }
 
 /// Helper function to commit local changes

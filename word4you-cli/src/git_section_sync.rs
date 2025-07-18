@@ -28,9 +28,9 @@ impl GitSectionSynchronizer {
             .ok_or_else(|| anyhow!("Invalid vocabulary file path"))?;
 
         self.term
-            .write_line("🔄 Starting simplified synchronization...")?;
+            .write_line("🔄 Starting synchronization...")?;
 
-        // 1. Fetch latest from remote
+        // Fetch latest from remote
         self.term
             .write_line("📥 Fetching latest changes from remote...")?;
         if let Err(e) = run_git_command(&["fetch", "origin"], work_dir) {
@@ -39,30 +39,7 @@ impl GitSectionSynchronizer {
             // Continue with local-only operation
         }
 
-        // 2. Check if we have local changes
-        let status = run_git_command(&["status", "--porcelain"], work_dir)?;
-        let has_local_changes = !status.trim().is_empty();
-
-        if has_local_changes {
-            self.term.write_line("📝 Local changes detected")?;
-            // Commit local changes first
-            self.commit_changes_if_needed()?;
-        } else {
-            self.term.write_line("ℹ️  No uncommitted changes detected")?;
-        }
-
-        // 2.5. Check if we have unpushed commits
-        let mut has_unpushed_commits = false;
-        if let Ok(output) = run_git_command(&["rev-list", "--count", "origin/main..HEAD"], work_dir) {
-            if let Ok(count) = output.trim().parse::<i32>() {
-                has_unpushed_commits = count > 0;
-                if has_unpushed_commits {
-                    self.term.write_line(&format!("📝 {} unpushed commits detected", count))?;
-                }
-            }
-        }
-
-        // 3. Check if this is a first-time sync (no common history)
+        // Check if this is a first-time sync (no common history)
         self.term.write_line("🔍 Checking repository history...")?;
         let is_first_time_sync = self.is_first_time_sync(work_dir)?;
 
@@ -71,6 +48,17 @@ impl GitSectionSynchronizer {
                 .write_line("🎆 First-time sync detected - using direct content merging...")?;
             self.handle_first_time_sync()?;
         } else {
+            // Check if we have unpushed commits
+            let mut has_unpushed_commits = false;
+            if let Ok(output) = run_git_command(&["rev-list", "--count", "origin/main..HEAD"], work_dir) {
+                if let Ok(count) = output.trim().parse::<i32>() {
+                    has_unpushed_commits = count > 0;
+                    if has_unpushed_commits {
+                        self.term.write_line(&format!("📝 {} unpushed commits detected", count))?;
+                    }
+                }
+            }
+
             // Normal sync with existing history
             // First check if we're ahead of remote (only have unpushed commits)
             if has_unpushed_commits {
@@ -94,10 +82,10 @@ impl GitSectionSynchronizer {
             }
         }
 
-        // 4. Push changes if remote is configured
+        // Push changes if remote is configured
         if self.config.git_remote_url.is_some() {
             self.term.write_line("📤 Pushing changes to remote...")?;
-            match run_git_command(&["push", "origin", "main"], work_dir) {
+            match run_git_command(&["push","-u", "origin", "main"], work_dir) {
                 Ok(_) => self
                     .term
                     .write_line("✅ Successfully pushed changes to remote")?,
@@ -363,43 +351,43 @@ impl GitSectionSynchronizer {
         Ok(())
     }
 
-    fn commit_changes_if_needed(&self) -> Result<()> {
-        let work_dir = Path::new(&self.config.vocabulary_notebook_file)
-            .parent()
-            .unwrap();
-
-        // Check if there are changes to commit
-        let status = run_git_command(&["status", "--porcelain"], work_dir)?;
-        if !status.trim().is_empty() {
-            // Add all changes
-            run_git_command(&["add", "."], work_dir)?;
-
-            // Double-check after adding - sometimes files get ignored
-            let status_after_add = run_git_command(&["status", "--porcelain"], work_dir)?;
-            if status_after_add.trim().is_empty() {
-                self.term
-                    .write_line("ℹ️  No changes to commit after staging")?;
-                return Ok(());
-            }
-
-            // Commit with simplified message
-            let commit_message = format!(
-                "Simplified sync - {}",
-                chrono::Utc::now().format("%Y-%m-%d %H:%M:%S")
-            );
-
-            if let Err(e) = run_git_command(&["commit", "-m", &commit_message], work_dir) {
-                self.term
-                    .write_line(&format!("⚠️  Could not commit changes: {}", e))?;
-                self.term
-                    .write_line("💡 You may need to commit changes manually")?;
-            } else {
-                self.term.write_line("✅ Committed changes locally")?;
-            }
-        } else {
-            self.term.write_line("ℹ️  No changes to commit")?;
-        }
-
-        Ok(())
-    }
+    // fn commit_changes_if_needed(&self) -> Result<()> {
+    //     let work_dir = Path::new(&self.config.vocabulary_notebook_file)
+    //         .parent()
+    //         .unwrap();
+    //
+    //     // Check if there are changes to commit
+    //     let status = run_git_command(&["status", "--porcelain"], work_dir)?;
+    //     if !status.trim().is_empty() {
+    //         // Add all changes
+    //         run_git_command(&["add", "."], work_dir)?;
+    //
+    //         // Double-check after adding - sometimes files get ignored
+    //         let status_after_add = run_git_command(&["status", "--porcelain"], work_dir)?;
+    //         if status_after_add.trim().is_empty() {
+    //             self.term
+    //                 .write_line("ℹ️  No changes to commit after staging")?;
+    //             return Ok(());
+    //         }
+    //
+    //         // Commit with simplified message
+    //         let commit_message = format!(
+    //             "Simplified sync - {}",
+    //             chrono::Utc::now().format("%Y-%m-%d %H:%M:%S")
+    //         );
+    //
+    //         if let Err(e) = run_git_command(&["commit", "-m", &commit_message], work_dir) {
+    //             self.term
+    //                 .write_line(&format!("⚠️  Could not commit changes: {}", e))?;
+    //             self.term
+    //                 .write_line("💡 You may need to commit changes manually")?;
+    //         } else {
+    //             self.term.write_line("✅ Committed changes locally")?;
+    //         }
+    //     } else {
+    //         self.term.write_line("ℹ️  No changes to commit")?;
+    //     }
+    //
+    //     Ok(())
+    // }
 }
