@@ -1,6 +1,6 @@
 use crate::config::Config;
 use crate::gemini_client::GeminiClient;
-use crate::git_utils::{init_git_repo_with_remote, run_git_command, sync_with_section_awareness};
+use crate::git_utils::{init_git_repo_with_remote, run_git_command};
 use crate::utils::{
     delete_from_vocabulary_notebook, prepend_to_vocabulary_notebook, validate_word,
 };
@@ -172,20 +172,13 @@ impl WordProcessor {
         // Save to vocabulary notebook
         prepend_to_vocabulary_notebook(&self.config.vocabulary_notebook_file, content)?;
 
-        // Commit and push changes only if git is enabled
+        // Commit changes only if git is enabled
         term.write_line("✅ Successfully saved word locally")?;
 
         if self.config.git_enabled {
-            // First commit changes locally
+            // Commit changes locally
             term.write_line("📝 Committing changes locally...")?;
             self.commit_local_changes(word, "Add")?;
-
-            // Then perform section-aware sync
-            term.write_line("🔄 Synchronizing with section awareness...")?;
-            sync_with_section_awareness(
-                &self.config.vocabulary_notebook_file,
-                self.config.git_remote_url.as_deref(),
-            )?;
         } else {
             term.write_line("ℹ️  Git operations disabled (GIT_ENABLED=false)")?;
         }
@@ -205,20 +198,13 @@ impl WordProcessor {
         // Delete from vocabulary notebook, optionally with timestamp
         delete_from_vocabulary_notebook(&self.config.vocabulary_notebook_file, word, timestamp)?;
 
-        // Commit and push changes only if git is enabled
+        // Commit changes only if git is enabled
         term.write_line("✅ Successfully deleted word locally")?;
 
         if self.config.git_enabled {
-            // First commit changes locally
+            // Commit changes locally
             term.write_line("📝 Committing changes locally...")?;
             self.commit_local_changes(word, "Delete")?;
-
-            // Then perform section-aware sync
-            term.write_line("🔄 Synchronizing with section awareness...")?;
-            sync_with_section_awareness(
-                &self.config.vocabulary_notebook_file,
-                self.config.git_remote_url.as_deref(),
-            )?;
         } else {
             term.write_line("ℹ️  Git operations disabled (GIT_ENABLED=false)")?;
         }
@@ -262,20 +248,13 @@ impl WordProcessor {
         term.write_line(&format!("💾 Saving updated content for '{}'...", word))?;
         prepend_to_vocabulary_notebook(&self.config.vocabulary_notebook_file, content)?;
 
-        // Commit and push changes only if git is enabled
+        // Commit changes only if git is enabled
         term.write_line("✅ Successfully updated word locally")?;
 
         if self.config.git_enabled {
-            // First commit changes locally
+            // Commit changes locally
             term.write_line("📝 Committing changes locally...")?;
             self.commit_local_changes(word, "Update")?;
-
-            // Then perform section-aware sync
-            term.write_line("🔄 Synchronizing with section awareness...")?;
-            sync_with_section_awareness(
-                &self.config.vocabulary_notebook_file,
-                self.config.git_remote_url.as_deref(),
-            )?;
         } else {
             term.write_line("ℹ️  Git operations disabled (GIT_ENABLED=false)")?;
         }

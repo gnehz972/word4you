@@ -5,7 +5,6 @@ use word_processor::WordProcessor;
 
 mod config;
 mod gemini_client;
-mod git_section_sync;
 mod git_utils;
 mod utils;
 mod word_processor;
@@ -59,9 +58,6 @@ enum Commands {
         raw: bool,
     },
 
-    /// Test the API connection
-    Test,
-
     /// Save word to vocabulary notebook
     Save {
         /// The word to save
@@ -96,12 +92,8 @@ enum Commands {
         timestamp: Option<String>,
     },
 
-    /// Synchronize vocabulary with remote using section-based logic
-    Sync {
-        /// Force sync even if there are conflicts
-        #[arg(long)]
-        force: bool,
-    },
+    /// Test the API connection
+    Test,
 }
 
 #[tokio::main]
@@ -145,12 +137,7 @@ async fn main() -> Result<()> {
                 return Ok(());
             }
         }
-        Some(Commands::Sync { force }) => {
-            if let Err(e) = sync_vocabulary(&term, *force).await {
-                eprintln!("❌ Error: {}", e);
-                return Ok(());
-            }
-        }
+
         None => {
             // Enter interactive mode when no subcommand provided
             if let Err(e) = interactive_mode(&term).await {
@@ -247,20 +234,6 @@ async fn test_api_connection(term: &Term) -> anyhow::Result<()> {
 }
 
 
-async fn sync_vocabulary(term: &Term, _force: bool) -> anyhow::Result<()> {
-    // Validate configuration
-    let config = Config::load()?;
-
-    term.write_line("🔄 Starting section-aware vocabulary synchronization...")?;
-
-    // Use section-aware synchronization
-    git_utils::sync_with_section_awareness(
-        &config.vocabulary_notebook_file,
-        config.git_remote_url.as_deref(),
-    )?;
-
-    Ok(())
-}
 
 async fn interactive_mode(term: &Term) -> anyhow::Result<()> {
     // Validate configuration first
