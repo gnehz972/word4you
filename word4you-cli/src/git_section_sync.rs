@@ -10,6 +10,25 @@ pub enum SyncResult {
     NoChanges,
 }
 
+#[derive(Debug)]
+struct LocalChanges {
+    added_sections: Vec<AddedWordSection>,
+    deleted_sections: Vec<DeletedWordSection>,
+}
+
+#[derive(Debug)]
+struct AddedWordSection {
+    word: String,
+    content: String,
+    timestamp: Option<String>,
+}
+
+#[derive(Debug)]
+struct DeletedWordSection {
+    word: String,
+    timestamp: Option<String>,
+}
+
 pub struct GitSectionSynchronizer {
     config: Config,
     term: Term,
@@ -283,15 +302,19 @@ impl GitSectionSynchronizer {
             }
             Err(e) => {
                 self.term.write_line(&format!("⚠️  Merge with -X theirs failed: {}", e))?;
-                self.term.write_line("🔄 Falling back to manual merge commit creation...")?;
+                self.term.write_line("🔄 Falling back to manual merge with local changes preservation...")?;
             }
         }
 
-        // If the above fails, manually create a merge commit that preserves remote history
+        // If the above fails, manually create a merge commit that preserves local changes
         let _ = run_git_command(&["merge", "--abort"], work_dir);
         
+        // Get local changes since common ancestor
+        self.term.write_line("🔍 Analyzing local changes since common ancestor...")?;
+        let local_changes = self.get_local_changes_since_ancestor(work_dir)?;
+        
         // Get the remote version manually
-        self.term.write_line("📥 Getting remote version manually...")?;
+        self.term.write_line("📥 Getting remote version as base...")?;
 
         // Extract filename from the vocabulary file path
         let vocab_filename = Path::new(&self.config.vocabulary_notebook_file)
@@ -306,8 +329,12 @@ impl GitSectionSynchronizer {
                 anyhow!("Failed to get remote file content: {}. This might be a first-time sync with an empty remote repository.", e)
             })?;
 
-        // Write remote content to resolve conflicts
+        // Write remote content as base
         std::fs::write(&self.config.vocabulary_notebook_file, remote_content)?;
+
+        // Apply local changes to the remote base
+        self.term.write_line("🔄 Applying local changes to remote base...")?;
+        self.apply_local_changes(&local_changes)?;
 
         // Stage the resolved content
         self.term.write_line("💾 Staging resolved content...")?;
@@ -327,10 +354,10 @@ impl GitSectionSynchronizer {
             match run_git_command(&[
                 "commit",
                 "-m",
-                "Merge origin/main (resolved conflicts by accepting remote version)",
+                "Merge origin/main (resolved conflicts by preserving local changes)",
             ], work_dir) {
                 Ok(_) => {
-                    self.term.write_line("✅ Successfully created merge commit with remote history preserved")?;
+                    self.term.write_line("✅ Successfully created merge commit with local changes preserved")?;
                 }
                 Err(e) => {
                     self.term.write_line(&format!("⚠️  Failed to create merge commit: {}", e))?;
@@ -338,7 +365,7 @@ impl GitSectionSynchronizer {
                     run_git_command(&[
                         "commit",
                         "-m",
-                        "Accept remote version (fallback commit)",
+                        "Apply local changes to remote base (fallback commit)",
                     ], work_dir)?;
                     self.term.write_line("✅ Created fallback commit")?;
                 }
@@ -346,6 +373,167 @@ impl GitSectionSynchronizer {
         } else {
             self.term
                 .write_line("ℹ️  No changes to commit after resolution")?;
+        }
+
+        Ok(())
+    }
+
+    /// Get local changes since common ancestor by parsing git diff
+    fn get_local_changes_since_ancestor(&self, work_dir: &Path) -> Result<LocalChanges> {
+        // Get common ancestor (merge base)
+        let merge_base = run_git_command(&["merge-base", "HEAD", "origin/main"], work_dir)
+            .map_err(|e| anyhow!("Failed to find common ancestor: {}", e))?;
+        let merge_base = merge_base.trim();
+
+        // Get diff from merge base to HEAD for vocabulary file only
+        let vocab_filename = Path::new(&self.config.vocabulary_notebook_file)
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("vocabulary_notebook.md");
+
+        let diff_output = run_git_command(&[
+            "diff", 
+            &format!("{}...HEAD", merge_base), 
+            "--", 
+            vocab_filename
+        ], work_dir)?;
+
+        self.parse_diff_for_word_changes(&diff_output)
+    }
+
+    /// Parse git diff output to extract word section changes
+    fn parse_diff_for_word_changes(&self, diff_output: &str) -> Result<LocalChanges> {
+        let mut added_sections = Vec::new();
+        let mut deleted_sections = Vec::new();
+        
+        let lines: Vec<&str> = diff_output.lines().collect();
+        let mut i = 0;
+
+        while i < lines.len() {
+            let line = lines[i];
+            
+            // Look for added word sections (+ prefix)
+            if let Some(stripped) = line.strip_prefix("+## ") {
+                let word = stripped.trim();
+                let mut section_content = String::new();
+                let mut timestamp = None;
+                
+                // Collect the entire added section
+                section_content.push_str(&line[1..]); // Remove + prefix
+                section_content.push('\n');
+                i += 1;
+                
+                // Continue collecting until we hit a separator or another section
+                while i < lines.len() {
+                    let current_line = lines[i];
+                    if current_line.starts_with("+---") {
+                        section_content.push_str("---\n");
+                        i += 1;
+                        break;
+                    } else if current_line.starts_with("+## ") {
+                        // Hit another section, don't consume this line
+                        break;
+                    } else if let Some(stripped) = current_line.strip_prefix("+<!-- timestamp=") {
+                        // Extract timestamp
+                        if let Some(ts_end) = stripped.find(" -->") {
+                            timestamp = Some(stripped[..ts_end].to_string());
+                        }
+                        section_content.push_str(&current_line[1..]); // Remove + prefix
+                        section_content.push('\n');
+                        i += 1;
+                    } else if let Some(stripped) = current_line.strip_prefix("+") {
+                        // Regular added line
+                        section_content.push_str(stripped);
+                        section_content.push('\n');
+                        i += 1;
+                    } else {
+                        // Not an added line, stop collecting
+                        break;
+                    }
+                }
+                
+                added_sections.push(AddedWordSection {
+                    word: word.to_string(),
+                    content: section_content.trim().to_string(),
+                    timestamp,
+                });
+                continue;
+            }
+            
+            // Look for deleted word sections (- prefix)
+            if let Some(stripped) = line.strip_prefix("-## ") {
+                let word = stripped.trim();
+                let mut timestamp = None;
+                
+                i += 1;
+                // Look for timestamp in the deleted section
+                while i < lines.len() {
+                    let current_line = lines[i];
+                    if current_line.starts_with("-<!-- timestamp=") {
+                        // Extract timestamp
+                        if let Some(ts_start) = current_line.find("timestamp=") {
+                            if let Some(ts_end) = current_line.find(" -->") {
+                                timestamp = Some(current_line[ts_start + 10..ts_end].to_string());
+                            }
+                        }
+                        i += 1;
+                        break;
+                    } else if current_line.starts_with("----") {
+                        i += 1;
+                        break;
+                    } else if current_line.starts_with("-## ") {
+                        // Hit another section, don't consume this line
+                        break;
+                    } else if current_line.starts_with("-") {
+                        // Continue through deleted section
+                        i += 1;
+                    } else {
+                        // Not a deleted line, stop collecting
+                        break;
+                    }
+                }
+                
+                deleted_sections.push(DeletedWordSection {
+                    word: word.to_string(),
+                    timestamp,
+                });
+                continue;
+            }
+            
+            i += 1;
+        }
+
+        Ok(LocalChanges {
+            added_sections,
+            deleted_sections,
+        })
+    }
+
+    /// Apply local changes to the current file (which has remote content as base)
+    fn apply_local_changes(&self, changes: &LocalChanges) -> Result<()> {
+        // First, remove deleted sections
+        for deleted in &changes.deleted_sections {
+            self.term.write_line(&format!("🗑️  Removing deleted word: {}", deleted.word))?;
+            if let Err(e) = crate::utils::delete_from_vocabulary_notebook(
+                &self.config.vocabulary_notebook_file,
+                &deleted.word,
+                deleted.timestamp.as_deref(),
+            ) {
+                self.term.write_line(&format!("⚠️  Could not delete '{}': {}", deleted.word, e))?;
+                // Continue with other deletions
+            }
+        }
+
+        // Then, prepend added sections
+        for added in &changes.added_sections {
+            self.term.write_line(&format!("➕ Adding local word: {}", added.word))?;
+            if let Err(e) = crate::utils::prepend_to_vocabulary_notebook(
+                &self.config.vocabulary_notebook_file,
+                &added.content,
+            ) {
+                self.term.write_line(&format!("⚠️  Could not add '{}': {}", added.word, e))?;
+                // Continue with other additions
+            }
         }
 
         Ok(())
