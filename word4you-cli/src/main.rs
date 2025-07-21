@@ -234,8 +234,6 @@ async fn test_api_connection(term: &Term) -> anyhow::Result<()> {
     }
 }
 
-
-
 async fn interactive_mode(term: &Term) -> anyhow::Result<()> {
     // Validate configuration first
     let config = Config::load()?;

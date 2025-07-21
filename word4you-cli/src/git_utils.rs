@@ -37,11 +37,7 @@ pub fn run_git_command(args: &[&str], work_dir: &Path) -> Result<String> {
     }
 }
 
-pub fn init_git_repo(
-    work_dir: &Path,
-    remote_url: Option<&str>,
-) -> Result<()> {
-
+pub fn init_git_repo(work_dir: &Path, remote_url: Option<&str>) -> Result<()> {
     if !work_dir.join(".git").exists() {
         run_git_command(&["init"], work_dir)?;
         run_git_command(&["config", "init.defaultBranch", "main"], work_dir)?;
@@ -84,5 +80,3 @@ pub fn commit(message: &str, vocabulary_file: &str) -> Result<()> {
 
     Ok(())
 }
-
-

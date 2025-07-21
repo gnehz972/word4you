@@ -45,7 +45,7 @@ Important formatting rules:
 - Use Simplified Chinese, no Pinyin(romanized Chinese) included
 - Ensure the response is in proper markdown format
 "#
-            .to_string();
+        .to_string();
 
         let vocabulary_base_dir = env::var("VOCABULARY_BASE_DIR")
             .map(|path| expand_tilde_path(&path))
@@ -71,10 +71,6 @@ Important formatting rules:
             .unwrap_or(false);
 
         let git_remote_url = env::var("GIT_REMOTE_URL").ok();
-
-
-
-
 
         Ok(Config {
             gemini_api_key,

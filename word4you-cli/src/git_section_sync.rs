@@ -46,8 +46,7 @@ impl GitSectionSynchronizer {
             .parent()
             .ok_or_else(|| anyhow!("Invalid vocabulary file path"))?;
 
-        self.term
-            .write_line("🔄 Starting synchronization...")?;
+        self.term.write_line("🔄 Starting synchronization...")?;
 
         // Fetch latest from remote
         self.term
@@ -69,11 +68,14 @@ impl GitSectionSynchronizer {
         } else {
             // Check if we have unpushed commits
             let mut has_unpushed_commits = false;
-            if let Ok(output) = run_git_command(&["rev-list", "--count", "origin/main..HEAD"], work_dir) {
+            if let Ok(output) =
+                run_git_command(&["rev-list", "--count", "origin/main..HEAD"], work_dir)
+            {
                 if let Ok(count) = output.trim().parse::<i32>() {
                     has_unpushed_commits = count > 0;
                     if has_unpushed_commits {
-                        self.term.write_line(&format!("📝 {} unpushed commits detected", count))?;
+                        self.term
+                            .write_line(&format!("📝 {} unpushed commits detected", count))?;
                     }
                 }
             }
@@ -82,16 +84,19 @@ impl GitSectionSynchronizer {
             // First check if we're ahead of remote (only have unpushed commits)
             if has_unpushed_commits {
                 // Check if remote has new commits
-                let remote_ahead = run_git_command(&["rev-list", "--count", "HEAD..origin/main"], work_dir)
-                    .map(|output| output.trim().parse::<i32>().unwrap_or(0) > 0)
-                    .unwrap_or(false);
-                
+                let remote_ahead =
+                    run_git_command(&["rev-list", "--count", "HEAD..origin/main"], work_dir)
+                        .map(|output| output.trim().parse::<i32>().unwrap_or(0) > 0)
+                        .unwrap_or(false);
+
                 if !remote_ahead {
                     // We're ahead and remote has no new commits - skip merge, go straight to push
-                    self.term.write_line("ℹ️  Only local commits, no remote changes - skipping merge")?;
+                    self.term
+                        .write_line("ℹ️  Only local commits, no remote changes - skipping merge")?;
                 } else {
                     // Both sides have commits - need to merge
-                    self.term.write_line("🔍 Both local and remote changes detected - merging...")?;
+                    self.term
+                        .write_line("🔍 Both local and remote changes detected - merging...")?;
                     self.perform_merge(work_dir)?;
                 }
             } else {
@@ -104,7 +109,7 @@ impl GitSectionSynchronizer {
         // Push changes if remote is configured
         if self.config.git_remote_url.is_some() {
             self.term.write_line("📤 Pushing changes to remote...")?;
-            match run_git_command(&["push","-u", "origin", "main"], work_dir) {
+            match run_git_command(&["push", "-u", "origin", "main"], work_dir) {
                 Ok(_) => self
                     .term
                     .write_line("✅ Successfully pushed changes to remote")?,
@@ -134,7 +139,7 @@ impl GitSectionSynchronizer {
                 // No conflicts - complete the merge
                 self.term
                     .write_line("✅ No conflicts detected - completing merge...")?;
-                
+
                 // Check if there are actually changes to commit
                 let status = run_git_command(&["status", "--porcelain"], work_dir)?;
                 if !status.trim().is_empty() {
@@ -144,7 +149,10 @@ impl GitSectionSynchronizer {
                 } else {
                     // No file changes but merge is needed - complete the merge
                     // This happens when remote has commits that don't change files
-                    run_git_command(&["commit", "-m", "Merge remote changes (no file changes)"], work_dir)?;
+                    run_git_command(
+                        &["commit", "-m", "Merge remote changes (no file changes)"],
+                        work_dir,
+                    )?;
                     self.term
                         .write_line("✅ Successfully merged remote changes (no file changes)")?;
                 }
@@ -152,9 +160,7 @@ impl GitSectionSynchronizer {
             Err(e) => {
                 let error_msg = e.to_string();
 
-                if error_msg.contains("CONFLICT")
-                    || error_msg.contains("Automatic merge failed")
-                {
+                if error_msg.contains("CONFLICT") || error_msg.contains("Automatic merge failed") {
                     self.term.write_line(
                         "⚠️  Merge conflicts detected - resolving with theirs strategy...",
                     )?;
@@ -236,8 +242,9 @@ impl GitSectionSynchronizer {
             .ok_or_else(|| anyhow!("Invalid vocabulary file path"))?;
 
         // Read local content before merge (if any)
-        let local_content = std::fs::read_to_string(&self.config.vocabulary_notebook_file)
-            ?.trim().to_string();
+        let local_content = std::fs::read_to_string(&self.config.vocabulary_notebook_file)?
+            .trim()
+            .to_string();
 
         // Check if remote branch exists
         let remote_exists =
@@ -246,22 +253,39 @@ impl GitSectionSynchronizer {
         if remote_exists {
             // Just let Git handle the merge completely
             self.term.write_line("🔗 Merging with remote history...")?;
-            
-            match run_git_command(&["merge", "origin/main", "--allow-unrelated-histories", "-X", "theirs"], work_dir) {
+
+            match run_git_command(
+                &[
+                    "merge",
+                    "origin/main",
+                    "--allow-unrelated-histories",
+                    "-X",
+                    "theirs",
+                ],
+                work_dir,
+            ) {
                 Ok(_) => {
-                    self.term.write_line("✅ Successfully merged with remote history")?;
-                    
+                    self.term
+                        .write_line("✅ Successfully merged with remote history")?;
+
                     // If we had local content, prepend it to the merged file
                     if !local_content.is_empty() {
                         self.term.write_line("📝 Prepending local content...")?;
-                        
+
                         // Use our existing prepend utility function
-                        crate::utils::prepend_to_vocabulary_notebook(&self.config.vocabulary_notebook_file, &local_content)?;
-                        
+                        crate::utils::prepend_to_vocabulary_notebook(
+                            &self.config.vocabulary_notebook_file,
+                            &local_content,
+                        )?;
+
                         // Commit the prepended content
                         run_git_command(&["add", "."], work_dir)?;
-                        run_git_command(&["commit", "-m", "Prepend local content after initial sync"], work_dir)?;
-                        self.term.write_line("✅ Successfully prepended local content")?;
+                        run_git_command(
+                            &["commit", "-m", "Prepend local content after initial sync"],
+                            work_dir,
+                        )?;
+                        self.term
+                            .write_line("✅ Successfully prepended local content")?;
                     }
                 }
                 Err(e) => {
@@ -273,14 +297,17 @@ impl GitSectionSynchronizer {
             // No remote exists, just commit local content if any
             if !local_content.is_empty() {
                 run_git_command(&["add", "."], work_dir)?;
-                run_git_command(&["commit", "-m", "Initial sync: local content only"], work_dir)?;
-                self.term.write_line("✅ Successfully committed local content")?;
+                run_git_command(
+                    &["commit", "-m", "Initial sync: local content only"],
+                    work_dir,
+                )?;
+                self.term
+                    .write_line("✅ Successfully committed local content")?;
             }
         }
 
         Ok(())
     }
-
 
     /// Fallback manual resolution when theirs strategy fails
     fn resolve_conflicts_with_manual_theirs(&self) -> Result<()> {
@@ -291,67 +318,94 @@ impl GitSectionSynchronizer {
         // First, clean up any existing merge state
         self.term.write_line("🧹 Cleaning up merge state...")?;
         let _ = run_git_command(&["merge", "--abort"], work_dir);
-        
+
         // Use a different approach: merge with --allow-unrelated-histories and -X theirs
-        self.term.write_line("🔄 Attempting merge with unrelated histories and theirs strategy...")?;
+        self.term
+            .write_line("🔄 Attempting merge with unrelated histories and theirs strategy...")?;
         let local_changes = self.get_local_changes_since_ancestor(work_dir)?;
-        match run_git_command(&["merge", "--allow-unrelated-histories", "-X", "theirs", "origin/main"], work_dir) {
+        match run_git_command(
+            &[
+                "merge",
+                "--allow-unrelated-histories",
+                "-X",
+                "theirs",
+                "origin/main",
+            ],
+            work_dir,
+        ) {
             Ok(_) => {
-                self.term.write_line("✅ Successfully merged with unrelated histories and theirs strategy")?;
+                self.term.write_line(
+                    "✅ Successfully merged with unrelated histories and theirs strategy",
+                )?;
                 // Analyze and apply local changes after merge
-                self.term.write_line("🔍 Applying local changes after theirs merge...")?;
-               
+                self.term
+                    .write_line("🔍 Applying local changes after theirs merge...")?;
+
                 self.apply_local_changes(&local_changes)?;
 
-                 // Stage the resolved content
-        self.term.write_line("💾 Staging resolved content...")?;
-        run_git_command(&["add", "."], work_dir)?;
+                // Stage the resolved content
+                self.term.write_line("💾 Staging resolved content...")?;
+                run_git_command(&["add", "."], work_dir)?;
 
-        // Create a merge commit that preserves remote history
-        self.term.write_line("🔗 Creating merge commit to preserve remote history...")?;
-        
-        // Check if there are actually changes to commit
-        let status = run_git_command(&["status", "--porcelain"], work_dir)?;
-        if !status.trim().is_empty() {
-            // Create a merge commit with two parents
-            match run_git_command(&[
-                "commit",
-                "-m",
-                "Merge origin/main (resolved conflicts by preserving local changes)",
-            ], work_dir) {
-                Ok(_) => {
-                    self.term.write_line("✅ Successfully created merge commit with local changes preserved")?;
-                }
-                Err(e) => {
-                    self.term.write_line(&format!("⚠️  Failed to create merge commit: {}", e))?;
-                    // Fall back to regular commit
-                    run_git_command(&[
-                        "commit",
-                        "-m",
-                        "Apply local changes to remote base (fallback commit)",
-                    ], work_dir)?;
-                    self.term.write_line("✅ Created fallback commit")?;
-                }
-            }
-        } else {
-            self.term
-                .write_line("ℹ️  No changes to commit after resolution")?;
-        }
+                // Create a merge commit that preserves remote history
+                self.term
+                    .write_line("🔗 Creating merge commit to preserve remote history...")?;
 
+                // Check if there are actually changes to commit
+                let status = run_git_command(&["status", "--porcelain"], work_dir)?;
+                if !status.trim().is_empty() {
+                    // Create a merge commit with two parents
+                    match run_git_command(
+                        &[
+                            "commit",
+                            "-m",
+                            "Merge origin/main (resolved conflicts by preserving local changes)",
+                        ],
+                        work_dir,
+                    ) {
+                        Ok(_) => {
+                            self.term.write_line(
+                                "✅ Successfully created merge commit with local changes preserved",
+                            )?;
+                        }
+                        Err(e) => {
+                            self.term
+                                .write_line(&format!("⚠️  Failed to create merge commit: {}", e))?;
+                            // Fall back to regular commit
+                            run_git_command(
+                                &[
+                                    "commit",
+                                    "-m",
+                                    "Apply local changes to remote base (fallback commit)",
+                                ],
+                                work_dir,
+                            )?;
+                            self.term.write_line("✅ Created fallback commit")?;
+                        }
+                    }
+                } else {
+                    self.term
+                        .write_line("ℹ️  No changes to commit after resolution")?;
+                }
 
                 return Ok(());
             }
             Err(e) => {
-                self.term.write_line(&format!("⚠️  Merge with -X theirs failed: {}", e))?;
-                self.term.write_line("🔄 Rolling back to local changes...")?;
+                self.term
+                    .write_line(&format!("⚠️  Merge with -X theirs failed: {}", e))?;
+                self.term
+                    .write_line("🔄 Rolling back to local changes...")?;
                 // Restore vocabulary file to local HEAD
                 let vocab_filename = Path::new(&self.config.vocabulary_notebook_file)
                     .file_name()
                     .and_then(|name| name.to_str())
                     .unwrap_or("vocabulary_notebook.md");
                 let _ = run_git_command(&["checkout", "HEAD", "--", vocab_filename], work_dir);
-                self.term.write_line("✅ Local changes restored after failed merge")?;
-                self.term.write_line("🔄 Falling back to manual merge with local changes preservation...")?;
+                self.term
+                    .write_line("✅ Local changes restored after failed merge")?;
+                self.term.write_line(
+                    "🔄 Falling back to manual merge with local changes preservation...",
+                )?;
                 return Ok(());
             }
         }
@@ -370,12 +424,15 @@ impl GitSectionSynchronizer {
             .and_then(|name| name.to_str())
             .unwrap_or("vocabulary_notebook.md");
 
-        let diff_output = run_git_command(&[
-            "diff", 
-            &format!("{}...HEAD", merge_base), 
-            "--", 
-            vocab_filename
-        ], work_dir)?;
+        let diff_output = run_git_command(
+            &[
+                "diff",
+                &format!("{}...HEAD", merge_base),
+                "--",
+                vocab_filename,
+            ],
+            work_dir,
+        )?;
 
         self.parse_diff_for_word_changes(&diff_output)
     }
@@ -384,24 +441,24 @@ impl GitSectionSynchronizer {
     fn parse_diff_for_word_changes(&self, diff_output: &str) -> Result<LocalChanges> {
         let mut added_sections = Vec::new();
         let mut deleted_sections = Vec::new();
-        
+
         let lines: Vec<&str> = diff_output.lines().collect();
         let mut i = 0;
 
         while i < lines.len() {
             let line = lines[i];
-            
+
             // Look for added word sections (+ prefix)
             if let Some(stripped) = line.strip_prefix("+## ") {
                 let word = stripped.trim();
                 let mut section_content = String::new();
                 let mut timestamp = None;
-                
+
                 // Collect the entire added section
                 section_content.push_str(&line[1..]); // Remove + prefix
                 section_content.push('\n');
                 i += 1;
-                
+
                 // Continue collecting until we hit a separator or another section
                 while i < lines.len() {
                     let current_line = lines[i];
@@ -430,7 +487,7 @@ impl GitSectionSynchronizer {
                         break;
                     }
                 }
-                
+
                 added_sections.push(AddedWordSection {
                     word: word.to_string(),
                     content: section_content.trim().to_string(),
@@ -438,12 +495,12 @@ impl GitSectionSynchronizer {
                 });
                 continue;
             }
-            
+
             // Look for deleted word sections (- prefix)
             if let Some(stripped) = line.strip_prefix("-## ") {
                 let word = stripped.trim();
                 let mut timestamp = None;
-                
+
                 i += 1;
                 // Look for timestamp in the deleted section
                 while i < lines.len() {
@@ -471,14 +528,14 @@ impl GitSectionSynchronizer {
                         break;
                     }
                 }
-                
+
                 deleted_sections.push(DeletedWordSection {
                     word: word.to_string(),
                     timestamp,
                 });
                 continue;
             }
-            
+
             i += 1;
         }
 
@@ -492,30 +549,33 @@ impl GitSectionSynchronizer {
     fn apply_local_changes(&self, changes: &LocalChanges) -> Result<()> {
         // First, remove deleted sections
         for deleted in &changes.deleted_sections {
-            self.term.write_line(&format!("🗑️  Removing deleted word: {}", deleted.word))?;
+            self.term
+                .write_line(&format!("🗑️  Removing deleted word: {}", deleted.word))?;
             if let Err(e) = crate::utils::delete_from_vocabulary_notebook(
                 &self.config.vocabulary_notebook_file,
                 &deleted.word,
                 deleted.timestamp.as_deref(),
             ) {
-                self.term.write_line(&format!("⚠️  Could not delete '{}': {}", deleted.word, e))?;
+                self.term
+                    .write_line(&format!("⚠️  Could not delete '{}': {}", deleted.word, e))?;
                 // Continue with other deletions
             }
         }
 
         // Then, prepend added sections
         for added in &changes.added_sections {
-            self.term.write_line(&format!("➕ Adding local word: {}", added.word))?;
+            self.term
+                .write_line(&format!("➕ Adding local word: {}", added.word))?;
             if let Err(e) = crate::utils::prepend_to_vocabulary_notebook(
                 &self.config.vocabulary_notebook_file,
                 &added.content,
             ) {
-                self.term.write_line(&format!("⚠️  Could not add '{}': {}", added.word, e))?;
+                self.term
+                    .write_line(&format!("⚠️  Could not add '{}': {}", added.word, e))?;
                 // Continue with other additions
             }
         }
 
         Ok(())
     }
-
 }

@@ -44,7 +44,8 @@ pub fn prepend_to_vocabulary_notebook(vocabulary_notebook_file: &str, content: &
         // Add timestamp and separator for new content
         format!(
             "{}\n\n<!-- timestamp={} -->\n\n---",
-            content.trim(), local_timestamp
+            content.trim(),
+            local_timestamp
         )
     };
 
@@ -83,10 +84,8 @@ pub fn delete_from_vocabulary_notebook(
         if !found && line.starts_with("## ") {
             let section_word = line[3..].trim(); // Remove "## " prefix
 
-
             // Check if this is the section we want to delete
             if section_word.to_lowercase() == word.to_lowercase() {
-
                 // If timestamp is specified, look for its exact match
                 if let Some(ts) = timestamp {
                     // Search forward for the timestamp line within the current section
@@ -119,7 +118,6 @@ pub fn delete_from_vocabulary_notebook(
 
                 continue;
             }
-
         }
 
         // Add the line to our filtered content

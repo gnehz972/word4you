@@ -1,12 +1,14 @@
 use crate::config::Config;
 use crate::gemini_client::GeminiClient;
+use crate::git_section_sync::{GitSectionSynchronizer, SyncResult};
 use crate::git_utils::{commit, init_git_repo};
-use crate::utils::{delete_from_vocabulary_notebook, get_work_dir, prepend_to_vocabulary_notebook, validate_word};
+use crate::utils::{
+    delete_from_vocabulary_notebook, get_work_dir, prepend_to_vocabulary_notebook, validate_word,
+};
 use anyhow::Result;
 use console::{style, Term};
 use dialoguer::Select;
 use termimad::*;
-use crate::git_section_sync::{GitSectionSynchronizer, SyncResult};
 
 pub struct WordProcessor {
     gemini_client: GeminiClient,
@@ -163,7 +165,10 @@ impl WordProcessor {
         // Validate word
         validate_word(word)?;
 
-        term.write_line(&format!("💾 Saving word '{}' to vocabulary notebook...", word))?;
+        term.write_line(&format!(
+            "💾 Saving word '{}' to vocabulary notebook...",
+            word
+        ))?;
 
         // Save to vocabulary notebook
         prepend_to_vocabulary_notebook(&self.config.vocabulary_notebook_file, content)?;
@@ -180,7 +185,10 @@ impl WordProcessor {
         // Validate word
         validate_word(word)?;
 
-        term.write_line(&format!("🗑️  Deleting word '{}' from vocabulary notebook...", word))?;
+        term.write_line(&format!(
+            "🗑️  Deleting word '{}' from vocabulary notebook...",
+            word
+        ))?;
 
         // Delete from vocabulary notebook, optionally with timestamp
         delete_from_vocabulary_notebook(&self.config.vocabulary_notebook_file, word, timestamp)?;
@@ -203,10 +211,13 @@ impl WordProcessor {
         // Validate word
         validate_word(word)?;
 
-        term.write_line(&format!("🔄 Updating word '{}' in vocabulary notebook...", word))?;
+        term.write_line(&format!(
+            "🔄 Updating word '{}' in vocabulary notebook...",
+            word
+        ))?;
 
         // First, try to delete the word if it exists (ignore error if word doesn't exist)
-        delete_from_vocabulary_notebook(&self.config.vocabulary_notebook_file, word, timestamp, )?;
+        delete_from_vocabulary_notebook(&self.config.vocabulary_notebook_file, word, timestamp)?;
 
         // Then save the new content
         prepend_to_vocabulary_notebook(&self.config.vocabulary_notebook_file, content)?;
@@ -223,10 +234,7 @@ impl WordProcessor {
         if self.config.git_enabled {
             let work_dir = get_work_dir(&self.config.vocabulary_notebook_file)?;
             // Initialize git repository if it doesn't exist
-            init_git_repo(
-                &work_dir,
-                self.config.git_remote_url.as_deref(),
-            )?;
+            init_git_repo(&work_dir, self.config.git_remote_url.as_deref())?;
             // Commit changes locally
             term.write_line("📝 Committing changes locally...")?;
             self.commit_local_changes(word, operation)?;
@@ -250,20 +258,15 @@ impl WordProcessor {
             word,
             chrono::Utc::now().format("%Y-%m-%d %H:%M:%S")
         );
-        commit(
-            &commit_message,
-            &self.config.vocabulary_notebook_file,
-        )?;
+        commit(&commit_message, &self.config.vocabulary_notebook_file)?;
 
         Ok(())
     }
 
     /// Section-aware synchronization that uses git's change detection
-    fn sync_with_remote(
-        &self,
-    ) -> Result<()> {
+    fn sync_with_remote(&self) -> Result<()> {
         // Create section synchronizer
-         let synchronizer = GitSectionSynchronizer::new(self.config.clone())?;
+        let synchronizer = GitSectionSynchronizer::new(self.config.clone())?;
 
         // Perform section-aware sync
         match synchronizer.sync_with_remote() {
