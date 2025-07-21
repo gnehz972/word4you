@@ -31,6 +31,12 @@ jobs:
         run: |
           rustup target add x86_64-apple-darwin aarch64-apple-darwin x86_64-unknown-linux-gnu
 
+      - name: Install OpenSSL for Linux builds
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
+        run: |
+          brew install openssl
+          export OPENSSL_DIR=$(brew --prefix openssl)
+
       - name: Build release binary
         run: |
           cargo build --release --target ${{ matrix.target }}
