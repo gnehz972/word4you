@@ -165,12 +165,12 @@ Enter a word to learn: beautiful
 
 Choose an action:
 s - Save to vocabulary notebook
+k - Skip this word
 r - Regenerate explanation
 p - Preview what will be saved
-k - Skip this word
 
 Enter your choice: k
-❌ Word explanation skipped.
+⏭ Word explanation skipped.
 
 ==================================================
 

@@ -74,6 +74,13 @@ impl WordProcessor {
             )?;
             term.write_line(
                 format!(
+                    "{} - Skip this word",
+                    style("⏭").red().to_string()
+                )
+                .as_str(),
+            )?;
+            term.write_line(
+                format!(
                     "{} - Regenerate explanation",
                     style("r").yellow().to_string()
                 )
@@ -86,10 +93,9 @@ impl WordProcessor {
                 )
                 .as_str(),
             )?;
-            term.write_line(format!("{} - Skip this word", style("k").red().to_string()).as_str())?;
             term.write_line("")?;
 
-            let choices = vec!["s", "r", "p", "k"];
+            let choices = vec!["s", "k", "r", "p"];
             let selection = Select::new()
                 .with_prompt("Enter your choice")
                 .items(&choices)
@@ -103,6 +109,11 @@ impl WordProcessor {
                     return Ok(());
                 }
                 1 => {
+                    // Skip
+                    term.write_line("⏭ Word explanation skipped.")?;
+                    return Ok(());
+                }
+                2 => {
                     // Regenerate explanation
                     term.write_line("🔄 Regenerating explanation...")?;
                     let new_explanation = self
@@ -121,7 +132,7 @@ impl WordProcessor {
                     term.write_line(&style("=".repeat(50)).blue().to_string())?;
                     continue; // Ask again
                 }
-                2 => {
+                3 => {
                     // Preview
                     term.write_line("\n📋 Preview of what will be saved:")?;
                     term.write_line(&style("=".repeat(50)).blue().to_string())?;
@@ -143,11 +154,6 @@ impl WordProcessor {
 
                     term.write_line(&style("=".repeat(50)).blue().to_string())?;
                     continue;
-                }
-                3 => {
-                    // Skip
-                    term.write_line("❌ Word explanation skipped.")?;
-                    return Ok(());
                 }
                 _ => {
                     term.write_line("❓ Invalid choice. Please try again.")?;
