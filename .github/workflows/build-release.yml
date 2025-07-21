@@ -71,7 +71,7 @@ jobs:
 
   release:
     needs: [build-linux, build-macos]
-    runs-on: macos-latest
+    runs-on: ubuntu-latest # Switched to ubuntu for easier shell scripting
     if: ${{ github.event.inputs.release_tag != '' }}
     steps:
       - name: Download all build artifacts
@@ -79,12 +79,22 @@ jobs:
         with:
           path: dist
 
+      # 💡 New step to rename binaries
+      - name: Rename binaries for release
+        run: |
+          ls -R dist # Optional: to see the directory structure
+          for dir in dist/*/; do
+            mv "${dir}word4you" "${dir}$(basename "$dir")"
+          done
+          ls -R dist # Optional: to verify the new names
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.release_tag }}
           name: Release ${{ github.event.inputs.release_tag }}
+          # ✅ Updated glob to find the renamed files
           files: |
-            dist/**/word4you*
+            dist/**/word4you-*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
