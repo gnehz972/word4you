@@ -32,6 +32,8 @@ termimad = "0.33.0"
 
 # File and path handling
 anyhow = "1.0"
+directories = "5.0"
+toml = "0.8.8"
 
 # Date and time
 chrono = { version = "0.4", features = ["serde"] }

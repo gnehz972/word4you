@@ -75,7 +75,7 @@ impl WordProcessor {
             term.write_line(
                 format!(
                     "{} - Skip this word",
-                    style("⏭").red().to_string()
+                    style("k").red().to_string()
                 )
                 .as_str(),
             )?;
@@ -86,16 +86,9 @@ impl WordProcessor {
                 )
                 .as_str(),
             )?;
-            term.write_line(
-                format!(
-                    "{} - Preview what will be saved",
-                    style("p").blue().to_string()
-                )
-                .as_str(),
-            )?;
             term.write_line("")?;
 
-            let choices = vec!["s", "k", "r", "p"];
+            let choices = vec!["s", "k", "r"];
             let selection = Select::new()
                 .with_prompt("Enter your choice")
                 .items(&choices)
@@ -110,7 +103,7 @@ impl WordProcessor {
                 }
                 1 => {
                     // Skip
-                    term.write_line("⏭ Word explanation skipped.")?;
+                    term.write_line("✔️ Word explanation skipped.")?;
                     return Ok(());
                 }
                 2 => {
@@ -132,29 +125,7 @@ impl WordProcessor {
                     term.write_line(&style("=".repeat(50)).blue().to_string())?;
                     continue; // Ask again
                 }
-                3 => {
-                    // Preview
-                    term.write_line("\n📋 Preview of what will be saved:")?;
-                    term.write_line(&style("=".repeat(50)).blue().to_string())?;
 
-                    let lines: Vec<&str> = explanation.lines().collect();
-                    let preview_lines = if lines.len() > 10 {
-                        &lines[..10]
-                    } else {
-                        &lines
-                    };
-
-                    for line in preview_lines {
-                        term.write_line(line)?;
-                    }
-
-                    if lines.len() > 10 {
-                        term.write_line(&format!("\n... and {} more lines", lines.len() - 10))?;
-                    }
-
-                    term.write_line(&style("=".repeat(50)).blue().to_string())?;
-                    continue;
-                }
                 _ => {
                     term.write_line("❓ Invalid choice. Please try again.")?;
                     continue;

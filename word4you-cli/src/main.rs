@@ -4,6 +4,7 @@ use console::{style, Term};
 use word_processor::WordProcessor;
 
 mod config;
+mod config_manager;
 mod gemini_client;
 mod git_section_sync;
 mod git_utils;
@@ -11,6 +12,7 @@ mod utils;
 mod word_processor;
 
 use config::Config;
+use config_manager::ConfigManager;
 
 const INTRO: &str = r#"
 Word4You - English Word Learning Tool
@@ -27,6 +29,7 @@ Usage:
   word4you                           # Interactive mode (enter words one by one)
   word4you query <word>              # Learn a new word
   word4you test                      # Test API connection
+  word4you config                    # Set up or update configuration
   word4you save <word> --content <content>  # Save word to vocabulary
   word4you delete <word> [--timestamp <timestamp>]  # Delete word from vocabulary, optionally by specific timestamp
   word4you update <word> --content <content> [--timestamp <timestamp>]  # Update word (delete if exists, then save)
@@ -95,12 +98,34 @@ enum Commands {
 
     /// Test the API connection
     Test,
+    
+    /// Set up or update configuration
+    Config,
+    
+    /// Run the onboarding process to set up Word4You
+    Onboard,
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
     let term = Term::stdout();
+
+    // Check if configuration exists, if not, run onboarding
+    if !ConfigManager::config_exists() && !matches!(cli.command, Some(Commands::Config)) {
+        term.write_line(&style("👋 Welcome to Word4You!").cyan().bold().to_string())?;
+        term.write_line("It looks like this is your first time running Word4You.")?;
+        term.write_line("Let's set up your configuration before we begin.")?;
+        term.write_line("")?;
+        
+        if let Err(e) = ConfigManager::run_setup(&term) {
+            eprintln!("❌ Configuration error: {}", e);
+            term.write_line("You can run 'word4you config' later to set up your configuration.")?;
+            return Ok(());
+        }
+        
+        term.write_line("")?;
+    }
 
     // Handle subcommands
     match &cli.command {
@@ -138,7 +163,18 @@ async fn main() -> Result<()> {
                 return Ok(());
             }
         }
-
+        Some(Commands::Config) => {
+            if let Err(e) = ConfigManager::run_setup(&term) {
+                eprintln!("❌ Configuration error: {}", e);
+                return Ok(());
+            }
+        }
+        Some(Commands::Onboard) => {
+            if let Err(e) = ConfigManager::run_setup(&term) {
+                eprintln!("❌ Configuration error: {}", e);
+                return Ok(());
+            }
+        }
         None => {
             // Enter interactive mode when no subcommand provided
             if let Err(e) = interactive_mode(&term).await {
