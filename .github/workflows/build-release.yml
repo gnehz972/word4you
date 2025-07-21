@@ -33,7 +33,7 @@ jobs:
 
       - name: Build release binary
         run: |
-          cargo build --release --locked --target ${{ matrix.target }}
+          cargo build --release --target ${{ matrix.target }}
         working-directory: word4you-cli
 
       - name: Upload release artifact
