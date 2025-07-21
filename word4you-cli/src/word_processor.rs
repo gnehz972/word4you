@@ -271,11 +271,11 @@ impl WordProcessor {
         // Perform section-aware sync
         match synchronizer.sync_with_remote() {
             Ok(SyncResult::Success) => {
-                println!("✅ Successfully synchronized vocabulary with section awareness");
+                println!("✅ Successfully synchronized vocabulary notebook");
                 Ok(())
             }
-            Ok(SyncResult::NoChanges) => {
-                println!("ℹ️  No changes to synchronize");
+            Ok(SyncResult::FAIL) => {
+                println!("ℹ️ Failed to synchronize");
                 Ok(())
             }
             Err(e) => Err(e),

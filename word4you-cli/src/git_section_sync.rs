@@ -7,7 +7,7 @@ use std::path::Path;
 #[derive(Debug)]
 pub enum SyncResult {
     Success,
-    NoChanges,
+    FAIL,
 }
 
 #[derive(Debug)]
@@ -106,25 +106,21 @@ impl GitSectionSynchronizer {
             }
         }
 
-        // Push changes if remote is configured
-        if self.config.git_remote_url.is_some() {
-            self.term.write_line("📤 Pushing changes to remote...")?;
-            match run_git_command(&["push", "-u", "origin", "main"], work_dir) {
-                Ok(_) => self
+        // Push changes
+        self.term.write_line("📤 Pushing changes to remote...")?;
+        match run_git_command(&["push", "-u", "origin", "main"], work_dir) {
+            Ok(_) => {
+                self
                     .term
-                    .write_line("✅ Successfully pushed changes to remote")?,
-                Err(e) => {
-                    self.term
-                        .write_line(&format!("⚠️  Could not push to remote: {}", e))?;
-                    self.term
-                        .write_line("💡 You may need to resolve conflicts manually")?;
-                }
+                    .write_line("✅ Successfully pushed changes to remote")?;
+                Ok(SyncResult::Success)
+            }
+            Err(e) => {
+                self.term
+                    .write_line(&format!("⚠️  Could not push to remote: {}", e))?;
+                Ok(SyncResult::FAIL)
             }
         }
-
-        self.term
-            .write_line("✅ Synchronization completed successfully")?;
-        Ok(SyncResult::Success)
     }
 
     /// Perform merge with conflict resolution
