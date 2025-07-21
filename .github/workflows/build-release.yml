@@ -39,12 +39,13 @@ jobs:
       - name: Build release binary
         run: |
           cargo build --release --locked --target ${{ matrix.target }}
+        working-directory: word4you-cli
 
       - name: Upload release artifact
         uses: actions/upload-artifact@v4
         with:
           name: word4you-${{ matrix.target }}
-          path: target/${{ matrix.target }}/release/word4you
+          path: word4you-cli/target/${{ matrix.target }}/release/word4you
 
   release:
     needs: build
