@@ -9,11 +9,38 @@ on:
         default: ''
 
 jobs:
-  build:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libssl-dev
+
+      - name: Build release binary (Linux)
+        run: |
+          cargo build --release --target x86_64-unknown-linux-gnu
+        working-directory: word4you-cli
+
+      - name: Upload release artifact (Linux)
+        uses: actions/upload-artifact@v4
+        with:
+          name: word4you-x86_64-unknown-linux-gnu
+          path: word4you-cli/target/x86_64-unknown-linux-gnu/release/word4you
+
+  build-macos:
     strategy:
       matrix:
         target:
-          - x86_64-unknown-linux-gnu
           - x86_64-apple-darwin
           - aarch64-apple-darwin
     runs-on: macos-latest
@@ -29,27 +56,21 @@ jobs:
 
       - name: Add Rust targets
         run: |
-          rustup target add x86_64-apple-darwin aarch64-apple-darwin x86_64-unknown-linux-gnu
+          rustup target add x86_64-apple-darwin aarch64-apple-darwin
 
-      - name: Install OpenSSL for Linux builds
-        if: matrix.target == 'x86_64-unknown-linux-gnu'
-        run: |
-          brew install openssl
-          export OPENSSL_DIR=$(brew --prefix openssl)
-
-      - name: Build release binary
+      - name: Build release binary (macOS)
         run: |
           cargo build --release --target ${{ matrix.target }}
         working-directory: word4you-cli
 
-      - name: Upload release artifact
+      - name: Upload release artifact (macOS)
         uses: actions/upload-artifact@v4
         with:
           name: word4you-${{ matrix.target }}
           path: word4you-cli/target/${{ matrix.target }}/release/word4you
 
   release:
-    needs: build
+    needs: [build-linux, build-macos]
     runs-on: macos-latest
     if: ${{ github.event.inputs.release_tag != '' }}
     steps:
