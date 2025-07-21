@@ -27,11 +27,6 @@ jobs:
           toolchain: stable
           override: true
 
-      - name: Install build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential pkg-config libssl-dev
-
       - name: Add Rust targets
         run: |
           rustup target add x86_64-apple-darwin aarch64-apple-darwin
@@ -49,7 +44,7 @@ jobs:
 
   release:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     if: ${{ github.event.inputs.release_tag != '' }}
     steps:
       - name: Download all build artifacts
