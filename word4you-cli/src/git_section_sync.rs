@@ -294,49 +294,16 @@ impl GitSectionSynchronizer {
         
         // Use a different approach: merge with --allow-unrelated-histories and -X theirs
         self.term.write_line("🔄 Attempting merge with unrelated histories and theirs strategy...")?;
-        
+        let local_changes = self.get_local_changes_since_ancestor(work_dir)?;
         match run_git_command(&["merge", "--allow-unrelated-histories", "-X", "theirs", "origin/main"], work_dir) {
             Ok(_) => {
                 self.term.write_line("✅ Successfully merged with unrelated histories and theirs strategy")?;
-                return Ok(());
-            }
-            Err(e) => {
-                self.term.write_line(&format!("⚠️  Merge with -X theirs failed: {}", e))?;
-                self.term.write_line("🔄 Falling back to manual merge with local changes preservation...")?;
-            }
-        }
+                // Analyze and apply local changes after merge
+                self.term.write_line("🔍 Applying local changes after theirs merge...")?;
+               
+                self.apply_local_changes(&local_changes)?;
 
-        // If the above fails, manually create a merge commit that preserves local changes
-        let _ = run_git_command(&["merge", "--abort"], work_dir);
-        
-        // Get local changes since common ancestor
-        self.term.write_line("🔍 Analyzing local changes since common ancestor...")?;
-        let local_changes = self.get_local_changes_since_ancestor(work_dir)?;
-        
-        // Get the remote version manually
-        self.term.write_line("📥 Getting remote version as base...")?;
-
-        // Extract filename from the vocabulary file path
-        let vocab_filename = Path::new(&self.config.vocabulary_notebook_file)
-            .file_name()
-            .and_then(|name| name.to_str())
-            .unwrap_or("vocabulary_notebook.md");
-
-        let remote_ref = format!("origin/main:{}", vocab_filename);
-        let remote_content = run_git_command(&["show", &remote_ref], work_dir)
-            .map_err(|e| {
-                self.term.write_line(&format!("⚠️  Could not get remote file '{}': {}", vocab_filename, e)).ok();
-                anyhow!("Failed to get remote file content: {}. This might be a first-time sync with an empty remote repository.", e)
-            })?;
-
-        // Write remote content as base
-        std::fs::write(&self.config.vocabulary_notebook_file, remote_content)?;
-
-        // Apply local changes to the remote base
-        self.term.write_line("🔄 Applying local changes to remote base...")?;
-        self.apply_local_changes(&local_changes)?;
-
-        // Stage the resolved content
+                 // Stage the resolved content
         self.term.write_line("💾 Staging resolved content...")?;
         run_git_command(&["add", "."], work_dir)?;
 
@@ -346,11 +313,7 @@ impl GitSectionSynchronizer {
         // Check if there are actually changes to commit
         let status = run_git_command(&["status", "--porcelain"], work_dir)?;
         if !status.trim().is_empty() {
-            // Create a merge commit with both parents to preserve history
-            // Note: We could use git commit-tree to create the merge commit manually
-            // but for simplicity, we'll use the standard commit approach
-            
-            // Create the merge commit with two parents
+            // Create a merge commit with two parents
             match run_git_command(&[
                 "commit",
                 "-m",
@@ -375,7 +338,23 @@ impl GitSectionSynchronizer {
                 .write_line("ℹ️  No changes to commit after resolution")?;
         }
 
-        Ok(())
+
+                return Ok(());
+            }
+            Err(e) => {
+                self.term.write_line(&format!("⚠️  Merge with -X theirs failed: {}", e))?;
+                self.term.write_line("🔄 Rolling back to local changes...")?;
+                // Restore vocabulary file to local HEAD
+                let vocab_filename = Path::new(&self.config.vocabulary_notebook_file)
+                    .file_name()
+                    .and_then(|name| name.to_str())
+                    .unwrap_or("vocabulary_notebook.md");
+                let _ = run_git_command(&["checkout", "HEAD", "--", vocab_filename], work_dir);
+                self.term.write_line("✅ Local changes restored after failed merge")?;
+                self.term.write_line("🔄 Falling back to manual merge with local changes preservation...")?;
+                return Ok(());
+            }
+        }
     }
 
     /// Get local changes since common ancestor by parsing git diff
@@ -539,43 +518,4 @@ impl GitSectionSynchronizer {
         Ok(())
     }
 
-    // fn commit_changes_if_needed(&self) -> Result<()> {
-    //     let work_dir = Path::new(&self.config.vocabulary_notebook_file)
-    //         .parent()
-    //         .unwrap();
-    //
-    //     // Check if there are changes to commit
-    //     let status = run_git_command(&["status", "--porcelain"], work_dir)?;
-    //     if !status.trim().is_empty() {
-    //         // Add all changes
-    //         run_git_command(&["add", "."], work_dir)?;
-    //
-    //         // Double-check after adding - sometimes files get ignored
-    //         let status_after_add = run_git_command(&["status", "--porcelain"], work_dir)?;
-    //         if status_after_add.trim().is_empty() {
-    //             self.term
-    //                 .write_line("ℹ️  No changes to commit after staging")?;
-    //             return Ok(());
-    //         }
-    //
-    //         // Commit with simplified message
-    //         let commit_message = format!(
-    //             "Simplified sync - {}",
-    //             chrono::Utc::now().format("%Y-%m-%d %H:%M:%S")
-    //         );
-    //
-    //         if let Err(e) = run_git_command(&["commit", "-m", &commit_message], work_dir) {
-    //             self.term
-    //                 .write_line(&format!("⚠️  Could not commit changes: {}", e))?;
-    //             self.term
-    //                 .write_line("💡 You may need to commit changes manually")?;
-    //         } else {
-    //             self.term.write_line("✅ Committed changes locally")?;
-    //         }
-    //     } else {
-    //         self.term.write_line("ℹ️  No changes to commit")?;
-    //     }
-    //
-    //     Ok(())
-    // }
 }

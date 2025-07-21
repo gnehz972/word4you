@@ -78,7 +78,6 @@ pub fn delete_from_vocabulary_notebook(
     let mut i = 0;
     while i < lines.len() {
         let line = &lines[i];
-        println!("Processing line {}: {}", i + 1, line);
 
         // Check if this line starts a new word section
         if !found && line.starts_with("## ") {
