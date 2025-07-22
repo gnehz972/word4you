@@ -1,4 +1,4 @@
-# Word4You - AI-Powered English Word Learning/Collecting Tool.
+# Word4You - AI-Powered Word Learning & Collecting Tool.
 
 Build your only vocabulary notebook, query word with AI and save it to local markdown file, accumulating your vocabulary
 daily.
