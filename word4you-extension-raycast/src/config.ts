@@ -56,7 +56,8 @@ export function isCliInstalled(): boolean {
     // Otherwise check if it's in PATH
     execSync("which word4you", { stdio: "ignore" });
     return true;
-  } catch (error) {
+  } catch (_) {
+    // We don't need the error object, just return false if any error occurs
     return false;
   }
 }
