@@ -38,8 +38,8 @@ export function ensureVocabularyDirectoryExists(vocabularyPath: string): void {
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
-  } catch (error) {
-    console.error("Error creating vocabulary directory:", error);
+  } catch (err) {
+    console.error("Error creating vocabulary directory:", err);
   }
 }
 

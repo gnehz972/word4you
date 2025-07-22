@@ -139,6 +139,7 @@ export async function saveWordToVocabulary(
         stdio: ["pipe", "pipe", "pipe"],
       });
 
+      // We need to keep fullOutput and errorOutput here since they're used in the logs below
       let fullOutput = "";
       let errorOutput = "";
       let success = false;
@@ -219,12 +220,10 @@ export async function deleteWordFromVocabulary(
         stdio: ["pipe", "pipe", "pipe"],
       });
 
-      let fullOutput = "";
       let success = false;
 
       child.stdout.on("data", (data) => {
         const message = data.toString();
-        fullOutput += message;
         if (onStatusUpdate) {
           onStatusUpdate(message.trim());
         }
@@ -232,7 +231,6 @@ export async function deleteWordFromVocabulary(
 
       child.stderr.on("data", (data) => {
         const message = data.toString();
-        fullOutput += message;
         if (onStatusUpdate) {
           onStatusUpdate(message.trim());
         }
@@ -290,12 +288,10 @@ export async function updateWordInVocabulary(
         stdio: ["pipe", "pipe", "pipe"],
       });
 
-      let fullOutput = "";
       let success = false;
 
       child.stdout.on("data", (data) => {
         const message = data.toString();
-        fullOutput += message;
         if (onStatusUpdate) {
           onStatusUpdate(message.trim());
         }
@@ -303,7 +299,6 @@ export async function updateWordInVocabulary(
 
       child.stderr.on("data", (data) => {
         const message = data.toString();
-        fullOutput += message;
         if (onStatusUpdate) {
           onStatusUpdate(message.trim());
         }
