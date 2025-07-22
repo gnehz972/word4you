@@ -1,5 +1,4 @@
 use anyhow::{anyhow, Result};
-use dotenvy::dotenv;
 use std::env;
 use std::path::PathBuf;
 
@@ -17,32 +16,22 @@ pub struct Config {
 
 impl Config {
     pub fn load() -> Result<Self> {
-        // First try to load from config file
-        let user_config = if ConfigManager::config_exists() {
-            ConfigManager::load_config()?
-        } else {
-            // If config file doesn't exist, try environment variables
-            // Load .env file if it exists
-            let _ = dotenv();
-            
-            // Create default config that will be populated from env vars
-            UserConfig::default()
-        };
+        // Check if config file exists
+        if !ConfigManager::config_exists() {
+            return Err(anyhow!("Configuration not found. Run 'word4you config' to set up."));
+        }
         
-        // Get API key from config file or environment
-        let gemini_api_key = if !user_config.gemini_api_key.is_empty() {
-            user_config.gemini_api_key
-        } else {
-            env::var("GEMINI_API_KEY")
-                .map_err(|_| anyhow!("GEMINI_API_KEY not found in configuration or environment variables. Run 'word4you config' to set up."))?
-        };
+        // Load configuration from file
+        let user_config = ConfigManager::load_config()?;
+        
+        // Get API key from config file
+        let gemini_api_key = user_config.gemini_api_key.clone();
+        if gemini_api_key.is_empty() {
+            return Err(anyhow!("Gemini API key not found in configuration. Run 'word4you config' to set up."));
+        }
 
-        // Get model name from config file or environment
-        let gemini_model_name = if !user_config.gemini_model_name.is_empty() {
-            user_config.gemini_model_name
-        } else {
-            env::var("GEMINI_MODEL_NAME").unwrap_or_else(|_| "gemini-2.0-flash-001".to_string())
-        };
+        // Get model name from config file
+        let gemini_model_name = user_config.gemini_model_name.clone();
 
         let gemini_prompt_template = r#"
 Please provide a comprehensive explanation for the English word "{word}" in the following format:
@@ -66,18 +55,8 @@ Important formatting rules:
 "#
         .to_string();
 
-        // Get vocabulary base directory from config or environment
-        let vocabulary_base_dir = if !user_config.vocabulary_base_dir.is_empty() {
-            expand_tilde_path(&user_config.vocabulary_base_dir)
-        } else {
-            env::var("VOCABULARY_BASE_DIR")
-                .map(|path| expand_tilde_path(&path))
-                .unwrap_or_else(|_| {
-                    // Default to home directory
-                    env::var("HOME")
-                        .unwrap_or_else(|_| env::var("USERPROFILE").unwrap_or_else(|_| ".".to_string()))
-                })
-        };
+        // Get vocabulary base directory from config
+        let vocabulary_base_dir = expand_tilde_path(&user_config.vocabulary_base_dir);
 
         // Create word4you subdirectory path
         let mut word4you_dir = PathBuf::from(vocabulary_base_dir);
@@ -99,21 +78,11 @@ Important formatting rules:
 
         let vocabulary_notebook_file = vocabulary_notebook_file.to_string_lossy().to_string();
 
-        // Get git enabled from config or environment
-        let git_enabled = if ConfigManager::config_exists() {
-            user_config.git_enabled
-        } else {
-            env::var("GIT_ENABLED")
-                .map(|val| val.to_lowercase() == "true" || val == "1" || val.to_lowercase() == "yes")
-                .unwrap_or(false)
-        };
+        // Get git enabled from config
+        let git_enabled = user_config.git_enabled;
 
-        // Get git remote URL from config or environment
-        let git_remote_url = if ConfigManager::config_exists() {
-            user_config.git_remote_url
-        } else {
-            env::var("GIT_REMOTE_URL").ok()
-        };
+        // Get git remote URL from config
+        let git_remote_url = user_config.git_remote_url;
 
         Ok(Config {
             gemini_api_key,

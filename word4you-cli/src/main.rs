@@ -101,9 +101,6 @@ enum Commands {
     
     /// Set up or update configuration
     Config,
-    
-    /// Run the onboarding process to set up Word4You
-    Onboard,
 }
 
 #[tokio::main]
@@ -164,12 +161,6 @@ async fn main() -> Result<()> {
             }
         }
         Some(Commands::Config) => {
-            if let Err(e) = ConfigManager::run_setup(&term) {
-                eprintln!("❌ Configuration error: {}", e);
-                return Ok(());
-            }
-        }
-        Some(Commands::Onboard) => {
             if let Err(e) = ConfigManager::run_setup(&term) {
                 eprintln!("❌ Configuration error: {}", e);
                 return Ok(());
