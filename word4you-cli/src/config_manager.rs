@@ -165,16 +165,7 @@ impl ConfigManager {
             term.write_line(&format!("Creating directory: {}", word4you_dir.display()))?;
             fs::create_dir_all(&word4you_dir)?;
         }
-        
-        // Create vocabulary notebook file if it doesn't exist
-        let mut vocabulary_file = word4you_dir.clone();
-        vocabulary_file.push("vocabulary_notebook.md");
-        
-        if !vocabulary_file.exists() {
-            term.write_line(&format!("Creating vocabulary notebook: {}", vocabulary_file.display()))?;
-            fs::write(&vocabulary_file, "# Word4You Vocabulary Notebook\n\n")?;
-        }
-        
+
         term.write_line("")?;
 
         // Git Integration

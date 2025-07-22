@@ -22,7 +22,10 @@ or just put it in your obsidian vault, using obsidian plugin to do the synchroni
 - 🎨 Rich terminal UI/Raycast extension
 
 ## Screenshot
+Word4you CLI
 
-| Word4you CLI                                                      | Word4You Raycast Extension                                                                    |
-|-------------------------------------------------------------------|-----------------------------------------------------------------------------------------------|
-| ![Word4You CLI Screenshot](./word4you-cli/media/screenshot-1.png) | ![Word4You Raycast Extension Screenshot](./word4you-extension-raycast/media/screenshot-1.png) |
+![Word4You CLI Screenshot](./word4you-cli/media/screenshot-1.png)
+
+Word4You Raycast Extension
+
+![Word4You Raycast Extension Screenshot](./word4you-extension-raycast/media/screenshot-1.png)

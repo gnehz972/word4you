@@ -70,11 +70,6 @@ Important formatting rules:
         // Create vocabulary notebook file path
         let mut vocabulary_notebook_file = word4you_dir.clone();
         vocabulary_notebook_file.push("vocabulary_notebook.md");
-        
-        // Create the vocabulary notebook file if it doesn't exist
-        if !vocabulary_notebook_file.exists() {
-            std::fs::write(&vocabulary_notebook_file, "# Word4You Vocabulary Notebook\n\n")?;
-        }
 
         let vocabulary_notebook_file = vocabulary_notebook_file.to_string_lossy().to_string();
 
