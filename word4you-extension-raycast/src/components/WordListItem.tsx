@@ -2,11 +2,6 @@ import { List, ActionPanel, Action } from "@raycast/api";
 import { WordExplanation, SavedWord } from "../types";
 import { WordDetail } from "./WordDetail";
 
-// Type assertion to bypass TypeScript errors with Raycast API
-const ListComponent = List as any;
-const ActionPanelComponent = ActionPanel as any;
-const ActionComponent = Action as any;
-
 interface WordListItemProps {
   word: WordExplanation | SavedWord;
   index?: number;
@@ -27,29 +22,29 @@ export function WordListItem({
   onUpdate,
 }: WordListItemProps) {
   return (
-    <ListComponent.Item
+    <List.Item
       title={word.word}
       subtitle={word.chinese}
       accessories={[isAiResult ? { text: "AI Result" } : { text: `${index! + 1} of ${total}` }]}
       detail={<WordDetail word={word} />}
       actions={
-        <ActionPanelComponent>
+        <ActionPanel>
           {isAiResult && onSave && (
-            <ActionComponent title="Save to Vocabulary" icon="💾" onAction={() => onSave(word.word, word.raw_output)} />
+            <Action title="Save to Vocabulary" icon="💾" onAction={() => onSave(word.word, word.raw_output)} />
           )}
           {!isAiResult && (
             <>
               {onDelete && (
-                <ActionComponent
+                <Action
                   title="Delete Word"
                   icon="🗑️"
                   onAction={() => onDelete(word.word, (word as SavedWord).timestamp)}
                 />
               )}
-              {onUpdate && <ActionComponent title="Update Word" icon="📝" onAction={() => onUpdate(word.word)} />}
+              {onUpdate && <Action title="Update Word" icon="📝" onAction={() => onUpdate(word.word)} />}
             </>
           )}
-        </ActionPanelComponent>
+        </ActionPanel>
       }
     />
   );

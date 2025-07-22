@@ -2,11 +2,6 @@ import { List, Icon, ActionPanel, Action } from "@raycast/api";
 import { WordListItem } from "../components/WordListItem";
 import { WordExplanation, SavedWord } from "../types";
 
-// Type assertion to bypass TypeScript errors with Raycast API
-const ListComponent = List as any;
-const ActionPanelComponent = ActionPanel as any;
-const ActionComponent = Action as any;
-
 interface WordListViewProps {
   searchText: string;
   isLoading: boolean;
@@ -33,7 +28,7 @@ export function WordListView({
   onUpdate,
 }: WordListViewProps) {
   return (
-    <ListComponent
+    <List
       isLoading={isLoadingSaved || isLoading}
       searchBarPlaceholder="Search words or enter new word to query"
       onSearchTextChange={onSearchTextChange}
@@ -42,13 +37,13 @@ export function WordListView({
     >
       {allWords.length === 0 ? (
         isLoading ? (
-          <ListComponent.EmptyView
+          <List.EmptyView
             title="Querying..."
             icon={Icon.Cloud}
             description="Please wait while we query the word..."
           />
         ) : (
-          <ListComponent.EmptyView
+          <List.EmptyView
             title="No Words Found"
             description={
               searchText.trim()
@@ -57,13 +52,13 @@ export function WordListView({
             }
             actions={
               searchText.trim() ? (
-                <ActionPanelComponent>
-                  <ActionComponent
+                <ActionPanel>
+                  <Action
                     title={`Query "${searchText}" with AI`}
                     icon="🤖"
                     onAction={() => onSearch(searchText.trim())}
                   />
-                </ActionPanelComponent>
+                </ActionPanel>
               ) : null
             }
           />
@@ -86,6 +81,6 @@ export function WordListView({
           );
         })
       )}
-    </ListComponent>
+    </List>
   );
 }

@@ -1,9 +1,6 @@
 import { List } from "@raycast/api";
 import { WordExplanation, SavedWord } from "../types";
 
-// Type assertion to bypass TypeScript errors with Raycast API
-const ListComponent = List as any;
-
 interface WordDetailProps {
   word: WordExplanation | SavedWord;
 }
@@ -19,5 +16,5 @@ ${word.example_zh ? `\n> _${word.example_zh}_` : ""}
 ${word.tip ? `\n💡*${word.tip}*` : ""}
 `;
 
-  return <ListComponent.Item.Detail markdown={markdown} />;
+  return <List.Item.Detail markdown={markdown} />;
 }
