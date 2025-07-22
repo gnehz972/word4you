@@ -28,47 +28,13 @@
       ],
       "preferences": [
         {
-          "name": "geminiApiKey",
-          "type": "password",
-          "required": true,
-          "title": "Gemini API Key",
-          "description": "Your Google Gemini API key for AI word explanations",
-          "placeholder": "Enter your Gemini API key"
-        },
-        {
-          "name": "vocabularyBaseDir",
+          "name": "cliPath",
           "type": "textfield",
           "required": false,
-          "title": "Vocabulary Base Directory",
-          "description": "Base directory where 'word4you' subdirectory will be created (leave empty for default: home directory)",
+          "title": "Word4You CLI Path",
+          "description": "Path to the Word4You CLI executable (leave empty if installed in PATH)",
           "default": "",
-          "placeholder": "Home dir by default"
-        },
-        {
-          "name": "gitEnabled",
-          "type": "checkbox",
-          "required": false,
-          "title": "Enable Git Operations",
-          "description": "Enable automatic Git commit and push operations when saving words",
-          "default": false,
-          "label": "Enable Git operations"
-        },
-        {
-          "name": "gitRemoteUrl",
-          "type": "textfield",
-          "required": false,
-          "title": "Git Remote URL",
-          "description": "Git repository URL for vocabulary notebook backup",
-          "placeholder": "git@github.com:username/vocabulary.git"
-        },
-        {
-          "name": "geminiModelName",
-          "type": "textfield",
-          "required": false,
-          "title": "Gemini Model Name",
-          "description": "Gemini model name to use for AI explanations (leave empty for default: gemini-2.0-flash-001)",
-          "default": "gemini-2.0-flash-001",
-          "placeholder": "gemini-2.0-flash-001"
+          "placeholder": "/usr/local/bin/word4you"
         }
       ]
     }

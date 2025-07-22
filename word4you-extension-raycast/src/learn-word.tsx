@@ -5,20 +5,22 @@ import {
   Toast,
   showToast,
   LaunchProps,
-  useNavigation,
   Icon,
+  openExtensionPreferences,
+  open,
 } from "@raycast/api";
 import { useState, useEffect } from "react";
 import { execSync, spawn } from "child_process";
-import React from "react";
 import fs from "fs";
 import {
   getPreferences,
   getVocabularyPath,
-  ensureVocabularyDirectoryExists,
   getExecutablePath,
   createEnvironmentFromPreferences,
+  isCliInstalled,
+  ensureVocabularyDirectoryExists,
 } from "./config";
+import path from "path";
 
 // Type assertion to bypass TypeScript errors with Raycast API
 const ListComponent = List as any;
@@ -127,7 +129,7 @@ async function getWordExplanation(
     const executablePath = getExecutablePath();
 
     // Use cross-platform path resolution for vocabulary file
-    const vocabularyPath = getVocabularyPath(preferences.vocabularyBaseDir);
+    const vocabularyPath = getVocabularyPath();
 
     // Ensure the directory exists
     ensureVocabularyDirectoryExists(vocabularyPath);
@@ -138,10 +140,16 @@ async function getWordExplanation(
     // Use --raw flag to get clean output without TTY interaction
     const command = `"${executablePath}" query "${word}" --raw`;
 
+    // If using a custom path, use the directory of the executable as cwd
+    // Otherwise, use the current directory
+    const cwd = preferences.cliPath 
+      ? path.dirname(preferences.cliPath)
+      : process.cwd();
+
     const output = execSync(command, {
       encoding: "utf8",
       timeout: 30000,
-      cwd: require("path").dirname(executablePath),
+      cwd: cwd,
       env: env,
     });
 
@@ -163,7 +171,7 @@ async function saveWordToVocabulary(
       const executablePath = getExecutablePath();
 
       // Use cross-platform path resolution for vocabulary file
-      const vocabularyPath = getVocabularyPath(preferences.vocabularyBaseDir);
+      const vocabularyPath = getVocabularyPath();
 
       // Ensure the directory exists
       ensureVocabularyDirectoryExists(vocabularyPath);
@@ -171,12 +179,18 @@ async function saveWordToVocabulary(
       // Create environment variables from preferences
       const env = createEnvironmentFromPreferences();
 
+      // If using a custom path, use the directory of the executable as cwd
+      // Otherwise, use the current directory
+      const cwd = preferences.cliPath 
+        ? path.dirname(preferences.cliPath)
+        : process.cwd();
+
       // Use spawn to capture real-time output
       const child = spawn(
         executablePath,
         ["save", word, "--content", content],
         {
-          cwd: require("path").dirname(executablePath),
+          cwd: cwd,
           env: env,
           stdio: ["pipe", "pipe", "pipe"],
         },
@@ -288,12 +302,29 @@ export default function Word4YouCommand(
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingSaved, setIsLoadingSaved] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [cliInstalled, setCliInstalled] = useState<boolean | null>(null);
   const [savedWordsMap, setSavedWordsMap] = useState<Map<string, SavedWord>>(
     new Map(),
   );
 
+  // Check if CLI is installed
   useEffect(() => {
-    loadSavedWords();
+    const checkCliInstallation = async () => {
+      const installed = isCliInstalled();
+      setCliInstalled(installed);
+      
+      if (!installed) {
+        await showToast({
+          style: Toast.Style.Failure,
+          title: "Word4You CLI not found",
+          message: "Please install the CLI first",
+        });
+      } else {
+        loadSavedWords();
+      }
+    };
+    
+    checkCliInstallation();
   }, []);
 
   // Auto-trigger if word is provided as argument
@@ -313,8 +344,7 @@ export default function Word4YouCommand(
 
   const loadSavedWords = async () => {
     try {
-      const preferences = getPreferences();
-      const vocabularyPath = getVocabularyPath(preferences.vocabularyBaseDir);
+      const vocabularyPath = getVocabularyPath();
       const words = parseSavedWords(vocabularyPath);
       setSavedWords(words);
 
@@ -396,7 +426,7 @@ export default function Word4YouCommand(
         const executablePath = getExecutablePath();
 
         // Use cross-platform path resolution for vocabulary file
-        const vocabularyPath = getVocabularyPath(preferences.vocabularyBaseDir);
+        const vocabularyPath = getVocabularyPath();
 
         // Ensure the directory exists
         ensureVocabularyDirectoryExists(vocabularyPath);
@@ -409,9 +439,15 @@ export default function Word4YouCommand(
           ? ["delete", word, "--timestamp", timestamp]
           : ["delete", word];
 
+        // If using a custom path, use the directory of the executable as cwd
+        // Otherwise, use the current directory
+        const cwd = preferences.cliPath 
+          ? path.dirname(preferences.cliPath)
+          : process.cwd();
+
         // Use spawn to capture real-time output
         const child = spawn(executablePath, args, {
-          cwd: require("path").dirname(executablePath),
+          cwd: cwd,
           env: env,
           stdio: ["pipe", "pipe", "pipe"],
         });
@@ -463,7 +499,7 @@ export default function Word4YouCommand(
         const executablePath = getExecutablePath();
 
         // Use cross-platform path resolution for vocabulary file
-        const vocabularyPath = getVocabularyPath(preferences.vocabularyBaseDir);
+        const vocabularyPath = getVocabularyPath();
 
         // Ensure the directory exists
         ensureVocabularyDirectoryExists(vocabularyPath);
@@ -476,9 +512,15 @@ export default function Word4YouCommand(
           ? ["update", word, "--content", content, "--timestamp", timestamp]
           : ["update", word, "--content", content];
 
+        // If using a custom path, use the directory of the executable as cwd
+        // Otherwise, use the current directory
+        const cwd = preferences.cliPath 
+          ? path.dirname(preferences.cliPath)
+          : process.cwd();
+
         // Use spawn to capture real-time output
         const child = spawn(executablePath, args, {
-          cwd: require("path").dirname(executablePath),
+          cwd: cwd,
           env: env,
           stdio: ["pipe", "pipe", "pipe"],
         });
@@ -567,6 +609,34 @@ export default function Word4YouCommand(
   const allWords = aiResult
     ? [aiResult, ...filteredSavedWords]
     : filteredSavedWords;
+
+  // If CLI is not installed, show installation instructions
+  if (cliInstalled === false) {
+    return (
+      <ListComponent isShowingDetail>
+        <ListComponent.EmptyView
+          title="Word4You CLI Not Found"
+          icon={Icon.Warning}
+          description="Download and configure it in your system PATH or in the extension preference"
+          actions={
+            <ActionPanelComponent>
+              <ActionComponent
+                title="Download Word4You CLI"
+                icon={Icon.Download}
+                onAction={() => open("https://github.com/gnehz972/word4you/releases")}
+              />
+              <ActionComponent
+                title="Open Extension Preferences"
+                icon={Icon.Gear}
+                onAction={openExtensionPreferences}
+                shortcut={{ modifiers: ["cmd"], key: "," }}
+              />
+            </ActionPanelComponent>
+          }
+        />
+      </ListComponent>
+    );
+  }
 
   return (
     <ListComponent

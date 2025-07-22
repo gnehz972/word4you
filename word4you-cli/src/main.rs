@@ -30,6 +30,7 @@ Usage:
   word4you query <word>              # Learn a new word
   word4you test                      # Test API connection
   word4you config                    # Set up or update configuration
+  word4you config --show-vob-path      # Show the vocabulary notebook path
   word4you save <word> --content <content>  # Save word to vocabulary
   word4you delete <word> [--timestamp <timestamp>]  # Delete word from vocabulary, optionally by specific timestamp
   word4you update <word> --content <content> [--timestamp <timestamp>]  # Update word (delete if exists, then save)
@@ -100,7 +101,11 @@ enum Commands {
     Test,
     
     /// Set up or update configuration
-    Config,
+    Config {
+        /// Show the vocabulary notebook path
+        #[arg(long)]
+        show_vob_path: bool,
+    },
 }
 
 #[tokio::main]
@@ -109,7 +114,7 @@ async fn main() -> Result<()> {
     let term = Term::stdout();
 
     // Check if configuration exists, if not, run onboarding
-    if !ConfigManager::config_exists() && !matches!(cli.command, Some(Commands::Config)) {
+    if !ConfigManager::config_exists() && !matches!(cli.command, Some(Commands::Config { .. })) {
         term.write_line(&style("👋 Welcome to Word4You!").cyan().bold().to_string())?;
         term.write_line("It looks like this is your first time running Word4You.")?;
         term.write_line("Let's set up your configuration before we begin.")?;
@@ -160,10 +165,19 @@ async fn main() -> Result<()> {
                 return Ok(());
             }
         }
-        Some(Commands::Config) => {
-            if let Err(e) = ConfigManager::run_setup(&term) {
-                eprintln!("❌ Configuration error: {}", e);
-                return Ok(());
+        Some(Commands::Config { show_vob_path }) => {
+            if *show_vob_path {
+                // Show the vocabulary notebook path
+                if let Err(e) = show_vocabulary_path(&term) {
+                    eprintln!("❌ Error: {}", e);
+                    return Ok(());
+                }
+            } else {
+                // Run the regular configuration setup
+                if let Err(e) = ConfigManager::run_setup(&term) {
+                    eprintln!("❌ Configuration error: {}", e);
+                    return Ok(());
+                }
             }
         }
         None => {
@@ -259,6 +273,17 @@ async fn test_api_connection(term: &Term) -> anyhow::Result<()> {
             return Ok(());
         }
     }
+}
+
+fn show_vocabulary_path(term: &Term) -> anyhow::Result<()> {
+    // Load configuration
+    let config = Config::load()?;
+    
+    // Simply print the vocabulary notebook file path without any formatting
+    // This makes it easier for scripts and other programs to parse the output
+    println!("{}", config.vocabulary_notebook_file);
+    
+    Ok(())
 }
 
 async fn interactive_mode(term: &Term) -> anyhow::Result<()> {

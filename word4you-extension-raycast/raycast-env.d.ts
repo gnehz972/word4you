@@ -15,16 +15,8 @@ declare type Preferences = ExtensionPreferences
 declare namespace Preferences {
   /** Preferences accessible in the `learn-word` command */
   export type LearnWord = ExtensionPreferences & {
-  /** Gemini API Key - Your Google Gemini API key for AI word explanations */
-  "geminiApiKey": string,
-  /** Vocabulary Base Directory - Base directory where 'word4you' subdirectory will be created (leave empty for default: home directory) */
-  "vocabularyBaseDir": string,
-  /** Enable Git Operations - Enable automatic Git commit and push operations when saving words */
-  "gitEnabled": boolean,
-  /** Git Remote URL - Git repository URL for vocabulary notebook backup */
-  "gitRemoteUrl"?: string,
-  /** Gemini Model Name - Gemini model name to use for AI explanations (leave empty for default: gemini-2.0-flash-001) */
-  "geminiModelName": string
+  /** Word4You CLI Path - Path to the Word4You CLI executable (leave empty if installed in PATH) */
+  "cliPath": string
 }
 }
 
