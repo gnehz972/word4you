@@ -142,7 +142,7 @@ async function getWordExplanation(
 
     // If using a custom path, use the directory of the executable as cwd
     // Otherwise, use the current directory
-    const cwd = preferences.cliPath 
+    const cwd = preferences.cliPath
       ? path.dirname(preferences.cliPath)
       : process.cwd();
 
@@ -181,7 +181,7 @@ async function saveWordToVocabulary(
 
       // If using a custom path, use the directory of the executable as cwd
       // Otherwise, use the current directory
-      const cwd = preferences.cliPath 
+      const cwd = preferences.cliPath
         ? path.dirname(preferences.cliPath)
         : process.cwd();
 
@@ -312,7 +312,7 @@ export default function Word4YouCommand(
     const checkCliInstallation = async () => {
       const installed = isCliInstalled();
       setCliInstalled(installed);
-      
+
       if (!installed) {
         await showToast({
           style: Toast.Style.Failure,
@@ -323,7 +323,7 @@ export default function Word4YouCommand(
         loadSavedWords();
       }
     };
-    
+
     checkCliInstallation();
   }, []);
 
@@ -441,7 +441,7 @@ export default function Word4YouCommand(
 
         // If using a custom path, use the directory of the executable as cwd
         // Otherwise, use the current directory
-        const cwd = preferences.cliPath 
+        const cwd = preferences.cliPath
           ? path.dirname(preferences.cliPath)
           : process.cwd();
 
@@ -514,7 +514,7 @@ export default function Word4YouCommand(
 
         // If using a custom path, use the directory of the executable as cwd
         // Otherwise, use the current directory
-        const cwd = preferences.cliPath 
+        const cwd = preferences.cliPath
           ? path.dirname(preferences.cliPath)
           : process.cwd();
 
@@ -617,7 +617,7 @@ export default function Word4YouCommand(
         <ListComponent.EmptyView
           title="Word4You CLI Not Found"
           icon={Icon.Warning}
-          description="Download and configure it in your system PATH or in the extension preference"
+          description="Download and setup the CLI, then configure the full path in the extension preference"
           actions={
             <ActionPanelComponent>
               <ActionComponent
@@ -749,13 +749,27 @@ ${word.tip ? `\n💡*${word.tip}*` : ""}
                         onAction={async () => {
                           const toast = await showToast({
                             style: Toast.Style.Animated,
-                            title: `Updating "${word.word}"...`,
+                            title: `Querying fresh content for "${word.word}"...`,
                           });
 
                           try {
+                            // First query the word to get fresh content
+                            const freshResult = await getWordExplanation(word.word);
+
+                            if (!freshResult) {
+                              toast.style = Toast.Style.Failure;
+                              toast.title = "Failed to get fresh content";
+                              toast.message = "Please check your configuration";
+                              return;
+                            }
+
+                            toast.title = `Updating "${word.word}"...`;
+
+                            // The CLI expects just the content without the "## word" header
+                            // as the word is passed separately as a parameter
                             const success = await updateWordInVocabulary(
                               word.word,
-                              word.raw_output,
+                              freshResult.raw_output,
                               undefined,
                               (message) => {
                                 toast.message = message;
