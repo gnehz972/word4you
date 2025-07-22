@@ -1,6 +1,6 @@
 # Word4You - AI-Powered Word Learning & Collecting Tool.
 
-Build your only vocabulary notebook, query word with AI and save it to local markdown file, accumulating your vocabulary
+Build your own vocabulary notebook, query word with AI and save it to local markdown file, accumulating your vocabulary
 daily.
 
 You can use it on your work and home Mac and keep syncing your vocabulary notebook using Git with smart conflict
