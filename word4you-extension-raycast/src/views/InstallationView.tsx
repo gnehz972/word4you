@@ -10,15 +10,11 @@ export function InstallationView() {
         actions={
           <ActionPanel>
             <Action
-              title="Download Word4You CLI"
+              title="Download Word4you Cli"
               icon={Icon.Download}
               onAction={() => open("https://github.com/gnehz972/word4you/releases")}
             />
-            <Action 
-              title="Open Extension Preferences" 
-              icon={Icon.Gear} 
-              onAction={openExtensionPreferences} 
-            />
+            <Action title="Open Extension Preferences" icon={Icon.Gear} onAction={openExtensionPreferences} />
           </ActionPanel>
         }
       />

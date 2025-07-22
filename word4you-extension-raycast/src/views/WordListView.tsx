@@ -37,11 +37,7 @@ export function WordListView({
     >
       {allWords.length === 0 ? (
         isLoading ? (
-          <List.EmptyView
-            title="Querying..."
-            icon={Icon.Cloud}
-            description="Please wait while we query the word..."
-          />
+          <List.EmptyView title="Querying..." icon={Icon.Cloud} description="Please wait while we query the word..." />
         ) : (
           <List.EmptyView
             title="No Words Found"

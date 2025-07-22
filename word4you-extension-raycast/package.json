@@ -2,12 +2,11 @@
   "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "word4you",
   "title": "Word4you",
-  "description": "Query English words with AI-powered explanations using Google Gemini and save them to your vocabulary notebook in markdown file. Supports Git backup for vocabulary management.",
+  "description": "AI-Powered English Word Learning/Collecting Tool",
   "icon": "icon.png",
   "author": "gnehz972",
   "categories": [
-    "Productivity",
-    "Developer Tools"
+    "Productivity"
   ],
   "license": "MIT",
   "commands": [
@@ -40,18 +39,19 @@
     }
   ],
   "dependencies": {
-    "@raycast/api": "^1.100.0"
+    "@raycast/api": "^1.100.3",
+    "@raycast/utils": "^1.17.0"
   },
   "devDependencies": {
-    "@raycast/eslint-config": "^1.0.11",
-    "@types/node": "20.8.10",
-    "@types/react": "18.0.0",
-    "eslint": "^8.57.0",
-    "prettier": "^3.0.3",
-    "typescript": "^5.2.0"
+    "@raycast/eslint-config": "^2.0.4",
+    "@types/node": "22.13.10",
+    "@types/react": "19.0.10",
+    "eslint": "^9.22.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.2"
   },
   "scripts": {
-    "build": "ray build -e dist -o ./dist",
+    "build": "ray build",
     "dev": "ray develop",
     "fix-lint": "ray lint --fix",
     "lint": "ray lint",
