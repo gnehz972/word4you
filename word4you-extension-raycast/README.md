@@ -8,6 +8,9 @@ Raycast extension for quick/enriched UI interaction with the word4you CLI.
 - 😻 Rich UI interaction comparing with the CLI 
 - 🔊 CURD management for the markdown vocabulary notebook
 
+## Screenshot
+![Word4You Raycast Extension Screenshot](./media/screenshot-1.png)
+
 ## Prerequisites
 
 ### Install Word4You CLI

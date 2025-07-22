@@ -10,6 +10,9 @@ A fast, efficient command-line tool for querying and collecting English words wi
 - 🎨 Rich terminal UI
 - ⚡ Fast execution (Rust)
 
+## Screenshot
+![Word4You CLI Screenshot](./media/screenshot-1.png)
+
 ## Quick Start
 1. Download the [appropriate binary](https://github.com/gnehz972/word4you/releases) for your system and rename it to `word4you`
 2. Make it executable: `chmod +x word4you`
