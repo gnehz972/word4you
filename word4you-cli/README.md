@@ -11,40 +11,17 @@ A fast, efficient command-line tool for querying and collecting English words wi
 - ⚡ Fast execution (Rust)
 
 ## Quick Start
-
-1. **Install Rust** (if not installed):
-   ```bash
-   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+1. Download the [appropriate binary](https://github.com/gnehz972/word4you/releases) for your system and rename it to `word4you`
+2. Make it executable: `chmod +x word4you`
+3. Add it to your PATH:
    ```
-
-2. **Setup project**:
-   ```bash
-   git clone <your-repo-url>
-   cd word4you-cli
+   mv word4you $HOME/dev/bin/
+   export PATH="$HOME/dev/bin:$PATH"
    ```
-
-3. **Build and run**:
-   ```bash
-   cargo build --release
-   ./target/release/word4you
+4. Run it(Gemini API Key is required, for Mac users, you need to allow it to run for the first time in System Preferences > Security & Privacy):
    ```
-
-4. **Follow the onboarding process**:
-   - The first time you run Word4You, it will guide you through the setup process
-   - You'll need a Google Gemini API key (get one at [Google AI Studio](https://aistudio.google.com/app/apikey))
-   - The configuration will be saved to `$HOME/.config/word4you/config.toml`
-
-
-### Vocabulary Notebook Store Directory Structure
-
-The program automatically creates a dedicated `word4you` subdirectory for easy backup/sync the vocabulary notebook:
-
-```
-{VOCABULARY_BASE_DIR}/
-└── word4you/                    # Dedicated directory for Word4You
-    ├── .git/                    # Git repository (auto-initialized)
-    └── vocabulary_notebook.md   # Your vocabulary notebook
-```
+   word4you query beautiful
+   ```
 
 ## Commands
 
@@ -118,13 +95,16 @@ Enter a word to learn: exit
 👋 Goodbye!
 ```
 
-**Interactive Mode Features:**
-- 🔄 **Continuous learning**: Enter words one by one without restarting the program
-- 💾 **Save or skip**: Choose to save words to your vocabulary notebook or skip them
-- 🔄 **Regenerate**: Get a new explanation if you're not satisfied with the current one
-- 🚪 **Easy exit**: Type 'exit', 'quit', or 'q' to leave
+### Vocabulary Notebook Store Directory Structure
 
-## Example Output
+The program automatically creates a dedicated `word4you` subdirectory for easy backup/sync the vocabulary notebook:
+
+```
+{VOCABULARY_BASE_DIR}/
+└── word4you/                    # Dedicated directory for Word4You
+    ├── .git/                    # Git repository (auto-initialized)
+    └── vocabulary_notebook.md   # Your vocabulary notebook
+```
 
 ## Vocabulary Notebook
 
@@ -135,12 +115,34 @@ Words are saved in `{VOCABULARY_BASE_DIR}/word4you/vocabulary_notebook.md` with:
 - 📖 Detailed definitions
 - 🏷️ Usage notes and tips
 
-## Git Integration
+Check the [sample vocabulary notebook](./sample_vocabulary_notebook.md) for an example.
 
-- Backup/Sync your vocabulary notebook with Git
-- Smart git conflict resolution with multiple devices syncing
-- Word collection with clear history
 
+## Build and Run locally
+
+1. **Install Rust** (if not installed):
+   ```bash
+   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+   ```
+
+2. **Setup project**:
+   ```bash
+   git clone <your-repo-url>
+   cd word4you-cli
+   ```
+
+3. **Build and run**:
+   ```bash
+   cargo build --release
+   ./target/release/word4you
+   ```
+
+4. **Follow the config process**:
+   - The first time you run Word4You, it will guide you through the setup process
+   - You'll need a Google Gemini API key (get one at [Google AI Studio](https://aistudio.google.com/app/apikey))
+   - The configuration will be saved to `$HOME/.config/word4you/config.toml`
+
+   
 ## Requirements
 
 - Rust 1.70+
