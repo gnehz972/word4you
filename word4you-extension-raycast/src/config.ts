@@ -13,7 +13,9 @@ export function getVocabularyPath(): string {
   try {
     // Try to get the path from the CLI's configuration using the --show-vob-path flag
     const executablePath = getExecutablePath();
-    const output = execSync(`${executablePath} config --show-vob-path`, { encoding: 'utf8' }).trim();
+    const output = execSync(`${executablePath} config --show-vob-path`, {
+      encoding: "utf8",
+    }).trim();
 
     // If we got a valid path, return it
     if (output && output.length > 0) {
