@@ -24,8 +24,8 @@ or just put it in your obsidian vault, using obsidian plugin to do the synchroni
 ## Screenshot
 Word4you CLI
 
-![Word4You CLI Screenshot](./word4you-cli/media/screenshot-1.png)
+<img src="./word4you-cli/media/screenshot-1.png" width=800 />
 
 Word4You Raycast Extension
 
-![Word4You Raycast Extension Screenshot](./word4you-extension-raycast/media/screenshot-1.png)
+<img src="./word4you-extension-raycast/media/screenshot-1.png" width=800 />
