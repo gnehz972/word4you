@@ -2,7 +2,7 @@ use anyhow::{anyhow, Result};
 use std::env;
 use std::path::PathBuf;
 
-use crate::config_manager::{ConfigManager, UserConfig};
+use crate::config_manager::ConfigManager;
 
 #[derive(Debug, Clone)]
 pub struct Config {
@@ -16,24 +16,51 @@ pub struct Config {
 
 impl Config {
     pub fn load() -> Result<Self> {
-        // Load configuration from file if it exists, otherwise use defaults
-        let user_config = if ConfigManager::config_exists() {
-            ConfigManager::load_config()?
-        } else {
-            UserConfig::default()
-        };
+        // Check if WORD4YOU_GEMINI_API_KEY environment variable is set
+        // If it is, load all configuration from environment variables
+        // If not, fallback to loading all configuration from TOML config file
         
-        // Get API key from environment variable first, then config file
-        let gemini_api_key = env::var("WORD4YOU_GEMINI_API_KEY")
-            .unwrap_or_else(|_| user_config.gemini_api_key.clone());
-        
-        if gemini_api_key.is_empty() {
-            return Err(anyhow!("Gemini API key not found. Set WORD4YOU_GEMINI_API_KEY environment variable or run 'word4you config' to set up."));
-        }
+        let gemini_api_key = env::var("WORD4YOU_GEMINI_API_KEY");
 
-        // Get model name from environment variable first, then config file
-        let gemini_model_name = env::var("WORD4YOU_GEMINI_MODEL_NAME")
-            .unwrap_or_else(|_| user_config.gemini_model_name.clone());
+        let (gemini_api_key, gemini_model_name, vocabulary_base_dir_raw, git_enabled, git_remote_url) = 
+            if let Ok(api_key) = gemini_api_key {
+                // Load all configuration from environment variables
+                let model_name = env::var("WORD4YOU_GEMINI_MODEL_NAME")
+                    .unwrap_or_else(|_| "gemini-2.0-flash-001".to_string());
+                let vocab_dir = env::var("WORD4YOU_VOCABULARY_BASE_DIR")
+                    .unwrap_or_else(|_| "~".to_string());
+                let git_enabled = env::var("WORD4YOU_GIT_ENABLED")
+                    .map(|v| v.to_lowercase() == "true")
+                    .unwrap_or(false);
+                let git_url = env::var("WORD4YOU_GIT_REMOTE_URL")
+                    .ok()
+                    .filter(|s| !s.is_empty());
+                
+                (api_key, model_name, vocab_dir, git_enabled, git_url)
+            } else {
+                // Fallback to loading all configuration from TOML config file
+                if !ConfigManager::config_exists() {
+                    return Err(anyhow!(
+                        "Configuration not found. Run 'word4you config' to update your configuration."
+                    ));
+                }
+                
+                let user_config = ConfigManager::load_config()?;
+                
+                if user_config.gemini_api_key.is_empty() {
+                    return Err(anyhow!(
+                        "Gemini API key not found in configuration. Run 'word4you config' to update your configuration."
+                    ));
+                }
+                
+                (
+                    user_config.gemini_api_key,
+                    user_config.gemini_model_name,
+                    user_config.vocabulary_base_dir,
+                    user_config.git_enabled,
+                    user_config.git_remote_url,
+                )
+            };
 
         let gemini_prompt_template = r#"
 Please provide a comprehensive explanation for the English word "{word}" in the following format:
@@ -57,9 +84,7 @@ Important formatting rules:
 "#
         .to_string();
 
-        // Get vocabulary base directory from environment variable first, then config file
-        let vocabulary_base_dir_raw = env::var("WORD4YOU_VOCABULARY_BASE_DIR")
-            .unwrap_or_else(|_| user_config.vocabulary_base_dir.clone());
+        // Expand tilde path for vocabulary base directory
         let vocabulary_base_dir = expand_tilde_path(&vocabulary_base_dir_raw);
 
         // Create word4you subdirectory path
@@ -76,17 +101,6 @@ Important formatting rules:
         vocabulary_notebook_file.push("vocabulary_notebook.md");
 
         let vocabulary_notebook_file = vocabulary_notebook_file.to_string_lossy().to_string();
-
-        // Get git enabled from environment variable first, then config file
-        let git_enabled = env::var("WORD4YOU_GIT_ENABLED")
-            .map(|v| v.to_lowercase() == "true")
-            .unwrap_or(user_config.git_enabled);
-
-        // Get git remote URL from environment variable first, then config file
-        let git_remote_url = env::var("WORD4YOU_GIT_REMOTE_URL")
-            .ok()
-            .filter(|s| !s.is_empty())
-            .or(user_config.git_remote_url);
 
         Ok(Config {
             gemini_api_key,

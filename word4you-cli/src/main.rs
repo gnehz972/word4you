@@ -113,8 +113,13 @@ async fn main() -> Result<()> {
     let cli = Cli::parse();
     let term = Term::stdout();
 
-    // Check if configuration exists, if not, run onboarding
-    if !ConfigManager::config_exists() && !matches!(cli.command, Some(Commands::Config { .. })) {
+    // Check if configuration is available
+    // Priority: Environment variables (WORD4YOU_GEMINI_API_KEY) > Config file
+    let has_env_config = std::env::var("WORD4YOU_GEMINI_API_KEY").is_ok();
+    let has_file_config = ConfigManager::config_exists();
+    
+    // If neither environment variables nor config file exists, and not running config command, run onboarding
+    if !has_env_config && !has_file_config && !matches!(cli.command, Some(Commands::Config { .. })) {
         term.write_line(&style("👋 Welcome to Word4You!").cyan().bold().to_string())?;
         term.write_line("It looks like this is your first time running Word4You.")?;
         term.write_line("Let's set up your configuration before we begin.")?;
