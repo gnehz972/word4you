@@ -29,8 +29,8 @@ word4you --version
 1. Install the extension in Raycast
    - Run `npm run dev` in the `word4you-extension-raycast` directory
    - This will start the Raycast development server and open the extension in Raycast
-2. If needed, configure the CLI path in Raycast extension preferences:
-   - **CLI Path** (optional): Path to the Word4You CLI executable (leave empty if installed in PATH)
+2. Configure the CLI path in Raycast extension preferences:
+   - **CLI Path** (optional): Path to the Word4You CLI executable (leave empty if it's already in system PATH)
 
 ## Requirements
 
@@ -38,6 +38,7 @@ word4you --version
 - Node.js
 - The `word4you` CLI (installed separately)
 - Gemini API key
+- Git(Optional)
 
 ## Functionality
 
