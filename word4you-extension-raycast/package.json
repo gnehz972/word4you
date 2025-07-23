@@ -16,7 +16,17 @@
       "subtitle": "Word4You",
       "description": "Search saved words or query new words with AI explanations",
       "mode": "view",
-      "keywords": ["word", "query", "learn", "english", "vocabulary", "AI", "gemini", "study", "search"],
+      "keywords": [
+        "word",
+        "query",
+        "learn",
+        "english",
+        "vocabulary",
+        "AI",
+        "gemini",
+        "study",
+        "search"
+      ],
       "arguments": [
         {
           "name": "word",

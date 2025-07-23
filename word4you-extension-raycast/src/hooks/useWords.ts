@@ -8,7 +8,7 @@ import {
   updateWordInVocabulary,
   parseSavedWords,
 } from "../services/wordService";
-import { getVocabularyPath, isCliInstalled } from "../config";
+import { getVocabularyPath, isCliInstalled, ensureCLI } from "../config";
 
 export function useWords(initialWord?: string) {
   const [searchText, setSearchText] = useState(initialWord || "");
@@ -20,19 +20,33 @@ export function useWords(initialWord?: string) {
   const [cliInstalled, setCliInstalled] = useState<boolean | null>(null);
   const [savedWordsMap, setSavedWordsMap] = useState<Map<string, SavedWord>>(new Map());
 
-  // Check if CLI is installed
+  // Check if CLI is installed, and download it if not
   useEffect(() => {
     const checkCliInstallation = async () => {
       const installed = isCliInstalled();
-      setCliInstalled(installed);
 
       if (!installed) {
-        await showToast({
-          style: Toast.Style.Failure,
+        const toast = await showToast({
+          style: Toast.Style.Animated,
           title: "Word4You CLI not found",
-          message: "Please install the CLI first",
+          message: "Downloading CLI...",
         });
+
+        try {
+          // Try to download the CLI
+          await ensureCLI();
+          toast.style = Toast.Style.Success;
+          toast.title = "Word4You CLI downloaded successfully";
+          setCliInstalled(true);
+          loadSavedWords();
+        } catch (error) {
+          toast.style = Toast.Style.Failure;
+          toast.title = "Failed to download Word4You CLI";
+          toast.message = String(error);
+          setCliInstalled(false);
+        }
       } else {
+        setCliInstalled(true);
         loadSavedWords();
       }
     };
