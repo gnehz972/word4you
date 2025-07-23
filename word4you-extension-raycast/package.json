@@ -37,13 +37,48 @@
       ],
       "preferences": [
         {
-          "name": "cliPath",
+          "name": "geminiApiKey",
+          "type": "password",
+          "required": true,
+          "title": "Gemini API Key",
+          "description": "Your Google Gemini API key (get one at https://aistudio.google.com/app/apikey)",
+          "placeholder": "Enter your Gemini API key"
+        },
+        {
+          "name": "geminiModelName",
           "type": "textfield",
           "required": false,
-          "title": "Word4You CLI Path",
-          "description": "Path to the Word4You CLI executable (leave empty if installed in PATH)",
+          "title": "Gemini Model Name",
+          "description": "The Gemini model to use for word explanations",
+          "default": "gemini-2.0-flash-001",
+          "placeholder": "gemini-2.0-flash-001"
+        },
+        {
+          "name": "vocabularyBaseDir",
+          "type": "textfield",
+          "required": false,
+          "title": "Vocabulary Base Directory",
+          "description": "Base directory where vocabulary files will be stored (~ for home directory)",
+          "default": "~",
+          "placeholder": "~/Documents"
+        },
+        {
+          "name": "gitEnabled",
+          "type": "checkbox",
+          "required": false,
+          "title": "Enable Git Integration",
+          "description": "Enable Git version control for your vocabulary files",
+          "default": false,
+          "label": "Enable Git integration"
+        },
+        {
+          "name": "gitRemoteUrl",
+          "type": "textfield",
+          "required": false,
+          "title": "Git Remote URL",
+          "description": "Git remote repository URL (only used if Git integration is enabled)",
           "default": "",
-          "placeholder": "/usr/local/bin/word4you"
+          "placeholder": "https://github.com/username/vocabulary.git"
         }
       ]
     }

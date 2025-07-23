@@ -12,7 +12,11 @@ import { chmod, mkdir, rm } from "fs/promises";
 // No need for exec since we're not extracting archives
 
 export interface Preferences {
-  cliPath: string;
+  geminiApiKey: string;
+  geminiModelName: string;
+  vocabularyBaseDir: string;
+  gitEnabled: boolean;
+  gitRemoteUrl: string;
 }
 
 // Get the default vocabulary path from the CLI's configuration
@@ -36,13 +40,6 @@ export function ensureVocabularyDirectoryExists(vocabularyPath: string): void {
 // Check if word4you CLI is installed
 export function isCliInstalled(): boolean {
   try {
-    const preferences = getPreferences();
-
-    // If user specified a custom path, check if it exists
-    if (preferences.cliPath) {
-      return fs.existsSync(preferences.cliPath);
-    }
-
     // Check if our downloaded version exists
     const downloadedCli = word4youCLIFilepath();
     console.log("Checking for Word4You CLI at:", downloadedCli);
@@ -61,17 +58,6 @@ export function isCliInstalled(): boolean {
 
 // Get executable path for the word4you CLI
 export async function getExecutablePathAsync(): Promise<string> {
-  const preferences = getPreferences();
-
-  // If user specified a custom path, use it
-  if (preferences.cliPath) {
-    if (fs.existsSync(preferences.cliPath)) {
-      return preferences.cliPath;
-    } else {
-      console.warn("Custom CLI path specified but file not found:", preferences.cliPath);
-    }
-  }
-
   // Check if it's in PATH
   try {
     const pathOutput = execSync("which word4you", { encoding: "utf8" }).trim();
@@ -95,13 +81,6 @@ export async function getExecutablePathAsync(): Promise<string> {
 
 // Synchronous version for backward compatibility
 export function getExecutablePath(): string {
-  const preferences = getPreferences();
-
-  // If user specified a custom path, use it
-  if (preferences.cliPath) {
-    return preferences.cliPath;
-  }
-
   // Check if our downloaded version exists
   const downloadedCli = word4youCLIFilepath();
   if (fs.existsSync(downloadedCli)) {
@@ -119,8 +98,17 @@ export function getPreferences(): Preferences {
 
 // Create environment variables from preferences
 export function createEnvironmentFromPreferences(): NodeJS.ProcessEnv {
-  // Use the CLI's own configuration
-  return process.env;
+  const preferences = getPreferences();
+  
+  return {
+    ...process.env,
+    // Pass Raycast preferences as environment variables for the CLI
+    WORD4YOU_GEMINI_API_KEY: preferences.geminiApiKey || "",
+    WORD4YOU_GEMINI_MODEL_NAME: preferences.geminiModelName || "gemini-2.0-flash-001",
+    WORD4YOU_VOCABULARY_BASE_DIR: preferences.vocabularyBaseDir || "~",
+    WORD4YOU_GIT_ENABLED: preferences.gitEnabled ? "true" : "false",
+    WORD4YOU_GIT_REMOTE_URL: preferences.gitRemoteUrl || "",
+  };
 }
 
 // Helper function to calculate SHA256 hash of a file

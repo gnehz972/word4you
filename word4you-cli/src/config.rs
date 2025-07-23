@@ -16,22 +16,24 @@ pub struct Config {
 
 impl Config {
     pub fn load() -> Result<Self> {
-        // Check if config file exists
-        if !ConfigManager::config_exists() {
-            return Err(anyhow!("Configuration not found. Run 'word4you config' to set up."));
-        }
+        // Load configuration from file if it exists, otherwise use defaults
+        let user_config = if ConfigManager::config_exists() {
+            ConfigManager::load_config()?
+        } else {
+            UserConfig::default()
+        };
         
-        // Load configuration from file
-        let user_config = ConfigManager::load_config()?;
+        // Get API key from environment variable first, then config file
+        let gemini_api_key = env::var("WORD4YOU_GEMINI_API_KEY")
+            .unwrap_or_else(|_| user_config.gemini_api_key.clone());
         
-        // Get API key from config file
-        let gemini_api_key = user_config.gemini_api_key.clone();
         if gemini_api_key.is_empty() {
-            return Err(anyhow!("Gemini API key not found in configuration. Run 'word4you config' to set up."));
+            return Err(anyhow!("Gemini API key not found. Set WORD4YOU_GEMINI_API_KEY environment variable or run 'word4you config' to set up."));
         }
 
-        // Get model name from config file
-        let gemini_model_name = user_config.gemini_model_name.clone();
+        // Get model name from environment variable first, then config file
+        let gemini_model_name = env::var("WORD4YOU_GEMINI_MODEL_NAME")
+            .unwrap_or_else(|_| user_config.gemini_model_name.clone());
 
         let gemini_prompt_template = r#"
 Please provide a comprehensive explanation for the English word "{word}" in the following format:
@@ -55,8 +57,10 @@ Important formatting rules:
 "#
         .to_string();
 
-        // Get vocabulary base directory from config
-        let vocabulary_base_dir = expand_tilde_path(&user_config.vocabulary_base_dir);
+        // Get vocabulary base directory from environment variable first, then config file
+        let vocabulary_base_dir_raw = env::var("WORD4YOU_VOCABULARY_BASE_DIR")
+            .unwrap_or_else(|_| user_config.vocabulary_base_dir.clone());
+        let vocabulary_base_dir = expand_tilde_path(&vocabulary_base_dir_raw);
 
         // Create word4you subdirectory path
         let mut word4you_dir = PathBuf::from(vocabulary_base_dir);
@@ -73,11 +77,16 @@ Important formatting rules:
 
         let vocabulary_notebook_file = vocabulary_notebook_file.to_string_lossy().to_string();
 
-        // Get git enabled from config
-        let git_enabled = user_config.git_enabled;
+        // Get git enabled from environment variable first, then config file
+        let git_enabled = env::var("WORD4YOU_GIT_ENABLED")
+            .map(|v| v.to_lowercase() == "true")
+            .unwrap_or(user_config.git_enabled);
 
-        // Get git remote URL from config
-        let git_remote_url = user_config.git_remote_url;
+        // Get git remote URL from environment variable first, then config file
+        let git_remote_url = env::var("WORD4YOU_GIT_REMOTE_URL")
+            .ok()
+            .filter(|s| !s.is_empty())
+            .or(user_config.git_remote_url);
 
         Ok(Config {
             gemini_api_key,
