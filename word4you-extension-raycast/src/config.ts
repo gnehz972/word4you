@@ -22,15 +22,13 @@ export const CLI_CONFIG = {
     "darwin-arm64": "word4you-aarch64-apple-darwin",
     "darwin-x64": "word4you-x86_64-apple-darwin",
     "linux-x64": "word4you-x86_64-unknown-linux-gnu",
-    "linux-arm64": "word4you-aarch64-unknown-linux-gnu",
   },
 
   // Expected SHA256 hashes for verification
   hashes: {
-    "word4you-aarch64-apple-darwin": "5716162d81f3fce0c3f5a392cd902bfc6d44baa6c678432f9b1f2295ac97d0bf",
-    "word4you-x86_64-apple-darwin": "10eea5a1dd84516eb71a930f12193ebe4ef3de16ca9281b9d8d20cfa870f7bb1",
-    "word4you-x86_64-unknown-linux-gnu": "cd5b7232226e64889d7b428c5e45db46d9efe0f4ce9feeb07809a7de52de74e8",
-    "word4you-aarch64-unknown-linux-gnu": "2e42a55c773cb6c14f0a6f6f01c5d536957a481d46f85c4e2b838e4a7c73bc2e",
+    "word4you-aarch64-apple-darwin": "ca92435862631cc4a98239f00c3ca596dbd6231239a47e1d2fbb28a6fec36509",
+    "word4you-x86_64-apple-darwin": "f51ab9cc5e84c2648b1e6976c544e25c5cb26cc480bd94144fa62ae0a9ae7a85",
+    "word4you-x86_64-unknown-linux-gnu": "ad3d81dbbba374157816b63005b129abc35735dc813159ebf6e76a50fbcdf425",
   },
 } as const;
 
@@ -55,14 +53,10 @@ export function getDownloadUrl(): { url: string; assetName: string; expectedHash
 
   if (platform === "darwin") {
     platformKey = arch === "arm64" ? "darwin-arm64" : "darwin-x64";
+  } else if (platform === "linux" && arch === "x64") {
+    platformKey = "linux-x64";
   } else {
-    if (arch === "x64") {
-      platformKey = "linux-x64";
-    } else if (arch === "arm64") {
-      platformKey = "linux-arm64";
-    } else {
-      throw new Error(`Unsupported architecture: ${arch} on Linux. Only x64 and arm64 are supported.`);
-    }
+    throw new Error(`Unsupported architecture: ${arch} on Linux. Only x64 and arm64 are supported.`);
   }
 
   const assetName = CLI_CONFIG.assets[platformKey];
