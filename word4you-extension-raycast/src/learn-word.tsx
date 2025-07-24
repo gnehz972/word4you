@@ -1,11 +1,15 @@
 import { LaunchProps } from "@raycast/api";
 import { Arguments } from "./types";
 import { useWords } from "./hooks/useWords";
+import { useCliSetup } from "./hooks/useCliSetup";
 import { InstallationView } from "./views/InstallationView";
 import { WordListView } from "./views/WordListView";
 
 export default function Word4YouCommand(props: LaunchProps<{ arguments: Arguments }>) {
   const { word: argWord } = props.arguments;
+
+  // CLI setup - handled directly in UI component
+  const { cliInstalled } = useCliSetup();
 
   const {
     searchText,
@@ -14,12 +18,11 @@ export default function Word4YouCommand(props: LaunchProps<{ arguments: Argument
     aiResult,
     isLoading,
     isLoadingSaved,
-    cliInstalled,
     handleSearch,
     handleSave,
     handleDelete,
     handleUpdate,
-  } = useWords(argWord);
+  } = useWords(argWord, cliInstalled);
 
   // If CLI is not installed, show installation instructions
   if (cliInstalled === false) {
