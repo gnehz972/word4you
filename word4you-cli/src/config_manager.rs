@@ -129,7 +129,6 @@ impl ConfigManager {
         
         let model = Input::<String>::new()
             .with_prompt("Gemini model name")
-            .with_initial_text(&config.gemini_model_name)
             .default(config.gemini_model_name.clone())
             .interact()?;
             
@@ -142,7 +141,6 @@ impl ConfigManager {
         
         let vocab_dir = Input::<String>::new()
             .with_prompt("Vocabulary base directory (~ for home directory)")
-            .with_initial_text(&config.vocabulary_base_dir)
             .default(config.vocabulary_base_dir.clone())
             .interact()?;
             
@@ -183,11 +181,18 @@ impl ConfigManager {
         if git_enabled {
             let default_url = config.git_remote_url.clone().unwrap_or_else(|| "".to_string());
             
-            let git_url = Input::<String>::new()
-                .with_prompt("Git remote URL (leave empty to skip)")
-                .allow_empty(true)
-                .with_initial_text(&default_url)
-                .interact()?;
+            let git_url = if default_url.is_empty() {
+                Input::<String>::new()
+                    .with_prompt("Git remote URL (leave empty to skip)")
+                    .allow_empty(true)
+                    .interact()?
+            } else {
+                Input::<String>::new()
+                    .with_prompt("Git remote URL (leave empty to skip)")
+                    .default(default_url)
+                    .allow_empty(true)
+                    .interact()?
+            };
                 
             config.git_remote_url = if git_url.is_empty() { None } else { Some(git_url) };
             
