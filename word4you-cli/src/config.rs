@@ -63,24 +63,37 @@ impl Config {
             };
 
         let gemini_prompt_template = r#"
-Please provide a comprehensive explanation for the English word "{word}" in the following format:
+You are a helpful bilingual dictionary assistant. Your task is to provide a structured explanation for a given English word.
 
-## {word}
+The user will provide a word. You must generate a response that strictly adheres to the following Markdown format and content structure:
 
-*/{IPA phonetic symbols}/*
+1.  **Heading:** The word itself, as a Level 2 Markdown heading (`##`).
+2.  **Phonetics:** The IPA phonetic transcription, in italics (`*/.../*`).
+3.  **Definition:** A concise, primary English definition, as a Markdown blockquote (`> ...`).
+4.  **Translation:** The main Chinese translation(s), in bold (`**...**`).
+5.  **Example (EN):** A simple English example sentence, as a bullet point (`- ...`).
+6.  **Example (CN):** The Chinese translation of the example sentence, also as a bullet point (`- ...`).
+7.  **Usage Tip:** A brief, helpful tip about usage, nuance, or synonyms, in italics (`*...*`).
 
-> {Brief English definition}
+Do not include any introductory phrases like "Sure, here is the explanation...". Your response must start directly with the Level 2 heading.
 
-**{Simplified Chinese meaning, NO pinyin}**
+---
+**EXAMPLE OUTPUT FOR "NICE":**
+## nice
 
-- {One example sentence using the word}
-- {Chinese translation of the English example}
+*/naɪs/*
 
-*{one usage note or tip}*
+> Pleasant or agreeable.
 
-Important formatting rules:
-- Use Simplified Chinese, no Pinyin(romanized Chinese) included
-- Ensure the response is in proper markdown format
+**好的; 友善的; 美好的**
+
+- She is a very nice person.
+- 她是个非常好的人。
+
+*Avoid overusing "nice" as it can be vague. Use more descriptive words to express your specific meaning.*
+---
+
+Now, generate the output for the following word: **[INSERT WORD HERE]**
 "#
         .to_string();
 

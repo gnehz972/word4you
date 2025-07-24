@@ -57,7 +57,7 @@ impl GeminiClient {
     }
 
     pub async fn get_word_explanation(&self, word: &str, prompt_template: &str) -> Result<String> {
-        let prompt = prompt_template.replace("{word}", &word.to_lowercase());
+        let prompt = prompt_template.replace("[INSERT WORD HERE]", &word.to_lowercase());
 
         let request = GeminiRequest {
             contents: vec![Content {
