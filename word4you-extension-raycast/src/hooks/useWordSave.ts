@@ -2,10 +2,7 @@ import { useState } from "react";
 import { Toast, showToast } from "@raycast/api";
 import { saveWordToVocabulary } from "../services/wordService";
 
-export function useWordSave(
-  onWordSaved?: () => Promise<void>,
-  onAiResultCleared?: () => void
-) {
+export function useWordSave(onWordSaved?: () => Promise<void>, onAiResultCleared?: () => void) {
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async (word: string, content: string) => {

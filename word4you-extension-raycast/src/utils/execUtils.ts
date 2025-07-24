@@ -10,7 +10,7 @@ export function commandExistsInPath(command: string): string | null {
       return pathOutput;
     }
     return null;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -47,10 +47,10 @@ export function executeCliCommand(
     cwd?: string;
     env?: NodeJS.ProcessEnv;
     timeout?: number;
-  } = {}
+  } = {},
 ): string {
   const escapedPath = escapeExecutablePath(executablePath);
-  const escapedArgs = args.map(arg => `"${arg.replace(/"/g, '\\"')}"`);
+  const escapedArgs = args.map((arg) => `"${arg.replace(/"/g, '\\"')}"`);
   const command = `${escapedPath} ${escapedArgs.join(" ")}`;
 
   return execSync(command, {
@@ -70,24 +70,24 @@ export async function executeCliCommandAsync(
     env?: NodeJS.ProcessEnv;
     timeout?: number;
     onStatusUpdate?: (message: string) => void;
-  } = {}
+  } = {},
 ): Promise<{ success: boolean; output: string; error?: string }> {
   return new Promise((resolve) => {
     try {
       const output = executeCliCommand(executablePath, args, options);
-      
+
       if (options.onStatusUpdate) {
         options.onStatusUpdate(output.trim());
       }
-      
+
       resolve({ success: true, output: output.trim() });
-    } catch (error: any) {
-      const errorMessage = error.message || "Unknown error";
-      
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+
       if (options.onStatusUpdate) {
         options.onStatusUpdate(`Error: ${errorMessage}`);
       }
-      
+
       resolve({ success: false, output: "", error: errorMessage });
     }
   });

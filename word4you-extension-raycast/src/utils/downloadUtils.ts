@@ -39,7 +39,7 @@ export async function downloadFile(url: string, destDir: string, options: { file
 
       // Parse URL to determine if it's HTTP or HTTPS
       https
-        .get(currentUrl, async (response: any) => {
+        .get(currentUrl, async (response: import("http").IncomingMessage) => {
           // Handle redirects (status codes 301, 302, 303, 307, 308)
           if (
             response.statusCode &&
@@ -70,4 +70,3 @@ export async function downloadFile(url: string, destDir: string, options: { file
 
   return fetchWithRedirects(url);
 }
-

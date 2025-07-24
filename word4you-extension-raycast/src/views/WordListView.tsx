@@ -3,80 +3,80 @@ import { WordListItem } from "../components/WordListItem";
 import { WordExplanation, SavedWord } from "../types";
 
 interface WordListViewProps {
-    searchText: string;
-    isLoading: boolean;
-    isLoadingSaved: boolean;
-    allWords: (WordExplanation | SavedWord)[];
-    aiResult: WordExplanation | null;
-    onSearchTextChange: (text: string) => void;
-    onSearch: (text: string) => void;
-    onSave: (word: string, content: string) => void;
-    onDelete: (word: string, timestamp?: string) => void;
-    onUpdate: (word: string) => void;
+  searchText: string;
+  isLoading: boolean;
+  isLoadingSaved: boolean;
+  allWords: (WordExplanation | SavedWord)[];
+  aiResult: WordExplanation | null;
+  onSearchTextChange: (text: string) => void;
+  onSearch: (text: string) => void;
+  onSave: (word: string, content: string) => void;
+  onDelete: (word: string, timestamp?: string) => void;
+  onUpdate: (word: string) => void;
 }
 
 export function WordListView({
-    searchText,
-    isLoading,
-    isLoadingSaved,
-    allWords,
-    aiResult,
-    onSearchTextChange,
-    onSearch,
-    onSave,
-    onDelete,
-    onUpdate,
+  searchText,
+  isLoading,
+  isLoadingSaved,
+  allWords,
+  aiResult,
+  onSearchTextChange,
+  onSearch,
+  onSave,
+  onDelete,
+  onUpdate,
 }: WordListViewProps) {
-    return (
-        <List
-            isLoading={isLoadingSaved || isLoading}
-            searchBarPlaceholder="Search words or enter new word to query"
-            onSearchTextChange={onSearchTextChange}
-            searchText={searchText}
-            isShowingDetail
-        >
-            {allWords.length === 0 ? (
-                isLoading ? (
-                    <List.EmptyView title="Querying..." icon={Icon.Cloud} description="Please wait while we query the word..." />
-                ) : (
-                    <List.EmptyView
-                        title="No Words Found"
-                        description={
-                            searchText.trim()
-                                ? `No saved words match "${searchText}". Press Enter to query with AI.`
-                                : "You haven't saved any words yet. Enter a word to query with AI."
-                        }
-                        actions={
-                            searchText.trim() ? (
-                                <ActionPanel>
-                                    <Action
-                                        title={`Query "${searchText}" with AI`}
-                                        icon="🤖"
-                                        onAction={() => onSearch(searchText.trim())}
-                                    />
-                                </ActionPanel>
-                            ) : null
-                        }
-                    />
-                )
-            ) : (
-                allWords.map((word, index) => {
-                    const isAiResult = aiResult && word.word === aiResult.word;
+  return (
+    <List
+      isLoading={isLoadingSaved || isLoading}
+      searchBarPlaceholder="Search words or enter new word to query"
+      onSearchTextChange={onSearchTextChange}
+      searchText={searchText}
+      isShowingDetail
+    >
+      {allWords.length === 0 ? (
+        isLoading ? (
+          <List.EmptyView title="Querying..." icon={Icon.Cloud} description="Please wait while we query the word..." />
+        ) : (
+          <List.EmptyView
+            title="No Words Found"
+            description={
+              searchText.trim()
+                ? `No saved words match "${searchText}". Press Enter to query with AI.`
+                : "You haven't saved any words yet. Enter a word to query with AI."
+            }
+            actions={
+              searchText.trim() ? (
+                <ActionPanel>
+                  <Action
+                    title={`Query "${searchText}" with AI`}
+                    icon="🤖"
+                    onAction={() => onSearch(searchText.trim())}
+                  />
+                </ActionPanel>
+              ) : null
+            }
+          />
+        )
+      ) : (
+        allWords.map((word, index) => {
+          const isAiResult = aiResult && word.word === aiResult.word;
 
-                    return (
-                        <WordListItem
-                            key={`${word.word}-${isAiResult ? "ai" : "saved"}`}
-                            word={word}
-                            index={index}
-                            total={allWords.length}
-                            isAiResult={isAiResult}
-                            onSave={onSave}
-                            onDelete={onDelete}
-                            onUpdate={onUpdate}
-                        />
-                    );
-                })
-            )}
-        </List>
-    );
+          return (
+            <WordListItem
+              key={`${word.word}-${isAiResult ? "ai" : "saved"}`}
+              word={word}
+              index={index}
+              total={allWords.length}
+              isAiResult={isAiResult}
+              onSave={onSave}
+              onDelete={onDelete}
+              onUpdate={onUpdate}
+            />
+          );
+        })
+      )}
+    </List>
+  );
 }

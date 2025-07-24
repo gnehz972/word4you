@@ -30,7 +30,7 @@ export function useWordUpdate(onWordUpdated?: () => Promise<void>) {
       if (success) {
         toast.style = Toast.Style.Success;
         toast.title = "Word updated successfully!";
-        
+
         if (onWordUpdated) {
           await onWordUpdated();
         }

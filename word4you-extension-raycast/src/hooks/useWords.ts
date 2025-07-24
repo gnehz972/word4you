@@ -13,7 +13,7 @@ export function useWords(initialWord?: string, cliInstalled?: boolean) {
   const { searchText, setSearchText, aiResult, isLoading, handleSearch, clearAiResult } = useWordSearch(
     savedWordsMap,
     isLoadingSaved,
-    initialWord
+    initialWord,
   );
 
   // Word filtering

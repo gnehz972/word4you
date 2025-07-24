@@ -16,7 +16,7 @@ export function useWordDelete(onWordDeleted?: () => Promise<void>) {
       if (success) {
         toast.style = Toast.Style.Success;
         toast.title = "Word deleted successfully!";
-        
+
         if (onWordDeleted) {
           await onWordDeleted();
         }

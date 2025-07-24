@@ -3,7 +3,6 @@ import path from "path";
 import os from "os";
 import fs from "fs";
 
-
 export interface Preferences {
   geminiApiKey: string;
   geminiModelName: string;
@@ -91,8 +90,6 @@ export function ensureVocabularyDirectoryExists(vocabularyPath: string): void {
   }
 }
 
-
-
 // Get preferences with proper typing
 export function getPreferences(): Preferences {
   return getPreferenceValues<Preferences>();
@@ -112,5 +109,3 @@ export function createEnvironmentFromPreferences(): NodeJS.ProcessEnv {
     WORD4YOU_GIT_REMOTE_URL: preferences.gitRemoteUrl || "",
   };
 }
-
-
