@@ -8,7 +8,8 @@ import {
   updateWordInVocabulary,
   parseSavedWords,
 } from "../services/wordService";
-import { getVocabularyPath, isCliInstalled, ensureCLI } from "../config";
+import { getVocabularyPath } from "../config";
+import { isCliInstalled, ensureCLI } from "../services/cliManager";
 
 export function useWords(initialWord?: string) {
   const [searchText, setSearchText] = useState(initialWord || "");

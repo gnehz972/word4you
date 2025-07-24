@@ -4,10 +4,10 @@ import path from "path";
 import { WordExplanation, SavedWord } from "../types";
 import {
     getVocabularyPath,
-    getExecutablePathAsync,
     createEnvironmentFromPreferences,
     ensureVocabularyDirectoryExists,
 } from "../config";
+import { getExecutablePathAsync } from "./cliManager";
 
 export function parseRawWordExplanation(output: string, word: string): WordExplanation | null {
     try {
