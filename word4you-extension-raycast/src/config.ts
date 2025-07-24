@@ -26,9 +26,9 @@ export const CLI_CONFIG = {
 
   // Expected SHA256 hashes for verification
   hashes: {
-    "word4you-aarch64-apple-darwin": "ca92435862631cc4a98239f00c3ca596dbd6231239a47e1d2fbb28a6fec36509",
-    "word4you-x86_64-apple-darwin": "f51ab9cc5e84c2648b1e6976c544e25c5cb26cc480bd94144fa62ae0a9ae7a85",
-    "word4you-x86_64-unknown-linux-gnu": "ad3d81dbbba374157816b63005b129abc35735dc813159ebf6e76a50fbcdf425",
+    "word4you-aarch64-apple-darwin": "2a5bb4555e547c49ca837d8a4676cb50bf1afd8cf077dcf139f195bb7a06cd1a",
+    "word4you-x86_64-apple-darwin": "678e8c1fee0800ba754c90559a8b4b0a6b1a020eea4d04c12d4473298d2575fd",
+    "word4you-x86_64-unknown-linux-gnu": "10d3c157189eef23fdcc09f2b99ef76c6b01f816944820fd12edf06b4cffc2fc",
   },
 } as const;
 
