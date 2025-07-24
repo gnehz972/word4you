@@ -1,19 +1,26 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Toast, showToast } from "@raycast/api";
 import { isCliInstalled, ensureCLI } from "../services/cliManager";
 
 export function useCliSetup() {
-  const [cliInstalled, setCliInstalled] = useState<boolean | null>(null);
+  const [cliInstalled, setCliInstalled] = useState<boolean | undefined>();
+  const hasChecked = useRef(false);
 
   useEffect(() => {
+    // Prevent duplicate executions
+    if (hasChecked.current) {
+      return;
+    }
+    hasChecked.current = true;
+
     const checkCliInstallation = async () => {
       const installed = isCliInstalled();
+      setCliInstalled(installed);
 
       if (!installed) {
         const toast = await showToast({
           style: Toast.Style.Animated,
-          title: "Word4You CLI not found",
-          message: "Downloading CLI...",
+          title: "Downloading Word4You CLI",
         });
 
         try {
@@ -28,8 +35,6 @@ export function useCliSetup() {
           toast.message = String(error);
           setCliInstalled(false);
         }
-      } else {
-        setCliInstalled(true);
       }
     };
 

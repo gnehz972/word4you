@@ -6,7 +6,7 @@ interface WordListItemProps {
   word: WordExplanation | SavedWord;
   index?: number;
   total?: number;
-  isAiResult?: boolean;
+  isAiResult: boolean | null;
   onSave?: (word: string, content: string) => void;
   onDelete?: (word: string, timestamp?: string) => void;
   onUpdate?: (word: string) => void;

@@ -4,7 +4,7 @@ import { SavedWord } from "../types";
 import { parseSavedWords } from "../services/wordService";
 import { getVocabularyPath } from "../config";
 
-export function useSavedWords(cliInstalled?: boolean) {
+export function useSavedWords() {
   const [savedWords, setSavedWords] = useState<SavedWord[]>([]);
   const [isLoadingSaved, setIsLoadingSaved] = useState(true);
   const [savedWordsMap, setSavedWordsMap] = useState<Map<string, SavedWord>>(new Map());
@@ -33,10 +33,8 @@ export function useSavedWords(cliInstalled?: boolean) {
 
   // Load saved words when CLI is installed
   useEffect(() => {
-    if (cliInstalled) {
-      loadSavedWords();
-    }
-  }, [cliInstalled]);
+    loadSavedWords();
+  }, []);
 
   return {
     savedWords,

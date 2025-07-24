@@ -1,37 +1,39 @@
 import { List, Icon, ActionPanel, Action } from "@raycast/api";
 import { WordListItem } from "../components/WordListItem";
-import { WordExplanation, SavedWord } from "../types";
+import { useSavedWords } from "../hooks/useSavedWords";
+import { useWordSearch } from "../hooks/useWordSearch";
+import { useWordFiltering } from "../hooks/useWordFiltering";
+import { useWordSave } from "../hooks/useWordSave";
+import { useWordDelete } from "../hooks/useWordDelete";
+import { useWordUpdate } from "../hooks/useWordUpdate";
 
 interface WordListViewProps {
-  searchText: string;
-  isLoading: boolean;
-  isLoadingSaved: boolean;
-  allWords: (WordExplanation | SavedWord)[];
-  aiResult: WordExplanation | null;
-  onSearchTextChange: (text: string) => void;
-  onSearch: (text: string) => void;
-  onSave: (word: string, content: string) => void;
-  onDelete: (word: string, timestamp?: string) => void;
-  onUpdate: (word: string) => void;
+  initialWord?: string;
 }
 
-export function WordListView({
-  searchText,
-  isLoading,
-  isLoadingSaved,
-  allWords,
-  aiResult,
-  onSearchTextChange,
-  onSearch,
-  onSave,
-  onDelete,
-  onUpdate,
-}: WordListViewProps) {
+export function WordListView({ initialWord }: WordListViewProps) {
+  // Saved words management
+  const { savedWords, isLoadingSaved, savedWordsMap, loadSavedWords } = useSavedWords();
+
+  // Search functionality
+  const { searchText, setSearchText, aiResult, isLoading, handleSearch, clearAiResult } = useWordSearch(
+    savedWordsMap,
+    isLoadingSaved,
+    initialWord,
+  );
+
+  // Word filtering
+  const { allWords } = useWordFiltering(savedWords, aiResult, searchText);
+
+  // Word operations
+  const { handleSave } = useWordSave(loadSavedWords, clearAiResult);
+  const { handleDelete } = useWordDelete(loadSavedWords);
+  const { handleUpdate } = useWordUpdate(loadSavedWords);
   return (
     <List
       isLoading={isLoadingSaved || isLoading}
       searchBarPlaceholder="Search words or enter new word to query"
-      onSearchTextChange={onSearchTextChange}
+      onSearchTextChange={setSearchText}
       searchText={searchText}
       isShowingDetail
     >
@@ -52,7 +54,7 @@ export function WordListView({
                   <Action
                     title={`Query "${searchText}" with AI`}
                     icon="🤖"
-                    onAction={() => onSearch(searchText.trim())}
+                    onAction={() => handleSearch(searchText.trim())}
                   />
                 </ActionPanel>
               ) : null
@@ -70,9 +72,9 @@ export function WordListView({
               index={index}
               total={allWords.length}
               isAiResult={isAiResult}
-              onSave={onSave}
-              onDelete={onDelete}
-              onUpdate={onUpdate}
+              onSave={handleSave}
+              onDelete={handleDelete}
+              onUpdate={handleUpdate}
             />
           );
         })
