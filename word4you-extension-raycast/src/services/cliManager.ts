@@ -1,52 +1,105 @@
 import fs from "fs";
-import { getCliFilepath, getDownloadUrl } from "../config";
-import { downloadFile, verifyFileHash } from "../utils/downloadUtils";
-import { environment } from "@raycast/api";
+import {
+    createEnvironmentFromPreferences,
+    ensureVocabularyDirectoryExists,
+    getCliFilepath,
+    getDownloadUrl,
+    getVocabularyPath
+} from "../config";
+import {downloadFile, verifyFileHash} from "../utils/downloadUtils";
+import {executeCliCommand, executeCliCommandAsync, getAvailableExecutablePath} from "../utils/execUtils";
+import {environment} from "@raycast/api";
 import path from "path";
-import { chmod, mkdir, rm } from "fs/promises";
+import {chmod, mkdir, rm} from "fs/promises";
 
 // Check if word4you CLI is installed
 export function isCliInstalled(): boolean {
-    try {
-        // Check if our downloaded version exists
-        const downloadedCli = getCliFilepath();
-        console.log("Checking for Word4You CLI at:", downloadedCli);
-        if (fs.existsSync(downloadedCli)) {
-            return true;
-        }
-
-        // Otherwise check if it's in PATH
-        const { execSync } = require("child_process");
-        execSync("which word4you", { stdio: "ignore" });
-        return true;
-    } catch (error) {
-        console.warn("word4you not found", error);
-        return false;
-    }
+    const availablePath = getAvailableExecutablePath();
+    console.log("Checking for Word4You CLI, found at:", availablePath);
+    return availablePath !== null;
 }
 
 // Get executable path for the word4you CLI
-export async function getExecutablePathAsync(): Promise<string> {
-    // Check if it's in PATH
-    try {
-        const { execSync } = require("child_process");
-        const pathOutput = execSync("which word4you", { encoding: "utf8" }).trim();
-
-        if (pathOutput && fs.existsSync(pathOutput)) {
-            return pathOutput;
-        }
-    } catch (error) {
-        console.warn("word4you not found in PATH, will download it");
+async function getExecutablePathAsync(): Promise<string> {
+    // Check if CLI is already available
+    const availablePath = getAvailableExecutablePath();
+    if (availablePath) {
+        return availablePath;
     }
+
+    console.warn("word4you not found, will download it");
 
     // If not found, download it
     try {
-        const cliPath = await ensureCLI();
-        return cliPath;
+        return await ensureCLI();
     } catch (error) {
         console.error("Failed to download word4you CLI:", error);
         throw new Error("Could not find or download word4you CLI");
     }
+}
+
+// Execute a CLI command with all the common setup steps
+export async function executeWordCliCommand(
+    args: string[],
+    options: {
+        onStatusUpdate?: (message: string) => void;
+    } = {}
+): Promise<{ success: boolean; output: string; error?: string }> {
+    try {
+        // Get executable path, downloading if necessary
+        const executablePath = await getExecutablePathAsync();
+
+        // Use cross-platform path resolution for vocabulary file
+        const vocabularyPath = getVocabularyPath();
+
+        // Ensure the directory exists
+        ensureVocabularyDirectoryExists(vocabularyPath);
+
+        // Create environment variables from preferences
+        const env = createEnvironmentFromPreferences();
+
+        // Execute the command
+        const result = await executeCliCommandAsync(
+            executablePath,
+            args,
+            {
+                cwd: process.cwd(),
+                env: env,
+                onStatusUpdate: options.onStatusUpdate,
+            }
+        );
+
+        return result;
+    } catch (error: any) {
+        const errorMessage = error.message || "Unknown error";
+        
+        if (options.onStatusUpdate) {
+            options.onStatusUpdate(`Error: ${errorMessage}`);
+        }
+        
+        return { success: false, output: "", error: errorMessage };
+    }
+}
+
+// Execute a synchronous CLI command with all the common setup steps
+export async function executeWordCliCommandSync(args: string[]): Promise<string> {
+    // Get executable path, downloading if necessary
+    const executablePath = await getExecutablePathAsync();
+
+    // Use cross-platform path resolution for vocabulary file
+    const vocabularyPath = getVocabularyPath();
+
+    // Ensure the directory exists
+    ensureVocabularyDirectoryExists(vocabularyPath);
+
+    // Create environment variables from preferences
+    const env = createEnvironmentFromPreferences();
+
+    // Execute the command synchronously
+    return executeCliCommand(executablePath, args, {
+        cwd: process.cwd(),
+        env: env,
+    });
 }
 
 // Ensure the Word4You CLI is available, downloading it if necessary

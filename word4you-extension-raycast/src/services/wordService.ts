@@ -1,13 +1,6 @@
-import { execSync } from "child_process";
 import fs from "fs";
-import path from "path";
 import { WordExplanation, SavedWord } from "../types";
-import {
-    getVocabularyPath,
-    createEnvironmentFromPreferences,
-    ensureVocabularyDirectoryExists,
-} from "../config";
-import { getExecutablePathAsync } from "./cliManager";
+import { executeWordCliCommand, executeWordCliCommandSync } from "./cliManager";
 
 export function parseRawWordExplanation(output: string, word: string): WordExplanation | null {
     try {
@@ -75,36 +68,7 @@ export function parseRawWordExplanation(output: string, word: string): WordExpla
 
 export async function getWordExplanation(word: string): Promise<WordExplanation | null> {
     try {
-        // Get executable path, downloading if necessary
-        const executablePath = await getExecutablePathAsync();
-
-        // Use cross-platform path resolution for vocabulary file
-        const vocabularyPath = getVocabularyPath();
-
-        // Ensure the directory exists
-        ensureVocabularyDirectoryExists(vocabularyPath);
-
-        // Create environment variables from preferences
-        const env = createEnvironmentFromPreferences();
-
-        // Use current directory as working directory
-        const cwd = process.cwd();
-
-        // Properly escape the executable path and arguments for shell execution
-        const escapedPath =
-            executablePath.includes(" ") || executablePath.includes("(")
-                ? `'${executablePath.replace(/'/g, "'\\''")}'`
-                : executablePath;
-
-        const command = `${escapedPath} query "${word.replace(/"/g, '\\"')}" --raw`;
-
-        const output = execSync(command, {
-            encoding: "utf8",
-            timeout: 30000,
-            cwd: cwd,
-            env: env,
-        });
-
+        const output = await executeWordCliCommandSync(["query", word, "--raw"]);
         return parseRawWordExplanation(output, word);
     } catch (error: any) {
         console.error("Error getting word explanation:", error);
@@ -117,60 +81,23 @@ export async function saveWordToVocabulary(
     content: string,
     onStatusUpdate?: (message: string) => void,
 ): Promise<boolean> {
-    return new Promise(async (resolve) => {
-        try {
-            // Get executable path, downloading if necessary
-            const executablePath = await getExecutablePathAsync();
+    try {
+        const result = await executeWordCliCommand(
+            ["save", word, "--content", content],
+            { onStatusUpdate }
+        );
 
-            // Use cross-platform path resolution for vocabulary file
-            const vocabularyPath = getVocabularyPath();
-
-            // Ensure the directory exists
-            ensureVocabularyDirectoryExists(vocabularyPath);
-
-            // Create environment variables from preferences
-            const env = createEnvironmentFromPreferences();
-
-            // Use current directory as working directory
-            const cwd = process.cwd();
-
-            // Properly escape the executable path and arguments for shell execution
-            const escapedPath =
-                executablePath.includes(" ") || executablePath.includes("(")
-                    ? `'${executablePath.replace(/'/g, "'\\''")}'`
-                    : executablePath;
-
-            const command = `${escapedPath} save "${word.replace(/"/g, '\\"')}" --content "${content.replace(/"/g, '\\"')}"`;
-
-            try {
-                const output = execSync(command, {
-                    encoding: "utf8",
-                    timeout: 30000,
-                    cwd: cwd,
-                    env: env,
-                });
-
-                if (onStatusUpdate) {
-                    onStatusUpdate(output.trim());
-                }
-
-                resolve(true);
-            } catch (error: any) {
-                console.error(`Save failed for word: ${word}`);
-                console.error(`content: ${content}`);
-                console.error(`Error details:`, error);
-
-                if (onStatusUpdate) {
-                    onStatusUpdate(`Error: ${error.message}`);
-                }
-
-                resolve(false);
-            }
-        } catch (error) {
-            console.error("Error in saveWordToVocabulary:", error);
-            resolve(false);
+        if (!result.success) {
+            console.error(`Save failed for word: ${word}`);
+            console.error(`content: ${content}`);
+            console.error(`Error details:`, result.error);
         }
-    });
+
+        return result.success;
+    } catch (error) {
+        console.error("Error in saveWordToVocabulary:", error);
+        return false;
+    }
 }
 
 export async function deleteWordFromVocabulary(
@@ -178,60 +105,25 @@ export async function deleteWordFromVocabulary(
     timestamp?: string,
     onStatusUpdate?: (message: string) => void,
 ): Promise<boolean> {
-    return new Promise(async (resolve) => {
-        try {
-            // Get executable path, downloading if necessary
-            const executablePath = await getExecutablePathAsync();
-
-            // Use cross-platform path resolution for vocabulary file
-            const vocabularyPath = getVocabularyPath();
-
-            // Ensure the directory exists
-            ensureVocabularyDirectoryExists(vocabularyPath);
-
-            // Create environment variables from preferences
-            const env = createEnvironmentFromPreferences();
-
-            // Use current directory as working directory
-            const cwd = process.cwd();
-
-            // Properly escape the executable path and arguments for shell execution
-            const escapedPath =
-                executablePath.includes(" ") || executablePath.includes("(")
-                    ? `'${executablePath.replace(/'/g, "'\\''")}'`
-                    : executablePath;
-
-            const timestampArg = timestamp ? ` --timestamp "${timestamp}"` : "";
-            const command = `${escapedPath} delete "${word.replace(/"/g, '\\"')}"${timestampArg}`;
-
-            try {
-                const output = execSync(command, {
-                    encoding: "utf8",
-                    timeout: 30000,
-                    cwd: cwd,
-                    env: env,
-                });
-
-                if (onStatusUpdate) {
-                    onStatusUpdate(output.trim());
-                }
-
-                resolve(true);
-            } catch (error: any) {
-                console.error(`Delete failed for word: ${word}`);
-                console.error(`Error details:`, error);
-
-                if (onStatusUpdate) {
-                    onStatusUpdate(`Error: ${error.message}`);
-                }
-
-                resolve(false);
-            }
-        } catch (error) {
-            console.error("Error in deleteWordFromVocabulary:", error);
-            resolve(false);
+    try {
+        // Build arguments array
+        const args = ["delete", word];
+        if (timestamp) {
+            args.push("--timestamp", timestamp);
         }
-    });
+
+        const result = await executeWordCliCommand(args, { onStatusUpdate });
+
+        if (!result.success) {
+            console.error(`Delete failed for word: ${word}`);
+            console.error(`Error details:`, result.error);
+        }
+
+        return result.success;
+    } catch (error) {
+        console.error("Error in deleteWordFromVocabulary:", error);
+        return false;
+    }
 }
 
 export async function updateWordInVocabulary(
@@ -240,61 +132,26 @@ export async function updateWordInVocabulary(
     timestamp?: string,
     onStatusUpdate?: (message: string) => void,
 ): Promise<boolean> {
-    return new Promise(async (resolve) => {
-        try {
-            // Get executable path, downloading if necessary
-            const executablePath = await getExecutablePathAsync();
-
-            // Use cross-platform path resolution for vocabulary file
-            const vocabularyPath = getVocabularyPath();
-
-            // Ensure the directory exists
-            ensureVocabularyDirectoryExists(vocabularyPath);
-
-            // Create environment variables from preferences
-            const env = createEnvironmentFromPreferences();
-
-            // Use current directory as working directory
-            const cwd = process.cwd();
-
-            // Properly escape the executable path and arguments for shell execution
-            const escapedPath =
-                executablePath.includes(" ") || executablePath.includes("(")
-                    ? `'${executablePath.replace(/'/g, "'\\''")}'`
-                    : executablePath;
-
-            const timestampArg = timestamp ? ` --timestamp "${timestamp}"` : "";
-            const command = `${escapedPath} update "${word.replace(/"/g, '\\"')}" --content "${content.replace(/"/g, '\\"')}"${timestampArg}`;
-
-            try {
-                const output = execSync(command, {
-                    encoding: "utf8",
-                    timeout: 30000,
-                    cwd: cwd,
-                    env: env,
-                });
-
-                if (onStatusUpdate) {
-                    onStatusUpdate(output.trim());
-                }
-
-                resolve(true);
-            } catch (error: any) {
-                console.error(`Update failed for word: ${word}`);
-                console.error(`content: ${content}`);
-                console.error(`Error details:`, error);
-
-                if (onStatusUpdate) {
-                    onStatusUpdate(`Error: ${error.message}`);
-                }
-
-                resolve(false);
-            }
-        } catch (error) {
-            console.error("Error in updateWordInVocabulary:", error);
-            resolve(false);
+    try {
+        // Build arguments array
+        const args = ["update", word, "--content", content];
+        if (timestamp) {
+            args.push("--timestamp", timestamp);
         }
-    });
+
+        const result = await executeWordCliCommand(args, { onStatusUpdate });
+
+        if (!result.success) {
+            console.error(`Update failed for word: ${word}`);
+            console.error(`content: ${content}`);
+            console.error(`Error details:`, result.error);
+        }
+
+        return result.success;
+    } catch (error) {
+        console.error("Error in updateWordInVocabulary:", error);
+        return false;
+    }
 }
 
 // Parse saved words from the vocabulary notebook
