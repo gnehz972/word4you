@@ -11,13 +11,12 @@ Raycast extension for quick/enriched UI interaction with the word4you CLI.
 ## Screenshot
 ![Word4You Raycast Extension Screenshot](./media/screenshot-1.png)
 
-
 ## Setup
 
 1. Install the extension in Raycast
-  - Run `cd word4you-extension-raycast`
-  - Run `npm install` to install the required dependencies
-  - Run `npm run dev` to start the Raycast development server and open the extension in Raycast
+    - Run `cd word4you-extension-raycast`
+    - Run `npm install` to install the required dependencies
+    - Run `npm run dev` to start the Raycast development server and open the extension in Raycast
 2. Configure the Gemini API key in Raycast extension preferences and start to use the extension
 
 ## Requirements
