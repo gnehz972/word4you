@@ -37,12 +37,10 @@ export function useWordUpdate(onWordUpdated?: () => Promise<void>) {
       } else {
         toast.style = Toast.Style.Failure;
         toast.title = "Failed to update word";
-        toast.message = "Please check your configuration";
       }
-    } catch (error) {
+    } catch {
       toast.style = Toast.Style.Failure;
       toast.title = "Error updating word";
-      toast.message = String(error);
     }
   };
 

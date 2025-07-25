@@ -51,13 +51,11 @@ export function useWordSearch(
         } else {
           toast.style = Toast.Style.Failure;
           toast.title = "Failed to get explanation";
-          toast.message = "Please check the word and try again";
           setAiResult(null);
         }
-      } catch (error) {
+      } catch {
         toast.style = Toast.Style.Failure;
         toast.title = "Error occurred";
-        toast.message = String(error);
         setAiResult(null);
       } finally {
         setIsLoading(false);
