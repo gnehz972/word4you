@@ -1,4 +1,4 @@
-import { List, ActionPanel, Action, Icon, open, openExtensionPreferences } from "@raycast/api";
+import { List, ActionPanel, Action, Icon, openExtensionPreferences } from "@raycast/api";
 
 export function InstallationView() {
   return (
