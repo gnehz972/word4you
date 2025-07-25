@@ -29,3 +29,7 @@ Word4you CLI
 Word4You Raycast Extension
 
 <img src="./word4you-extension-raycast/media/screenshot-1.png" width=800 />
+
+Saved vocabulary notebook(View in Obsidian)
+
+<img src="./word4you-cli/media/screenshot-2.png" width=800 />

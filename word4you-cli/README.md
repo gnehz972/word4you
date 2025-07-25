@@ -11,7 +11,13 @@ A fast, efficient command-line tool for querying and collecting English words wi
 - ⚡ Fast execution (Rust)
 
 ## Screenshot
-![Word4You CLI Screenshot](./media/screenshot-1.png)
+CLI
+
+<img src="./media/screenshot-1.png" width=800 />
+
+Saved vocabulary notebook(View in Obsidian)
+
+<img src="./media/screenshot-2.png" width=800 />
 
 ## Quick Start
 1. Download the [appropriate binary](https://github.com/gnehz972/word4you/releases) for your system and rename it to `word4you`
