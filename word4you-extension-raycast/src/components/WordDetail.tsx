@@ -1,8 +1,8 @@
 import { List } from "@raycast/api";
-import { WordExplanation, SavedWord } from "../types";
+import { WordExplanation } from "../types";
 
 interface WordDetailProps {
-  word: WordExplanation | SavedWord;
+  word: WordExplanation;
 }
 
 export function WordDetail({ word }: WordDetailProps) {

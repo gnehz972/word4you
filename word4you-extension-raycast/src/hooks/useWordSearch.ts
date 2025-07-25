@@ -1,9 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { Toast, showToast } from "@raycast/api";
-import { WordExplanation, SavedWord } from "../types";
+import { WordExplanation } from "../types";
 import { getWordExplanation } from "../services/wordService";
 
-export function useWordSearch(savedWordsMap: Map<string, SavedWord>, isLoadingSaved: boolean, initialWord?: string) {
+export function useWordSearch(
+  savedWordsMap: Map<string, WordExplanation>,
+  isLoadingSaved: boolean,
+  initialWord?: string,
+) {
   const [searchText, setSearchText] = useState(initialWord || "");
   const [aiResult, setAiResult] = useState<WordExplanation | null>(null);
   const [isLoading, setIsLoading] = useState(false);

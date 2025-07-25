@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { Toast, showToast } from "@raycast/api";
-import { SavedWord } from "../types";
+import { WordExplanation } from "../types";
 import { parseSavedWords } from "../services/wordService";
 import { getVocabularyPath } from "../config";
 
 export function useSavedWords() {
-  const [savedWords, setSavedWords] = useState<SavedWord[]>([]);
+  const [savedWords, setSavedWords] = useState<WordExplanation[]>([]);
   const [isLoadingSaved, setIsLoadingSaved] = useState(true);
-  const [savedWordsMap, setSavedWordsMap] = useState<Map<string, SavedWord>>(new Map());
+  const [savedWordsMap, setSavedWordsMap] = useState<Map<string, WordExplanation>>(new Map());
 
   const loadSavedWords = async () => {
     try {
@@ -16,7 +16,7 @@ export function useSavedWords() {
       setSavedWords(words);
 
       // Create a map for quick lookup
-      const wordsMap = new Map<string, SavedWord>();
+      const wordsMap = new Map<string, WordExplanation>();
       words.forEach((word) => wordsMap.set(word.word.toLowerCase(), word));
       setSavedWordsMap(wordsMap);
     } catch (error) {

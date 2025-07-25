@@ -1,5 +1,5 @@
 import fs from "fs";
-import { WordExplanation, SavedWord } from "../types";
+import { WordExplanation } from "../types";
 import { executeWordCliCommand, executeWordCliCommandSync } from "./cliManager";
 
 export function parseRawWordExplanation(output: string, word: string): WordExplanation | null {
@@ -15,6 +15,7 @@ export function parseRawWordExplanation(output: string, word: string): WordExpla
     let example_en = "";
     let example_zh = "";
     let tip = "";
+    let timestamp = "";
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -47,6 +48,15 @@ export function parseRawWordExplanation(output: string, word: string): WordExpla
       // Tip: *Tip text* (but not pronunciation format)
       else if (line.match(/^\*.*\*$/) && !line.match(/^\*\/.*\/\*$/)) {
         tip = line.replace(/^\*/, "").replace(/\*$/, "");
+      } else if (line.match(/<!--.*-->/)) {
+        const metadata = line.replace("<!--", "").replace("-->", "").trim().split(" ");
+
+        for (let i = 0; i < metadata.length; i++) {
+          const split = metadata[i].split("=");
+          if (split[0] === "timestamp") {
+            timestamp = split[1];
+          }
+        }
       }
     }
 
@@ -59,6 +69,7 @@ export function parseRawWordExplanation(output: string, word: string): WordExpla
       example_zh: example_zh || "",
       tip: tip || "",
       raw_output: output,
+      timestamp: timestamp,
     };
   } catch (error) {
     console.error("Error parsing raw word explanation:", error);
@@ -152,17 +163,17 @@ export async function updateWordInVocabulary(
 }
 
 // Parse saved words from the vocabulary notebook
-export function parseSavedWords(vocabularyPath: string): SavedWord[] {
+export function parseSavedWords(vocabularyPath: string): WordExplanation[] {
   try {
     if (!fs.existsSync(vocabularyPath)) {
       return [];
     }
 
     const content = fs.readFileSync(vocabularyPath, "utf8");
-    const words: SavedWord[] = [];
+    const words: WordExplanation[] = [];
 
     // Split content by word sections (## word)
-    const sections = content.split(/(?=^## )/m);
+    const sections = content.split("\n---\n");
 
     for (const section of sections) {
       if (!section.trim()) continue;
@@ -176,19 +187,11 @@ export function parseSavedWords(vocabularyPath: string): SavedWord[] {
       const word = wordMatch[1].trim();
       const wordContent = lines.slice(1).join("\n");
 
-      // Check for timestamp in the first two lines
-      let timestamp = "";
-      const timestampMatch = lines[1] && lines[1].match(/^Timestamp: (.+)$/);
-      if (timestampMatch) {
-        timestamp = timestampMatch[1];
-      }
-
       // Parse the word content similar to the original parser
       const parsed = parseRawWordExplanation(wordContent, word);
       if (parsed) {
         words.push({
           ...parsed,
-          timestamp: timestamp,
         });
       }
     }

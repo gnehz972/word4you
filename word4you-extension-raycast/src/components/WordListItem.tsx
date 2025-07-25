@@ -1,9 +1,9 @@
 import { List, ActionPanel, Action } from "@raycast/api";
-import { WordExplanation, SavedWord } from "../types";
+import { WordExplanation } from "../types";
 import { WordDetail } from "./WordDetail";
 
 interface WordListItemProps {
-  word: WordExplanation | SavedWord;
+  word: WordExplanation;
   index?: number;
   total?: number;
   isAiResult: boolean | null;
@@ -35,11 +35,7 @@ export function WordListItem({
           {!isAiResult && (
             <>
               {onDelete && (
-                <Action
-                  title="Delete Word"
-                  icon="🗑️"
-                  onAction={() => onDelete(word.word, (word as SavedWord).timestamp)}
-                />
+                <Action title="Delete Word" icon="🗑️" onAction={() => onDelete(word.word, word.timestamp)} />
               )}
               {onUpdate && <Action title="Update Word" icon="📝" onAction={() => onUpdate(word.word)} />}
             </>

@@ -1,7 +1,7 @@
 import { useMemo } from "react";
-import { WordExplanation, SavedWord } from "../types";
+import { WordExplanation } from "../types";
 
-export function useWordFiltering(savedWords: SavedWord[], aiResult: WordExplanation | null, searchText: string) {
+export function useWordFiltering(savedWords: WordExplanation[], aiResult: WordExplanation | null, searchText: string) {
   // Filter saved words based on search text
   const filteredSavedWords = useMemo(
     () =>

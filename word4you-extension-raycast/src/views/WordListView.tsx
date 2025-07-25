@@ -67,7 +67,7 @@ export function WordListView({ initialWord }: WordListViewProps) {
 
           return (
             <WordListItem
-              key={`${word.word}-${isAiResult ? "ai" : "saved"}`}
+              key={`${word.word}-${word.timestamp}`}
               word={word}
               index={index}
               total={allWords.length}
