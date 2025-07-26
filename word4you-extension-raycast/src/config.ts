@@ -87,7 +87,6 @@ export function ensureVocabularyDirectoryExists(vocabularyPath: string): void {
   }
 }
 
-
 // Create environment variables from preferences
 export function createEnvironmentFromPreferences(): NodeJS.ProcessEnv {
   const preferences = getPreferenceValues();
