@@ -6,13 +6,9 @@ use crate::ai_client::AiClient;
 #[derive(Debug, Serialize)]
 struct QwenRequest {
     model: String,
-    input: QwenInput,
-    parameters: QwenParameters,
-}
-
-#[derive(Debug, Serialize)]
-struct QwenInput {
     messages: Vec<Message>,
+    temperature: f32,
+    max_tokens: u32,
 }
 
 #[derive(Debug, Serialize)]
@@ -21,26 +17,25 @@ struct Message {
     content: String,
 }
 
-#[derive(Debug, Serialize)]
-struct QwenParameters {
-    temperature: f32,
-    max_tokens: u32,
-}
-
 #[derive(Debug, Deserialize)]
 struct QwenResponse {
-    output: QwenOutput,
-    usage: Option<QwenUsage>,
+    choices: Vec<Choice>,
+    usage: Option<Usage>,
 }
 
 #[derive(Debug, Deserialize)]
-struct QwenOutput {
-    text: String,
+struct Choice {
+    message: MessageResponse,
     finish_reason: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
-struct QwenUsage {
+struct MessageResponse {
+    content: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct Usage {
     total_tokens: Option<u32>,
     input_tokens: Option<u32>,
     output_tokens: Option<u32>,
@@ -54,7 +49,7 @@ pub struct QwenClient {
 
 impl QwenClient {
     pub fn new(api_key: String, _model_name: String) -> Self {
-        let base_url = "https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation".to_string();
+        let base_url = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions".to_string();
         Self {
             client: Client::new(),
             api_key,
@@ -70,16 +65,12 @@ impl AiClient for QwenClient {
 
         let request = QwenRequest {
             model: "qwen-turbo".to_string(), // Default model, can be overridden
-            input: QwenInput {
-                messages: vec![Message {
-                    role: "user".to_string(),
-                    content: prompt,
-                }],
-            },
-            parameters: QwenParameters {
-                temperature: 0.7,
-                max_tokens: 1000,
-            },
+            messages: vec![Message {
+                role: "user".to_string(),
+                content: prompt,
+            }],
+            temperature: 0.7,
+            max_tokens: 1000,
         };
 
         let response = self
@@ -98,22 +89,22 @@ impl AiClient for QwenClient {
 
         let qwen_response: QwenResponse = response.json().await?;
 
-        Ok(qwen_response.output.text.trim().to_string())
+        if let Some(choice) = qwen_response.choices.first() {
+            return Ok(choice.message.content.clone().trim().to_string());
+        }
+
+        Err(anyhow!("No response received from QWEN API"))
     }
 
     async fn test_connection(&self) -> Result<bool> {
         let request = QwenRequest {
             model: "qwen-turbo".to_string(),
-            input: QwenInput {
-                messages: vec![Message {
-                    role: "user".to_string(),
-                    content: "Hello".to_string(),
-                }],
-            },
-            parameters: QwenParameters {
-                temperature: 0.7,
-                max_tokens: 10,
-            },
+            messages: vec![Message {
+                role: "user".to_string(),
+                content: "Hello".to_string(),
+            }],
+            temperature: 0.7,
+            max_tokens: 10,
         };
 
         let response = self
@@ -150,6 +141,6 @@ mod tests {
         );
         
         assert_eq!(client.api_key, "test_api_key");
-        assert_eq!(client.base_url, "https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation");
+        assert_eq!(client.base_url, "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions");
     }
 } 
