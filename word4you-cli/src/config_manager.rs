@@ -201,10 +201,11 @@ impl ConfigManager {
         config.gemini_model_name = model;
         term.write_line("")?;
 
-        // QWEN Configuration
-        term.write_line(&style("3. QWEN Configuration").yellow().to_string())?;
-        term.write_line("You need a QWEN API key to use QWEN.")?;
-        term.write_line("Get one at: https://dashscope.console.aliyun.com/")?;
+        // QWEN Configuration (only if QWEN is selected or if user wants to configure both)
+        if config.ai_provider == "qwen" {
+            term.write_line(&style("3. QWEN Configuration").yellow().to_string())?;
+            term.write_line("You need a QWEN API key to use QWEN.")?;
+            term.write_line("Get one at: https://dashscope.console.aliyun.com/")?;
         
         let qwen_api_key = if !config.qwen_api_key.is_empty() {
             let masked_key = format!("{}...", &config.qwen_api_key[..4]);
@@ -238,9 +239,61 @@ impl ConfigManager {
             
         config.qwen_model_name = qwen_model;
         term.write_line("")?;
+        } else if config.ai_provider == "gemini" {
+            // Ask if user wants to configure QWEN as well (optional)
+            term.write_line(&style("3. Optional: QWEN Configuration").yellow().to_string())?;
+            term.write_line("Would you like to configure QWEN as an alternative AI provider?")?;
+            
+            let configure_qwen = Confirm::new()
+                .with_prompt("Configure QWEN settings? (optional)")
+                .default(false)
+                .interact()?;
+            
+            if configure_qwen {
+                term.write_line("You need a QWEN API key to use QWEN.")?;
+                term.write_line("Get one at: https://dashscope.console.aliyun.com/")?;
+                
+                let qwen_api_key = if !config.qwen_api_key.is_empty() {
+                    let masked_key = format!("{}...", &config.qwen_api_key[..4]);
+                    
+                    if Confirm::new()
+                        .with_prompt(format!("Current QWEN API key: {}. Update it?", masked_key))
+                        .default(false)
+                        .interact()?
+                    {
+                        Password::new()
+                            .with_prompt("Enter your QWEN API key")
+                            .interact()?
+                    } else {
+                        config.qwen_api_key.clone()
+                    }
+                } else {
+                    Password::new()
+                        .with_prompt("Enter your QWEN API key")
+                        .interact()?
+                };
+                
+                config.qwen_api_key = qwen_api_key;
+
+                // QWEN Model
+                term.write_line("Select the QWEN model to use:")?;
+                
+                let qwen_model = Input::<String>::new()
+                    .with_prompt("QWEN model name")
+                    .default(config.qwen_model_name.clone())
+                    .interact()?;
+                    
+                config.qwen_model_name = qwen_model;
+                term.write_line("")?;
+            } else {
+                term.write_line("Skipping QWEN configuration.")?;
+                term.write_line("")?;
+            }
+        }
 
         // Vocabulary Directory
-        term.write_line(&style("4. Vocabulary Storage Location").yellow().to_string())?;
+        let vocab_step = if config.ai_provider == "qwen" { "4" } else { "3" };
+        term.write_line(&style(&format!("{}. Vocabulary Storage Location", vocab_step)).yellow().to_string())?;
         term.write_line("Where do you want to store your vocabulary notebook?")?;
         
         let vocab_dir = Input::<String>::new()
@@ -271,7 +324,8 @@ impl ConfigManager {
         term.write_line("")?;
 
         // Git Integration
-        term.write_line(&style("5. Git Integration").yellow().to_string())?;
+        let git_step = if config.ai_provider == "qwen" { "5" } else { "4" };
+        term.write_line(&style(&format!("{}. Git Integration", git_step)).yellow().to_string())?;
         term.write_line("Would you like to enable Git integration for version control?")?;
         
         let git_enabled = Confirm::new()
