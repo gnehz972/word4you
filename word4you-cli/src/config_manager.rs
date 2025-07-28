@@ -62,7 +62,7 @@ impl ConfigManager {
         }
     }
 
-    /// Load configuration from file
+    /// Load configuration from file with backward compatibility
     pub fn load_config() -> Result<UserConfig> {
         let config_path = Self::get_config_file_path()?;
         
@@ -71,8 +71,55 @@ impl ConfigManager {
         }
 
         let config_str = fs::read_to_string(config_path)?;
-        let config: UserConfig = toml::from_str(&config_str)?;
-        Ok(config)
+        
+        // Try to parse with new format first
+        match toml::from_str::<UserConfig>(&config_str) {
+            Ok(config) => Ok(config),
+            Err(_) => {
+                // If that fails, try to parse with old format and migrate
+                eprintln!("ℹ️  Migrating configuration from old format to new format...");
+                let migrated_config = Self::migrate_old_config(&config_str)?;
+                
+                // Save the migrated configuration in new format
+                if let Err(e) = Self::save_config(&migrated_config) {
+                    eprintln!("Warning: Could not save migrated configuration: {}", e);
+                } else {
+                    eprintln!("✅ Configuration migrated successfully");
+                }
+                
+                Ok(migrated_config)
+            }
+        }
+    }
+
+    /// Migrate old configuration format to new format
+    fn migrate_old_config(config_str: &str) -> Result<UserConfig> {
+        // Define the old config structure
+        #[derive(Debug, Deserialize)]
+        struct OldUserConfig {
+            pub gemini_api_key: String,
+            pub gemini_model_name: String,
+            pub vocabulary_base_dir: String,
+            pub git_enabled: bool,
+            pub git_remote_url: Option<String>,
+        }
+
+        // Try to parse with old format
+        let old_config: OldUserConfig = toml::from_str(config_str)?;
+        
+        // Convert to new format
+        let new_config = UserConfig {
+            ai_provider: "gemini".to_string(), // Default to gemini for old configs
+            gemini_api_key: old_config.gemini_api_key,
+            gemini_model_name: old_config.gemini_model_name,
+            qwen_api_key: String::new(), // Empty for old configs
+            qwen_model_name: "qwen-turbo".to_string(), // Default value
+            vocabulary_base_dir: old_config.vocabulary_base_dir,
+            git_enabled: old_config.git_enabled,
+            git_remote_url: old_config.git_remote_url,
+        };
+
+        Ok(new_config)
     }
 
     /// Save configuration to file
@@ -296,5 +343,43 @@ impl ConfigManager {
         }
         
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_migrate_old_config() {
+        let old_config_str = r#"
+gemini_api_key = "test_key_123"
+gemini_model_name = "gemini-1.5-flash"
+vocabulary_base_dir = "~/Documents"
+git_enabled = true
+git_remote_url = "https://github.com/user/repo.git"
+"#;
+
+        let migrated_config = ConfigManager::migrate_old_config(old_config_str).unwrap();
+        
+        assert_eq!(migrated_config.ai_provider, "gemini");
+        assert_eq!(migrated_config.gemini_api_key, "test_key_123");
+        assert_eq!(migrated_config.gemini_model_name, "gemini-1.5-flash");
+        assert_eq!(migrated_config.qwen_api_key, "");
+        assert_eq!(migrated_config.qwen_model_name, "qwen-turbo");
+        assert_eq!(migrated_config.vocabulary_base_dir, "~/Documents");
+        assert_eq!(migrated_config.git_enabled, true);
+        assert_eq!(migrated_config.git_remote_url, Some("https://github.com/user/repo.git".to_string()));
+    }
+
+    #[test]
+    fn test_migrate_old_config_invalid_toml() {
+        let invalid_config_str = r#"
+gemini_api_key = "test_key_123"
+invalid_field = "should_fail"
+"#;
+
+        let result = ConfigManager::migrate_old_config(invalid_config_str);
+        assert!(result.is_err());
     }
 }
