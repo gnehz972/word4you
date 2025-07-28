@@ -242,117 +242,10 @@ impl ConfigManager {
             term.write_line("")?;
         }
 
-        // Optional: Configure the other provider (for users who want both)
-        if config.ai_provider == "gemini" {
-            // Ask if user wants to configure QWEN as well (optional)
-            term.write_line(&style("3. Optional: QWEN Configuration").yellow().to_string())?;
-            term.write_line("Would you like to configure QWEN as an alternative AI provider?")?;
-            
-            let configure_qwen = Confirm::new()
-                .with_prompt("Configure QWEN settings? (optional)")
-                .default(false)
-                .interact()?;
-            
-            if configure_qwen {
-                term.write_line("You need a QWEN API key to use QWEN.")?;
-                term.write_line("Get one at: https://dashscope.console.aliyun.com/")?;
-                
-                let qwen_api_key = if !config.qwen_api_key.is_empty() {
-                    let masked_key = format!("{}...", &config.qwen_api_key[..4]);
-                    
-                    if Confirm::new()
-                        .with_prompt(format!("Current QWEN API key: {}. Update it?", masked_key))
-                        .default(false)
-                        .interact()?
-                    {
-                        Password::new()
-                            .with_prompt("Enter your QWEN API key")
-                            .interact()?
-                    } else {
-                        config.qwen_api_key.clone()
-                    }
-                } else {
-                    Password::new()
-                        .with_prompt("Enter your QWEN API key")
-                        .interact()?
-                };
-                
-                config.qwen_api_key = qwen_api_key;
 
-                // QWEN Model
-                term.write_line("Select the QWEN model to use:")?;
-                
-                let qwen_model = Input::<String>::new()
-                    .with_prompt("QWEN model name")
-                    .default(config.qwen_model_name.clone())
-                    .interact()?;
-                    
-                config.qwen_model_name = qwen_model;
-                term.write_line("")?;
-            } else {
-                term.write_line("Skipping QWEN configuration.")?;
-                term.write_line("")?;
-            }
-        } else if config.ai_provider == "qwen" {
-            // Ask if user wants to configure Gemini as well (optional)
-            term.write_line(&style("3. Optional: Gemini Configuration").yellow().to_string())?;
-            term.write_line("Would you like to configure Gemini as an alternative AI provider?")?;
-            
-            let configure_gemini = Confirm::new()
-                .with_prompt("Configure Gemini settings? (optional)")
-                .default(false)
-                .interact()?;
-            
-            if configure_gemini {
-                term.write_line("You need a Google Gemini API key to use Gemini.")?;
-                term.write_line("Get one at: https://aistudio.google.com/app/apikey")?;
-                
-                let gemini_api_key = if !config.gemini_api_key.is_empty() {
-                    let masked_key = format!("{}...", &config.gemini_api_key[..4]);
-                    
-                    if Confirm::new()
-                        .with_prompt(format!("Current Gemini API key: {}. Update it?", masked_key))
-                        .default(false)
-                        .interact()?
-                    {
-                        Password::new()
-                            .with_prompt("Enter your Gemini API key")
-                            .interact()?
-                    } else {
-                        config.gemini_api_key.clone()
-                    }
-                } else {
-                    Password::new()
-                        .with_prompt("Enter your Gemini API key")
-                        .interact()?
-                };
-                
-                config.gemini_api_key = gemini_api_key;
-
-                // Gemini Model
-                term.write_line("Select the Gemini model to use:")?;
-                
-                let gemini_model = Input::<String>::new()
-                    .with_prompt("Gemini model name")
-                    .default(config.gemini_model_name.clone())
-                    .interact()?;
-                    
-                config.gemini_model_name = gemini_model;
-                term.write_line("")?;
-            } else {
-                term.write_line("Skipping Gemini configuration.")?;
-                term.write_line("")?;
-            }
-        }
 
         // Vocabulary Directory
-        let vocab_step = if (config.ai_provider == "qwen" && !config.gemini_api_key.is_empty()) || 
-                           (config.ai_provider == "gemini" && !config.qwen_api_key.is_empty()) {
-            "4"
-        } else {
-            "3"
-        };
-        term.write_line(&style(&format!("{}. Vocabulary Storage Location", vocab_step)).yellow().to_string())?;
+        term.write_line(&style("3. Vocabulary Storage Location").yellow().to_string())?;
         term.write_line("Where do you want to store your vocabulary notebook?")?;
         
         let vocab_dir = Input::<String>::new()
@@ -383,13 +276,7 @@ impl ConfigManager {
         term.write_line("")?;
 
         // Git Integration
-        let git_step = if (config.ai_provider == "qwen" && !config.gemini_api_key.is_empty()) || 
-                          (config.ai_provider == "gemini" && !config.qwen_api_key.is_empty()) {
-            "5"
-        } else {
-            "4"
-        };
-        term.write_line(&style(&format!("{}. Git Integration", git_step)).yellow().to_string())?;
+        term.write_line(&style("4. Git Integration").yellow().to_string())?;
         term.write_line("Would you like to enable Git integration for version control?")?;
         
         let git_enabled = Confirm::new()
