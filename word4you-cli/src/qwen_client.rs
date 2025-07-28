@@ -29,17 +29,21 @@ struct QwenParameters {
 
 #[derive(Debug, Deserialize)]
 struct QwenResponse {
-    choices: Vec<Choice>,
+    output: QwenOutput,
+    usage: Option<QwenUsage>,
 }
 
 #[derive(Debug, Deserialize)]
-struct Choice {
-    message: MessageResponse,
+struct QwenOutput {
+    text: String,
+    finish_reason: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
-struct MessageResponse {
-    content: String,
+struct QwenUsage {
+    total_tokens: Option<u32>,
+    input_tokens: Option<u32>,
+    output_tokens: Option<u32>,
 }
 
 pub struct QwenClient {
@@ -94,11 +98,7 @@ impl AiClient for QwenClient {
 
         let qwen_response: QwenResponse = response.json().await?;
 
-        if let Some(choice) = qwen_response.choices.first() {
-            return Ok(choice.message.content.clone().trim().to_string());
-        }
-
-        Err(anyhow!("No response received from QWEN API"))
+        Ok(qwen_response.output.text.trim().to_string())
     }
 
     async fn test_connection(&self) -> Result<bool> {
