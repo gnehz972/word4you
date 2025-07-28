@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Result};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use crate::ai_client::AiClient;
 
 #[derive(Debug, Serialize)]
 struct GeminiRequest {
@@ -55,8 +56,12 @@ impl GeminiClient {
             base_url,
         }
     }
+}
 
-    pub async fn get_word_explanation(&self, word: &str, prompt_template: &str) -> Result<String> {
+#[async_trait::async_trait]
+impl AiClient for GeminiClient {
+
+    async fn get_word_explanation(&self, word: &str, prompt_template: &str) -> Result<String> {
         let prompt = prompt_template.replace("[INSERT WORD HERE]", &word.to_lowercase());
 
         let request = GeminiRequest {
@@ -85,7 +90,7 @@ impl GeminiClient {
         Err(anyhow!("No response received from Gemini API"))
     }
 
-    pub async fn test_connection(&self) -> Result<bool> {
+    async fn test_connection(&self) -> Result<bool> {
         let request = GeminiRequest {
             contents: vec![Content {
                 parts: vec![Part {

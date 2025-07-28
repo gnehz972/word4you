@@ -6,9 +6,12 @@ use crate::config_manager::ConfigManager;
 
 #[derive(Debug, Clone)]
 pub struct Config {
+    pub ai_provider: String,
     pub gemini_api_key: String,
     pub gemini_model_name: String,
-    pub gemini_prompt_template: String,
+    pub qwen_api_key: String,
+    pub qwen_model_name: String,
+    pub prompt_template: String,
     pub vocabulary_notebook_file: String,
     pub git_enabled: bool,
     pub git_remote_url: Option<String>,
@@ -20,13 +23,20 @@ impl Config {
         // If it is, load all configuration from environment variables
         // If not, fallback to loading all configuration from TOML config file
         
+        let ai_provider = env::var("WORD4YOU_AI_PROVIDER")
+            .unwrap_or_else(|_| "gemini".to_string());
         let gemini_api_key = env::var("WORD4YOU_GEMINI_API_KEY");
+        let _qwen_api_key = env::var("WORD4YOU_QWEN_API_KEY");
 
-        let (gemini_api_key, gemini_model_name, vocabulary_base_dir_raw, git_enabled, git_remote_url) = 
-            if let Ok(api_key) = gemini_api_key {
+        let (ai_provider, gemini_api_key, gemini_model_name, qwen_api_key, qwen_model_name, vocabulary_base_dir_raw, git_enabled, git_remote_url) = 
+            if let Ok(gemini_key) = gemini_api_key {
                 // Load all configuration from environment variables
-                let model_name = env::var("WORD4YOU_GEMINI_MODEL_NAME")
+                let gemini_model = env::var("WORD4YOU_GEMINI_MODEL_NAME")
                     .unwrap_or_else(|_| "gemini-2.0-flash-001".to_string());
+                let qwen_key = env::var("WORD4YOU_QWEN_API_KEY")
+                    .unwrap_or_else(|_| "".to_string());
+                let qwen_model = env::var("WORD4YOU_QWEN_MODEL_NAME")
+                    .unwrap_or_else(|_| "qwen-turbo".to_string());
                 let vocab_dir = env::var("WORD4YOU_VOCABULARY_BASE_DIR")
                     .unwrap_or_else(|_| "~".to_string());
                 let git_enabled = env::var("WORD4YOU_GIT_ENABLED")
@@ -36,7 +46,7 @@ impl Config {
                     .ok()
                     .filter(|s| !s.is_empty());
                 
-                (api_key, model_name, vocab_dir, git_enabled, git_url)
+                (ai_provider, gemini_key, gemini_model, qwen_key, qwen_model, vocab_dir, git_enabled, git_url)
             } else {
                 // Fallback to loading all configuration from TOML config file
                 if !ConfigManager::config_exists() {
@@ -47,22 +57,26 @@ impl Config {
                 
                 let user_config = ConfigManager::load_config()?;
                 
-                if user_config.gemini_api_key.is_empty() {
+                // Check if we have at least one API key
+                if user_config.gemini_api_key.is_empty() && user_config.qwen_api_key.is_empty() {
                     return Err(anyhow!(
-                        "Gemini API key not found in configuration. Run 'word4you config' to update your configuration."
+                        "No API key found in configuration. Run 'word4you config' to update your configuration."
                     ));
                 }
                 
                 (
+                    user_config.ai_provider,
                     user_config.gemini_api_key,
                     user_config.gemini_model_name,
+                    user_config.qwen_api_key,
+                    user_config.qwen_model_name,
                     user_config.vocabulary_base_dir,
                     user_config.git_enabled,
                     user_config.git_remote_url,
                 )
             };
 
-        let gemini_prompt_template = r#"
+        let prompt_template = r#"
 You are a helpful bilingual dictionary assistant. Your task is to provide a structured explanation for a given English word.
 
 The user will provide a word. You must generate a response that strictly adheres to the following Markdown format and content structure:
@@ -116,9 +130,12 @@ Now, generate the output for the following word: **[INSERT WORD HERE]**
         let vocabulary_notebook_file = vocabulary_notebook_file.to_string_lossy().to_string();
 
         Ok(Config {
+            ai_provider,
             gemini_api_key,
             gemini_model_name,
-            gemini_prompt_template,
+            qwen_api_key,
+            qwen_model_name,
+            prompt_template,
             vocabulary_notebook_file,
             git_enabled,
             git_remote_url,

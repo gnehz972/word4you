@@ -16,7 +16,7 @@ or just put it in your obsidian vault, using obsidian plugin to do the synchroni
 
 ## Features
 
-- 🤖 AI-powered word explanations using Google Gemini API
+- 🤖 AI-powered word explanations using Google Gemini API or QWEN API
 - 📚 Markdown vocabulary notebook easily readable and editable and convertible to other formats
 - 🔄 Git backup/sync with smart conflict resolution
 - 🎨 Rich terminal UI/Raycast extension

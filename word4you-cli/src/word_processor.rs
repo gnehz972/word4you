@@ -1,5 +1,7 @@
 use crate::config::Config;
 use crate::gemini_client::GeminiClient;
+use crate::qwen_client::QwenClient;
+use crate::ai_client::AiClient;
 use crate::git_section_sync::{GitSectionSynchronizer, SyncResult};
 use crate::git_utils::{commit, init_git_repo};
 use crate::utils::{
@@ -11,18 +13,35 @@ use dialoguer::Select;
 use termimad::*;
 
 pub struct WordProcessor {
-    gemini_client: GeminiClient,
+    ai_client: Box<dyn AiClient + Send + Sync>,
     config: Config,
 }
 
 impl WordProcessor {
     pub fn new(config: Config) -> Self {
-        let gemini_client = GeminiClient::new(
-            config.gemini_api_key.clone(),
-            config.gemini_model_name.clone(),
-        );
+        let ai_client: Box<dyn AiClient + Send + Sync> = match config.ai_provider.as_str() {
+            "qwen" => {
+                if config.qwen_api_key.is_empty() {
+                    panic!("QWEN API key not configured");
+                }
+                Box::new(QwenClient::new(
+                    config.qwen_api_key.clone(),
+                    config.qwen_model_name.clone(),
+                ))
+            }
+            "gemini" | _ => {
+                if config.gemini_api_key.is_empty() {
+                    panic!("Gemini API key not configured");
+                }
+                Box::new(GeminiClient::new(
+                    config.gemini_api_key.clone(),
+                    config.gemini_model_name.clone(),
+                ))
+            }
+        };
+        
         Self {
-            gemini_client,
+            ai_client,
             config,
         }
     }
@@ -33,13 +52,13 @@ impl WordProcessor {
 
         if !raw {
             term.write_line(&format!("🔍 Processing word: {}", word))?;
-            term.write_line("🤖 Querying Gemini API...")?;
+            term.write_line(&format!("🤖 Querying {} API...", self.config.ai_provider.to_uppercase()))?;
         }
 
-        // Get explanation from Gemini
+        // Get explanation from AI provider
         let mut explanation = Box::new(
-            self.gemini_client
-                .get_word_explanation(word, &self.config.gemini_prompt_template)
+            self.ai_client
+                .get_word_explanation(word, &self.config.prompt_template)
                 .await?,
         );
 
@@ -110,8 +129,8 @@ impl WordProcessor {
                     // Regenerate explanation
                     term.write_line("🔄 Regenerating explanation...")?;
                     let new_explanation = self
-                        .gemini_client
-                        .get_word_explanation(word, &self.config.gemini_prompt_template)
+                        .ai_client
+                        .get_word_explanation(word, &self.config.prompt_template)
                         .await?;
                     explanation = Box::new(new_explanation);
 
@@ -135,7 +154,7 @@ impl WordProcessor {
     }
 
     pub async fn test_api_connection(&self) -> Result<bool> {
-        self.gemini_client.test_connection().await
+        self.ai_client.test_connection().await
     }
 
     pub fn save_word(&self, term: &Term, word: &str, content: &str) -> Result<()> {

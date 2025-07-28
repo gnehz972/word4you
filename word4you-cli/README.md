@@ -4,7 +4,7 @@ A fast, efficient command-line tool for querying and collecting English words wi
 
 ## Features
 
-- 🤖 AI-powered word explanations
+- 🤖 AI-powered word explanations (Google Gemini or QWEN)
 - 🔄 Git backup/sync with smart conflict resolution
 - 📚 Markdown vocabulary notebook
 - 🎨 Rich terminal UI
@@ -27,9 +27,14 @@ Saved vocabulary notebook(View in Obsidian)
    mv word4you $HOME/dev/bin/
    export PATH="$HOME/dev/bin:$PATH"
    ```
-4. Run it(Gemini API Key is required, for Mac users, you need to allow it to run for the first time in System Preferences > Security & Privacy):
+4. Configure your API keys:
+   - **Gemini**: Get API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
+   - **QWEN**: Get API key from [Alibaba Cloud DashScope](https://dashscope.console.aliyun.com/)
+5. Run it(API Key is required, for Mac users, you need to allow it to run for the first time in System Preferences > Security & Privacy):
    ```
    word4you query beautiful
+   word4you query beautiful --provider gemini  # Use Gemini
+   word4you query beautiful --provider qwen    # Use QWEN
    ```
 
 ## Commands
@@ -40,6 +45,8 @@ Saved vocabulary notebook(View in Obsidian)
 
 # Query a new word
 ./target/release/word4you query beautiful
+./target/release/word4you query beautiful --provider gemini  # Use Gemini
+./target/release/word4you query beautiful --provider qwen    # Use QWEN
 
 # Test API connection
 ./target/release/word4you test

@@ -3,9 +3,11 @@ use clap::{Parser, Subcommand};
 use console::{style, Term};
 use word_processor::WordProcessor;
 
+mod ai_client;
 mod config;
 mod config_manager;
 mod gemini_client;
+mod qwen_client;
 mod git_section_sync;
 mod git_utils;
 mod utils;
@@ -18,7 +20,7 @@ const INTRO: &str = r#"
 Word4You - English Word Learning Tool
 
 Features:
-• AI-powered word explanations using Google Gemini
+• AI-powered word explanations using Google Gemini or QWEN
 • Chinese translations and phonetic symbols
 • Example sentences in both English and Chinese
 • Automatic Git integration for version control
@@ -28,6 +30,8 @@ Features:
 Usage:
   word4you                           # Interactive mode (enter words one by one)
   word4you query <word>              # Learn a new word
+  word4you query <word> --provider gemini  # Use Gemini AI provider
+  word4you query <word> --provider qwen    # Use QWEN AI provider
   word4you test                      # Test API connection
   word4you config                    # Set up or update configuration
   word4you config --show-vob-path      # Show the vocabulary notebook path
@@ -37,6 +41,7 @@ Usage:
 
 Options:
   --raw                              # Output raw response from API without user interaction
+  --provider <provider>              # AI provider to use (gemini or qwen)
 "#;
 
 #[derive(Parser)]
@@ -61,6 +66,10 @@ enum Commands {
         /// Output raw response from API without user interaction
         #[arg(long)]
         raw: bool,
+
+        /// AI provider to use (gemini or qwen)
+        #[arg(long, value_enum)]
+        provider: Option<String>,
     },
 
     /// Save word to vocabulary notebook
@@ -114,8 +123,8 @@ async fn main() -> Result<()> {
     let term = Term::stdout();
 
     // Check if configuration is available
-    // Priority: Environment variables (WORD4YOU_GEMINI_API_KEY) > Config file
-    let has_env_config = std::env::var("WORD4YOU_GEMINI_API_KEY").is_ok();
+    // Priority: Environment variables > Config file
+    let has_env_config = std::env::var("WORD4YOU_GEMINI_API_KEY").is_ok() || std::env::var("WORD4YOU_QWEN_API_KEY").is_ok();
     let has_file_config = ConfigManager::config_exists();
     
     // If neither environment variables nor config file exists, and not running config command, run onboarding
@@ -136,8 +145,8 @@ async fn main() -> Result<()> {
 
     // Handle subcommands
     match &cli.command {
-        Some(Commands::Query { word, raw }) => {
-            if let Err(e) = query_word(&term, word, *raw).await {
+        Some(Commands::Query { word, raw, provider }) => {
+            if let Err(e) = query_word(&term, word, *raw, provider.as_deref()).await {
                 eprintln!("❌ Error: {}", e);
                 return Ok(());
             }
@@ -197,9 +206,14 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn query_word(term: &Term, word: &str, raw: bool) -> anyhow::Result<()> {
+async fn query_word(term: &Term, word: &str, raw: bool, provider: Option<&str>) -> anyhow::Result<()> {
     // Validate configuration
-    let config = Config::load()?;
+    let mut config = Config::load()?;
+
+    // Override provider if specified
+    if let Some(provider) = provider {
+        config.ai_provider = provider.to_string();
+    }
 
     // Initialize word processor
     let processor = WordProcessor::new(config);
@@ -280,7 +294,7 @@ async fn test_api_connection(term: &Term) -> anyhow::Result<()> {
     }
 }
 
-fn show_vocabulary_path(term: &Term) -> anyhow::Result<()> {
+fn show_vocabulary_path(_term: &Term) -> anyhow::Result<()> {
     // Load configuration
     let config = Config::load()?;
     
