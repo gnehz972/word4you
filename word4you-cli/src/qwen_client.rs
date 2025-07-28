@@ -6,15 +6,25 @@ use crate::ai_client::AiClient;
 #[derive(Debug, Serialize)]
 struct QwenRequest {
     model: String,
+    input: QwenInput,
+    parameters: QwenParameters,
+}
+
+#[derive(Debug, Serialize)]
+struct QwenInput {
     messages: Vec<Message>,
-    temperature: f32,
-    max_tokens: u32,
 }
 
 #[derive(Debug, Serialize)]
 struct Message {
     role: String,
     content: String,
+}
+
+#[derive(Debug, Serialize)]
+struct QwenParameters {
+    temperature: f32,
+    max_tokens: u32,
 }
 
 #[derive(Debug, Deserialize)]
@@ -56,12 +66,16 @@ impl AiClient for QwenClient {
 
         let request = QwenRequest {
             model: "qwen-turbo".to_string(), // Default model, can be overridden
-            messages: vec![Message {
-                role: "user".to_string(),
-                content: prompt,
-            }],
-            temperature: 0.7,
-            max_tokens: 1000,
+            input: QwenInput {
+                messages: vec![Message {
+                    role: "user".to_string(),
+                    content: prompt,
+                }],
+            },
+            parameters: QwenParameters {
+                temperature: 0.7,
+                max_tokens: 1000,
+            },
         };
 
         let response = self
@@ -90,12 +104,16 @@ impl AiClient for QwenClient {
     async fn test_connection(&self) -> Result<bool> {
         let request = QwenRequest {
             model: "qwen-turbo".to_string(),
-            messages: vec![Message {
-                role: "user".to_string(),
-                content: "Hello".to_string(),
-            }],
-            temperature: 0.7,
-            max_tokens: 10,
+            input: QwenInput {
+                messages: vec![Message {
+                    role: "user".to_string(),
+                    content: "Hello".to_string(),
+                }],
+            },
+            parameters: QwenParameters {
+                temperature: 0.7,
+                max_tokens: 10,
+            },
         };
 
         let response = self
