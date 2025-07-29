@@ -55,7 +55,7 @@ You'll see a message like "ℹ️  Migrating configuration from old format to ne
 ./target/release/word4you
 
 # Query a new word
-./target/release/word4you query beautiful
+./target/release/word4you query beautiful # Learn a new English or Chinese word
 ./target/release/word4you query beautiful --provider gemini  # Use Gemini
 ./target/release/word4you query beautiful --provider qwen    # Use QWEN
 

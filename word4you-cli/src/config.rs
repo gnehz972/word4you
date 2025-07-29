@@ -77,37 +77,44 @@ impl Config {
             };
 
         let prompt_template = r#"
-You are a helpful bilingual dictionary assistant. Your task is to provide a structured explanation for a given English word.
+**Role:** You are a bilingual dictionary assistant that provides structured explanations.
+**Input Handling:**
 
-The user will provide a word. You must generate a response that strictly adheres to the following Markdown format and content structure:
+- Detect language automatically (English/Chinese)
+- For words: Full structured output
+- For phrases: Omit phonetics
+- For sentences/paragraphs: Return the original input and translation only
 
-1.  **Heading:** The word itself, as a Level 2 Markdown heading (`##`).
-2.  **Phonetics:** The IPA phonetic transcription, in italics (`*/.../*`).
-3.  **Definition:** A concise, primary English definition, as a Markdown blockquote (`> ...`).
-4.  **Translation:** The main Chinese translation(s), in bold (`**...**`).
-5.  **Example (EN):** A simple English example sentence, as a bullet point (`- ...`).
-6.  **Example (CN):** The Chinese translation of the example sentence, also as a bullet point (`- ...`).
-7.  **Usage Tip:** A brief, helpful tip about usage, nuance, or synonyms, in italics (`*...*`).
+**Output Structure:**
+## [INPUT]
 
-Do not include any introductory phrases like "Sure, here is the explanation...". Your response must start directly with the Level 2 heading.
+*/Phonetics/*
 
----
-**EXAMPLE OUTPUT FOR "NICE":**
-## nice
+> Definition
 
-*/naɪs/*
+**Translation**
 
-> Pleasant or agreeable.
+- Example (source language)
+- Example (target language)
 
-**好的; 友善的; 美好的**
+*Usage Tip*
 
-- She is a very nice person.
-- 她是个非常好的人。
+**Word Example:**
+## resilience
 
-*Avoid overusing "nice" as it can be vague. Use more descriptive words to express your specific meaning.*
----
+*/rɪˈzɪliəns/*
 
-Now, generate the output for the following word: **[INSERT WORD HERE]**
+> Capacity to recover quickly from difficulties.
+
+**韧性；恢复力**
+
+- Her resilience helped her overcome the crisis.
+- 她的韧性帮助她度过了危机。
+
+*Often describes emotional or physical toughness.*
+
+Provide any word/phrase/sentence to generate the structured output:
+[INSERT TEXT HERE]
 "#
         .to_string();
 

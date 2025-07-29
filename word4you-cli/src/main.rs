@@ -17,27 +17,27 @@ use config::Config;
 use config_manager::ConfigManager;
 
 const INTRO: &str = r#"
-Word4You - English Word Learning Tool
+Word4You - Language Learning Tool
 
 Features:
-• AI-powered word explanations using Google Gemini or QWEN
-• Chinese translations and phonetic symbols
+• AI-powered explanations for words, phrases, and sentences using Google Gemini or QWEN
+• Translations between English and Chinese with phonetic symbols
 • Example sentences in both English and Chinese
 • Automatic Git integration for version control
 • Markdown-formatted vocabulary notebook
-• Word update functionality (delete and replace)
+• Content update functionality (delete and replace)
 
 Usage:
-  word4you                           # Interactive mode (enter words one by one)
-  word4you query <word>              # Learn a new word
-  word4you query <word> --provider gemini  # Use Gemini AI provider
-  word4you query <word> --provider qwen    # Use QWEN AI provider
+  word4you                           # Interactive mode (enter text one by one)
+    word4you query <text>              # Learn a new English or Chinese word, phrase, or sentence
+  word4you query <text> --provider gemini  # Use Gemini AI provider
+  word4you query <text> --provider qwen    # Use QWEN AI provider
   word4you test                      # Test API connection
   word4you config                    # Set up or update configuration
   word4you config --show-vob-path      # Show the vocabulary notebook path
-  word4you save <word> --content <content>  # Save word to vocabulary
-  word4you delete <word> [--timestamp <timestamp>]  # Delete word from vocabulary, optionally by specific timestamp
-  word4you update <word> --content <content> [--timestamp <timestamp>]  # Update word (delete if exists, then save)
+  word4you save <text> --content <content>  # Save content to vocabulary notebook
+  word4you delete <text> [--timestamp <timestamp>]  # Delete content from vocabulary notebook, optionally by specific timestamp
+  word4you update <text> --content <content> [--timestamp <timestamp>]  # Update content (delete if exists, then save)
 
 Options:
   --raw                              # Output raw response from API without user interaction
@@ -58,9 +58,9 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Query a word for learning
+    /// Query a word, phrase, or sentence for learning
     Query {
-        /// The word to learn
+        /// The text to learn (word, phrase, or sentence)
         word: String,
 
         /// Output raw response from API without user interaction
@@ -72,9 +72,9 @@ enum Commands {
         provider: Option<String>,
     },
 
-    /// Save word to vocabulary notebook
+    /// Save content to vocabulary notebook
     Save {
-        /// The word to save
+        /// The text to save (word, phrase, or sentence)
         word: String,
 
         /// The content to save
@@ -82,26 +82,26 @@ enum Commands {
         content: String,
     },
 
-    /// Delete a word from vocabulary notebook
+    /// Delete content from vocabulary notebook
     Delete {
-        /// The word to delete
+        /// The text to delete (word, phrase, or sentence)
         word: String,
 
-        /// Optional timestamp for the specific word entry to delete
+        /// Optional timestamp for the specific entry to delete
         #[arg(long)]
         timestamp: Option<String>,
     },
 
-    /// Update a word: delete if exists, then save new content
+    /// Update content: delete if exists, then save new content
     Update {
-        /// The word to update
+        /// The text to update (word, phrase, or sentence)
         word: String,
 
         /// The new content to save
         #[arg(long)]
         content: String,
 
-        /// Optional timestamp for the specific word entry to update
+        /// Optional timestamp for the specific entry to update
         #[arg(long)]
         timestamp: Option<String>,
     },
@@ -145,7 +145,7 @@ async fn main() -> Result<()> {
 
     // Handle subcommands
     match &cli.command {
-        Some(Commands::Query { word, raw, provider }) => {
+                Some(Commands::Query { word, raw, provider }) => {
             if let Err(e) = query_word(&term, word, *raw, provider.as_deref()).await {
                 eprintln!("❌ Error: {}", e);
                 return Ok(());
@@ -216,10 +216,14 @@ async fn query_word(term: &Term, word: &str, raw: bool, provider: Option<&str>) 
     }
 
     // Initialize word processor
-    let processor = WordProcessor::new(config);
+    let mut processor = WordProcessor::new(config);
+
+    // Use a single prompt template for both languages
+    let prompt_template = processor.config.prompt_template.clone();
+
 
     // Process the word
-    processor.process_word(term, word, raw).await?;
+    processor.process_word(term, word, raw, &prompt_template).await?;
 
     Ok(())
 }
@@ -317,13 +321,13 @@ async fn interactive_mode(term: &Term) -> anyhow::Result<()> {
             .cyan()
             .to_string(),
     )?;
-    term.write_line("Enter words to learn, or type 'exit' to quit.")?;
+    term.write_line("Enter words, phrases, or sentences to learn, or type 'exit' to quit.")?;
     term.write_line("")?;
 
     loop {
-        // Get word input from user
+        // Get text input from user
         let word = match dialoguer::Input::<String>::new()
-            .with_prompt("Enter a word to learn")
+            .with_prompt("Enter text to learn (word, phrase, or sentence)")
             .allow_empty(false)
             .interact_text()
         {
@@ -342,14 +346,16 @@ async fn interactive_mode(term: &Term) -> anyhow::Result<()> {
 
         // Skip empty input
         if word.is_empty() {
-            term.write_line("❌ Please enter a valid word.")?;
+            term.write_line("❌ Please enter valid text.")?;
             continue;
         }
 
-        // Process the word using existing functionality
-        if let Err(e) = processor.process_word(term, &word, false).await {
-            term.write_line(&format!("❌ Error processing word '{}': {}", word, e))?;
-            term.write_line("Please try another word.")?;
+        // Process the word using existing functionality with a single prompt template
+        let prompt_template = processor.config.prompt_template.clone();
+
+        if let Err(e) = processor.process_word(term, &word, false, &prompt_template).await {
+            term.write_line(&format!("❌ Error processing text '{}': {}", word, e))?;
+            term.write_line("Please try again with different text.")?;
             continue;
         }
 

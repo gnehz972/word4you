@@ -140,21 +140,108 @@ pub fn delete_from_vocabulary_notebook(
     Ok(())
 }
 
+pub fn is_chinese_ideograph(c: char) -> bool {
+    // Chinese characters are in the CJK Unified Ideographs block (U+4E00 to U+9FFF)
+    // and some other CJK blocks
+    (c >= '\u{4E00}' && c <= '\u{9FFF}') || // Basic CJK Unified Ideographs
+    (c >= '\u{3400}' && c <= '\u{4DBF}') || // CJK Unified Ideographs Extension A
+    (c >= '\u{20000}' && c <= '\u{2A6DF}') || // CJK Unified Ideographs Extension B
+    (c >= '\u{2A700}' && c <= '\u{2B73F}') || // CJK Unified Ideographs Extension C
+    (c >= '\u{2B740}' && c <= '\u{2B81F}') || // CJK Unified Ideographs Extension D
+    (c >= '\u{2B820}' && c <= '\u{2CEAF}') || // CJK Unified Ideographs Extension E
+    (c >= '\u{2CEB0}' && c <= '\u{2EBEF}') || // CJK Unified Ideographs Extension F
+    (c >= '\u{30000}' && c <= '\u{3134F}')    // CJK Unified Ideographs Extension G
+}
+
+fn is_chinese_punctuation(c: char) -> bool {
+    // Check for common Chinese punctuation marks
+    // This is not an exhaustive list, but covers many frequently used ones.
+    matches!(
+        c,
+        // Full-width forms (often used in Chinese)
+        '\u{3001}' | // IDEOGRAPHIC COMMA (、)
+        '\u{3002}' | // IDEOGRAPHIC FULL STOP (。)
+        '\u{FF0C}' | // FULLWIDTH COMMA (，)
+        '\u{FF0E}' | // FULLWIDTH FULL STOP (．)
+        '\u{FF1B}' | // FULLWIDTH SEMICOLON (；)
+        '\u{FF1A}' | // FULLWIDTH COLON (：)
+        '\u{FF1F}' | // FULLWIDTH QUESTION MARK (？)
+        '\u{FF01}' | // FULLWIDTH EXCLAMATION MARK (！)
+        '\u{3010}' | // LEFT BLACK LENTICULAR BRACKET (【)
+        '\u{3011}' | // RIGHT BLACK LENTICULAR BRACKET (】)
+        '\u{FF08}' | // FULLWIDTH LEFT PARENTHESIS (（)
+        '\u{FF09}' | // FULLWIDTH RIGHT PARENTHESIS (）)
+        '\u{300A}' | // LEFT DOUBLE ANGLE BRACKET (《)
+        '\u{300B}' | // RIGHT DOUBLE ANGLE BRACKET (》)
+        '\u{3008}' | // LEFT ANGLE BRACKET (〈)
+        '\u{3009}' | // RIGHT ANGLE BRACKET (〉)
+        '\u{2014}' | // EM DASH (—) - Often used in Chinese
+        '\u{2018}' | // LEFT SINGLE QUOTATION MARK (‘)
+        '\u{2019}' | // RIGHT SINGLE QUOTATION MARK (’)
+        '\u{201C}' | // LEFT DOUBLE QUOTATION MARK (“)
+        '\u{201D}'   // RIGHT DOUBLE QUOTATION MARK (”)
+        // Add more as needed based on requirements
+    )
+}
+
+
+pub enum InputType {
+    Word,
+    Phrase,
+    Sentence
+}
+
+pub fn determine_input_type(input: &str) -> InputType {
+    let input = input.trim();
+    
+    // Count spaces to determine if it's a word, phrase, or sentence
+    let space_count = input.chars().filter(|c| c.is_whitespace()).count();
+    
+    // Check for sentence-ending punctuation
+    let has_sentence_ending = input.chars().any(|c| c == '.' || c == '!' || c == '?' || c == '。' || c == '！' || c == '？');
+    
+    // Count Chinese characters to better identify Chinese sentences
+    let chinese_char_count = input.chars().filter(|c| is_chinese_ideograph(*c)).count();
+    
+    if space_count == 0 && chinese_char_count <= 1 {
+        // No spaces and at most one Chinese character, it's a single word
+        InputType::Word
+    } else if has_sentence_ending || space_count >= 5 || chinese_char_count >= 7 {
+        // Has sentence-ending punctuation, many spaces, or many Chinese characters, likely a sentence
+        InputType::Sentence
+    } else {
+        // A few words, likely a phrase
+        InputType::Phrase
+    }
+}
+
 pub fn validate_word(word: &str) -> Result<()> {
     if word.trim().is_empty() {
-        return Err(anyhow!("Word cannot be empty"));
+        return Err(anyhow!("Input cannot be empty"));
     }
 
     let word = word.trim();
 
-    // Check if it contains only letters and hyphens
-    if !word.chars().all(|c| c.is_ascii_alphabetic() || c == '-') {
-        return Err(anyhow!("Word can only contain letters and hyphens"));
+    // Allow letters (including CJK), digits, punctuation, and spaces for phrases and sentences
+    if !word.chars().all(|c|
+                c.is_alphabetic() 
+                || c.is_ascii_digit() 
+                || c.is_ascii_punctuation() 
+                || c.is_ascii_whitespace() 
+                || is_chinese_ideograph(c) 
+                || is_chinese_punctuation(c)
+        ) {
+        return Err(anyhow!("Input can only contain letters, numbers, punctuation, and spaces"));
+    }
+    
+    // Ensure the input contains at least one letter (alphabetic character)
+    if !word.chars().any(|c| c.is_alphabetic() || is_chinese_ideograph(c)) {
+        return Err(anyhow!("Input must contain at least one letter"));
     }
 
     // Check length
-    if word.len() < 1 || word.len() > 50 {
-        return Err(anyhow!("Word length must be between 1 and 50 characters"));
+    if word.len() < 1 || word.len() > 200 {
+        return Err(anyhow!("Input length must be between 1 and 200 characters"));
     }
 
     Ok(())

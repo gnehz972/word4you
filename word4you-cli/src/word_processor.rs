@@ -6,6 +6,7 @@ use crate::git_section_sync::{GitSectionSynchronizer, SyncResult};
 use crate::git_utils::{commit, init_git_repo};
 use crate::utils::{
     delete_from_vocabulary_notebook, get_work_dir, prepend_to_vocabulary_notebook, validate_word,
+    determine_input_type, InputType,
 };
 use anyhow::Result;
 use console::{style, Term};
@@ -14,7 +15,7 @@ use termimad::*;
 
 pub struct WordProcessor {
     ai_client: Box<dyn AiClient + Send + Sync>,
-    config: Config,
+    pub config: Config,
 }
 
 impl WordProcessor {
@@ -46,21 +47,55 @@ impl WordProcessor {
         }
     }
 
-    pub async fn process_word(&self, term: &Term, word: &str, raw: bool) -> Result<()> {
-        // Validate word
+        pub async fn process_word(&self, term: &Term, word: &str, raw: bool, prompt_template: &str) -> Result<()> {
+        // Validate input text
         validate_word(word)?;
 
+        // Determine input type (word, phrase, or sentence)
+        let input_type = determine_input_type(word);
+
         if !raw {
-            term.write_line(&format!("🔍 Processing word: {}", word))?;
+            term.write_line(&format!("🔍 Processing text: {}", word))?;
             term.write_line(&format!("🤖 Querying {} API...", self.config.ai_provider.to_uppercase()))?;
         }
 
         // Get explanation from AI provider
-        let mut explanation = Box::new(
-            self.ai_client
-                .get_word_explanation(word, &self.config.prompt_template)
-                .await?,
-        );
+        let full_explanation = self.ai_client
+            .get_word_explanation(word, prompt_template)
+            .await?;
+            
+        // Format the explanation based on input type
+        let mut explanation = Box::new(match input_type {
+            InputType::Word => {
+                // For words, return the full structured response
+                full_explanation
+            },
+            InputType::Phrase => {
+                // For phrases, remove the phonetics section
+                let mut lines: Vec<&str> = full_explanation.lines().collect();
+                
+                // Find the phonetics line (usually the second line, starts with */)
+                if let Some(phonetics_idx) = lines.iter().position(|line| line.trim().starts_with("*/")) {
+                    // Remove the phonetics line
+                    lines.remove(phonetics_idx);
+                }
+                
+                lines.join("\n")
+            },
+            InputType::Sentence => {
+                // For sentences, return only the translation
+                let lines: Vec<&str> = full_explanation.lines().collect();
+                
+                // Find the translation line (usually after the > line, starts with **)
+                if let Some(translation_idx) = lines.iter().position(|line| line.trim().starts_with("**")) {
+                    // Return only the translation line
+                    lines[translation_idx].to_string()
+                } else {
+                    // Fallback to full explanation if translation line not found
+                    full_explanation
+                }
+            }
+        });
 
         // If raw mode, just print the response and return
         if raw {
@@ -128,9 +163,9 @@ impl WordProcessor {
                 2 => {
                     // Regenerate explanation
                     term.write_line("🔄 Regenerating explanation...")?;
-                    let new_explanation = self
+                                        let new_explanation = self
                         .ai_client
-                        .get_word_explanation(word, &self.config.prompt_template)
+                        .get_word_explanation(word, prompt_template)
                         .await?;
                     explanation = Box::new(new_explanation);
 
@@ -158,11 +193,11 @@ impl WordProcessor {
     }
 
     pub fn save_word(&self, term: &Term, word: &str, content: &str) -> Result<()> {
-        // Validate word
+        // Validate input text
         validate_word(word)?;
 
         term.write_line(&format!(
-            "💾 Saving word '{}' to vocabulary notebook...",
+            "💾 Saving text '{}' to vocabulary notebook...",
             word
         ))?;
 
@@ -170,7 +205,7 @@ impl WordProcessor {
         prepend_to_vocabulary_notebook(&self.config.vocabulary_notebook_file, content)?;
 
         // Commit changes only if git is enabled
-        term.write_line("✅ Successfully saved word locally")?;
+        term.write_line("✅ Successfully saved text locally")?;
 
         self.commit_and_push(term, word, "Save")?;
 
@@ -178,11 +213,11 @@ impl WordProcessor {
     }
 
     pub fn delete_word(&self, term: &Term, word: &str, timestamp: Option<&str>) -> Result<()> {
-        // Validate word
+        // Validate input text
         validate_word(word)?;
 
         term.write_line(&format!(
-            "🗑️  Deleting word '{}' from vocabulary notebook...",
+            "🗑️  Deleting text '{}' from vocabulary notebook...",
             word
         ))?;
 
@@ -190,7 +225,7 @@ impl WordProcessor {
         delete_from_vocabulary_notebook(&self.config.vocabulary_notebook_file, word, timestamp)?;
 
         // Commit changes only if git is enabled
-        term.write_line("✅ Successfully deleted word locally")?;
+        term.write_line("✅ Successfully deleted text locally")?;
 
         self.commit_and_push(term, word, "Delete")?;
 
