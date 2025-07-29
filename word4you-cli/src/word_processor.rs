@@ -58,8 +58,6 @@ impl WordProcessor {
         // Get the appropriate prompt template based on classification
         let prompt_template = PromptTemplates::get_template(&classification);
 
-        term.write_line(&prompt_template);
-
         if !raw {
             let lang_str = match classification.language {
                 crate::utils::Language::English => "English",

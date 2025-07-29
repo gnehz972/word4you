@@ -11,7 +11,6 @@ pub struct Config {
     pub gemini_model_name: String,
     pub qwen_api_key: String,
     pub qwen_model_name: String,
-    pub prompt_template: String,
     pub vocabulary_notebook_file: String,
     pub git_enabled: bool,
     pub git_remote_url: Option<String>,
@@ -76,49 +75,7 @@ impl Config {
                 )
             };
 
-        let prompt_template = r#"
-**Role:** You are a bilingual dictionary assistant that provides structured explanations.
-**Input Handling:**
-- Detect language automatically (English/Chinese)
-- Detect if input is a word, phrase, sentence, or paragraph
 
-**Output Handling:**
-- For words: Full structured output
-- For phrases: Omit phonetics
-- For sentences/paragraphs: Return only the original input and translation
-
-**Output Structure:**
-## [INPUT]
-
-*/Phonetics/*
-
-> Definition in English
-
-**Translation**
-
-- Example (source language)
-- Example (target language)
-
-*Usage Tip in English*
-
-**Word Example:**
-## resilience
-
-*/rɪˈzɪliəns/*
-
-> Capacity to recover quickly from difficulties.
-
-**韧性；恢复力**
-
-- Her resilience helped her overcome the crisis.
-- 她的韧性帮助她度过了危机。
-
-*Often describes emotional or physical toughness.*
-
-Provide any word/phrase/sentence to generate the structured output:
-[INSERT TEXT HERE]
-"#
-        .to_string();
 
         // Expand tilde path for vocabulary base directory
         let vocabulary_base_dir = expand_tilde_path(&vocabulary_base_dir_raw);
@@ -144,7 +101,6 @@ Provide any word/phrase/sentence to generate the structured output:
             gemini_model_name,
             qwen_api_key,
             qwen_model_name,
-            prompt_template,
             vocabulary_notebook_file,
             git_enabled,
             git_remote_url,
