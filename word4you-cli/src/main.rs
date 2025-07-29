@@ -1,7 +1,7 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use console::{style, Term};
-use word_processor::WordProcessor;
+use text_processor::TextProcessor;
 
 mod ai_client;
 mod config;
@@ -12,7 +12,7 @@ mod git_section_sync;
 mod git_utils;
 mod prompt_templates;
 mod utils;
-mod word_processor;
+mod text_processor;
 
 use config::Config;
 use config_manager::ConfigManager;
@@ -147,7 +147,7 @@ async fn main() -> Result<()> {
     // Handle subcommands
     match &cli.command {
                 Some(Commands::Query { word, raw, provider }) => {
-            if let Err(e) = query_word(&term, word, *raw, provider.as_deref()).await {
+            if let Err(e) = query_text(&term, word, *raw, provider.as_deref()).await {
                 eprintln!("❌ Error: {}", e);
                 return Ok(());
             }
@@ -159,13 +159,13 @@ async fn main() -> Result<()> {
             }
         }
         Some(Commands::Save { word, content }) => {
-            if let Err(e) = save_word(&term, word, content).await {
+            if let Err(e) = save_text(&term, word, content).await {
                 eprintln!("❌ Error: {}", e);
                 return Ok(());
             }
         }
         Some(Commands::Delete { word, timestamp }) => {
-            if let Err(e) = delete_word(&term, word, timestamp.as_deref()).await {
+            if let Err(e) = delete_text(&term, word, timestamp.as_deref()).await {
                 eprintln!("❌ Error: {}", e);
                 return Ok(());
             }
@@ -175,7 +175,7 @@ async fn main() -> Result<()> {
             content,
             timestamp,
         }) => {
-            if let Err(e) = update_word(&term, word, content, timestamp.as_deref()).await {
+            if let Err(e) = update_text(&term, word, content, timestamp.as_deref()).await {
                 eprintln!("❌ Error: {}", e);
                 return Ok(());
             }
@@ -207,7 +207,7 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn query_word(term: &Term, word: &str, raw: bool, provider: Option<&str>) -> anyhow::Result<()> {
+async fn query_text(term: &Term, text: &str, raw: bool, provider: Option<&str>) -> anyhow::Result<()> {
     // Validate configuration
     let mut config = Config::load()?;
 
@@ -216,76 +216,76 @@ async fn query_word(term: &Term, word: &str, raw: bool, provider: Option<&str>) 
         config.ai_provider = provider.to_string();
     }
 
-    // Initialize word processor
-    let processor = WordProcessor::new(config);
+    // Initialize text processor
+    let processor = TextProcessor::new(config);
 
-    // Process the word (prompt template is now determined automatically based on classification)
-    processor.process_word(term, word, raw, "").await?;
+    // Process the text (prompt template is now determined automatically based on classification)
+    processor.process_text(term, text, raw, "").await?;
 
     Ok(())
 }
 
-async fn save_word(term: &Term, word: &str, content: &str) -> anyhow::Result<()> {
+async fn save_text(term: &Term, text: &str, content: &str) -> anyhow::Result<()> {
     // Validate configuration
     let config = Config::load()?;
 
-    // Initialize word processor
-    let processor = WordProcessor::new(config);
+    // Initialize text processor
+    let processor = TextProcessor::new(config);
 
-    // Save the word
-    processor.save_word(term, word, content)?;
+    // Save the text
+    processor.save_text(term, text, content)?;
 
     Ok(())
 }
 
-async fn delete_word(term: &Term, word: &str, timestamp: Option<&str>) -> anyhow::Result<()> {
+async fn delete_text(term: &Term, text: &str, timestamp: Option<&str>) -> anyhow::Result<()> {
     // Validate configuration
     let config = Config::load()?;
 
-    // Initialize word processor
-    let processor = WordProcessor::new(config);
+    // Initialize text processor
+    let processor = TextProcessor::new(config);
 
-    // Delete the word
-    processor.delete_word(term, word, timestamp)?;
+    // Delete the text
+    processor.delete_text(term, text, timestamp)?;
 
     Ok(())
 }
 
-async fn update_word(
+async fn update_text(
     term: &Term,
-    word: &str,
+    text: &str,
     content: &str,
     timestamp: Option<&str>,
 ) -> anyhow::Result<()> {
     // Validate configuration
     let config = Config::load()?;
 
-    // Initialize word processor
-    let processor = WordProcessor::new(config);
+    // Initialize text processor
+    let processor = TextProcessor::new(config);
 
-    // Update the word (delete if exists, then save)
-    processor.update_word(term, word, content, timestamp)?;
+    // Update the text (delete if exists, then save)
+    processor.update_text(term, text, content, timestamp)?;
 
     Ok(())
 }
 
 async fn test_api_connection(term: &Term) -> anyhow::Result<()> {
     let config = Config::load()?;
-    let processor = WordProcessor::new(config);
+    let processor = TextProcessor::new(config);
 
-    term.write_line("🔍 Testing Gemini API connection...")?;
+    term.write_line("🔍 Testing API connection...")?;
 
     match processor.test_api_connection().await {
         Ok(true) => {
             term.write_line(
-                &style("✅ Gemini API connection successful")
+                &style("✅ API connection successful")
                     .green()
                     .to_string(),
             )?;
             Ok(())
         }
         Ok(false) => {
-            term.write_line(&style("❌ Gemini API connection failed").red().to_string())?;
+            term.write_line(&style("❌ API connection failed").red().to_string())?;
             return Ok(());
         }
         Err(e) => {
@@ -310,8 +310,8 @@ async fn interactive_mode(term: &Term) -> anyhow::Result<()> {
     // Validate configuration first
     let config = Config::load()?;
 
-    // Initialize word processor
-    let processor = WordProcessor::new(config);
+    // Initialize text processor
+    let processor = TextProcessor::new(config);
 
     term.write_line(
         &style("🎯 Welcome to Word4You Interactive Mode!")
@@ -323,12 +323,12 @@ async fn interactive_mode(term: &Term) -> anyhow::Result<()> {
 
     loop {
         // Get text input from user
-        let word = match dialoguer::Input::<String>::new()
+        let input_text = match dialoguer::Input::<String>::new()
             .with_prompt("Enter text to learn (word, phrase, or sentence)")
             .allow_empty(false)
             .interact_text()
         {
-            Ok(input) => input.trim().to_lowercase(),
+            Ok(input) => input.trim().to_string(),
             Err(_) => {
                 term.write_line("👋 Goodbye!")?;
                 break;
@@ -336,25 +336,26 @@ async fn interactive_mode(term: &Term) -> anyhow::Result<()> {
         };
 
         // Check for exit command
-        if word == "exit" || word == "quit" || word == "q" {
+        let lower_input = input_text.to_lowercase();
+        if lower_input == "exit" || lower_input == "quit" || lower_input == "q" {
             term.write_line("👋 Goodbye!")?;
             break;
         }
 
         // Skip empty input
-        if word.is_empty() {
+        if input_text.is_empty() {
             term.write_line("❌ Please enter valid text.")?;
             continue;
         }
 
-        // Process the word using the new classification system
-        if let Err(e) = processor.process_word(term, &word, false, "").await {
-            term.write_line(&format!("❌ Error processing text '{}': {}", word, e))?;
+        // Process the text using the new classification system
+        if let Err(e) = processor.process_text(term, &input_text, false, "").await {
+            term.write_line(&format!("❌ Error processing text '{}': {}", input_text, e))?;
             term.write_line("Please try again with different text.")?;
             continue;
         }
 
-        // After processing (save/skip), continue to next word
+        // After processing (save/skip), continue to next text
         term.write_line("")?;
         term.write_line(&style("=".repeat(50)).blue().to_string())?;
         term.write_line("")?;

@@ -61,8 +61,8 @@ impl GeminiClient {
 #[async_trait::async_trait]
 impl AiClient for GeminiClient {
 
-    async fn get_word_explanation(&self, word: &str, prompt_template: &str) -> Result<String> {
-        let prompt = prompt_template.replace("[INSERT TEXT HERE]", &word.to_lowercase());
+    async fn get_text_explanation(&self, text: &str, prompt_template: &str) -> Result<String> {
+        let prompt = prompt_template.replace("[INSERT TEXT HERE]", text);
 
         let request = GeminiRequest {
             contents: vec![Content {

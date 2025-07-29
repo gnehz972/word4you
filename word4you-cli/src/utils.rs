@@ -303,15 +303,15 @@ fn determine_input_type(input: &str, language: &Language) -> InputType {
 
 
 
-pub fn validate_word(word: &str) -> Result<()> {
-    if word.trim().is_empty() {
+pub fn validate_text(text: &str) -> Result<()> {
+    if text.trim().is_empty() {
         return Err(anyhow!("Input cannot be empty"));
     }
 
-    let word = word.trim();
+    let text = text.trim();
 
     // Allow letters (including CJK), digits, punctuation, and spaces for phrases and sentences
-    if !word.chars().all(|c|
+    if !text.chars().all(|c|
                 c.is_alphabetic() 
                 || c.is_ascii_digit() 
                 || c.is_ascii_punctuation() 
@@ -323,12 +323,12 @@ pub fn validate_word(word: &str) -> Result<()> {
     }
     
     // Ensure the input contains at least one letter (alphabetic character)
-    if !word.chars().any(|c| c.is_alphabetic() || is_chinese_ideograph(c)) {
+    if !text.chars().any(|c| c.is_alphabetic() || is_chinese_ideograph(c)) {
         return Err(anyhow!("Input must contain at least one letter"));
     }
 
     // Check length
-    if word.len() < 1 || word.len() > 200 {
+    if text.len() < 1 || text.len() > 200 {
         return Err(anyhow!("Input length must be between 1 and 200 characters"));
     }
 
@@ -370,19 +370,19 @@ mod tests {
     }
 
     #[test]
-    fn test_validate_word() {
-        assert!(validate_word("hello").is_ok());
-        assert!(validate_word("test-word").is_ok());
-        assert!(validate_word("a").is_ok());
-        assert!(validate_word("你好").is_ok());
-        assert!(validate_word("Hello world").is_ok());
-        assert!(validate_word("这是一个句子。").is_ok());
+    fn test_validate_text() {
+        assert!(validate_text("hello").is_ok());
+        assert!(validate_text("test-word").is_ok());
+        assert!(validate_text("a").is_ok());
+        assert!(validate_text("你好").is_ok());
+        assert!(validate_text("Hello world").is_ok());
+        assert!(validate_text("这是一个句子。").is_ok());
 
-        assert!(validate_word("").is_err());
-        assert!(validate_word("   ").is_err());
+        assert!(validate_text("").is_err());
+        assert!(validate_text("   ").is_err());
 
         let long_text = "a".repeat(201);
-        assert!(validate_word(&long_text).is_err());
+        assert!(validate_text(&long_text).is_err());
     }
 
     #[test]

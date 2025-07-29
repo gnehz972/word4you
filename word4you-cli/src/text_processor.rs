@@ -6,7 +6,7 @@ use crate::git_section_sync::{GitSectionSynchronizer, SyncResult};
 use crate::git_utils::{commit, init_git_repo};
 use crate::prompt_templates::PromptTemplates;
 use crate::utils::{
-    delete_from_vocabulary_notebook, get_work_dir, prepend_to_vocabulary_notebook, validate_word,
+    delete_from_vocabulary_notebook, get_work_dir, prepend_to_vocabulary_notebook, validate_text,
     classify_input, InputType,
 };
 use anyhow::Result;
@@ -14,12 +14,12 @@ use console::{style, Term};
 use dialoguer::Select;
 use termimad::*;
 
-pub struct WordProcessor {
+pub struct TextProcessor {
     ai_client: Box<dyn AiClient + Send + Sync>,
     pub config: Config,
 }
 
-impl WordProcessor {
+impl TextProcessor {
     pub fn new(config: Config) -> Self {
         let ai_client: Box<dyn AiClient + Send + Sync> = match config.ai_provider.as_str() {
             "qwen" => {
@@ -48,12 +48,12 @@ impl WordProcessor {
         }
     }
 
-    pub async fn process_word(&self, term: &Term, word: &str, raw: bool, _prompt_template: &str) -> Result<()> {
+    pub async fn process_text(&self, term: &Term, text: &str, raw: bool, _prompt_template: &str) -> Result<()> {
         // Validate input text
-        validate_word(word)?;
+        validate_text(text)?;
 
         // Classify the input (language and type)
-        let classification = classify_input(word);
+        let classification = classify_input(text);
         
         // Get the appropriate prompt template based on classification
         let prompt_template = PromptTemplates::get_template(&classification);
@@ -70,13 +70,13 @@ impl WordProcessor {
                 InputType::Sentence => "sentence",
             };
             
-            term.write_line(&format!("🔍 Processing {} {}: {}", lang_str, type_str, word))?;
+            term.write_line(&format!("🔍 Processing {} {}: {}", lang_str, type_str, text))?;
             term.write_line(&format!("🤖 Querying {} API...", self.config.ai_provider.to_uppercase()))?;
         }
 
         // Get explanation from AI provider using the appropriate template
         let mut explanation = Box::new(self.ai_client
-            .get_word_explanation(word, &prompt_template)
+            .get_text_explanation(text, &prompt_template)
             .await?);
 
         // If raw mode, just print the response and return
@@ -99,8 +99,8 @@ impl WordProcessor {
         let skin = make_skin();
 
         // Render the markdown
-        let text = FmtText::from(&skin, &explanation, None);
-        term.write_line(&text.to_string())?;
+        let rendered_text = FmtText::from(&skin, &explanation, None);
+        term.write_line(&rendered_text.to_string())?;
 
         term.write_line(&style("=".repeat(50)).blue().to_string())?;
 
@@ -140,7 +140,7 @@ impl WordProcessor {
             match selection {
                 0 => {
                     // Save to vocabulary notebook using the shared method
-                    self.save_word(term, word, &explanation)?;
+                    self.save_text(term, text, &explanation)?;
                     return Ok(());
                 }
                 1 => {
@@ -153,7 +153,7 @@ impl WordProcessor {
                     term.write_line("🔄 Regenerating explanation...")?;
                     let new_explanation = self
                         .ai_client
-                        .get_word_explanation(word, &prompt_template)
+                        .get_text_explanation(text, &prompt_template)
                         .await?;
                     explanation = Box::new(new_explanation);
 
@@ -161,8 +161,8 @@ impl WordProcessor {
                     term.write_line(&style("=".repeat(50)).blue().to_string())?;
 
                     // Render the new markdown
-                    let text = FmtText::from(&skin, &explanation, None);
-                    term.write_line(&text.to_string())?;
+                    let rendered_text = FmtText::from(&skin, &explanation, None);
+                    term.write_line(&rendered_text.to_string())?;
 
                     term.write_line(&style("=".repeat(50)).blue().to_string())?;
                     continue; // Ask again
@@ -180,13 +180,13 @@ impl WordProcessor {
         self.ai_client.test_connection().await
     }
 
-    pub fn save_word(&self, term: &Term, word: &str, content: &str) -> Result<()> {
+    pub fn save_text(&self, term: &Term, text: &str, content: &str) -> Result<()> {
         // Validate input text
-        validate_word(word)?;
+        validate_text(text)?;
 
         term.write_line(&format!(
             "💾 Saving text '{}' to vocabulary notebook...",
-            word
+            text
         ))?;
 
         // Save to vocabulary notebook
@@ -195,68 +195,68 @@ impl WordProcessor {
         // Commit changes only if git is enabled
         term.write_line("✅ Successfully saved text locally")?;
 
-        self.commit_and_push(term, word, "Save")?;
+        self.commit_and_push(term, text, "Save")?;
 
         Ok(())
     }
 
-    pub fn delete_word(&self, term: &Term, word: &str, timestamp: Option<&str>) -> Result<()> {
+    pub fn delete_text(&self, term: &Term, text: &str, timestamp: Option<&str>) -> Result<()> {
         // Validate input text
-        validate_word(word)?;
+        validate_text(text)?;
 
         term.write_line(&format!(
             "🗑️  Deleting text '{}' from vocabulary notebook...",
-            word
+            text
         ))?;
 
         // Delete from vocabulary notebook, optionally with timestamp
-        delete_from_vocabulary_notebook(&self.config.vocabulary_notebook_file, word, timestamp)?;
+        delete_from_vocabulary_notebook(&self.config.vocabulary_notebook_file, text, timestamp)?;
 
         // Commit changes only if git is enabled
         term.write_line("✅ Successfully deleted text locally")?;
 
-        self.commit_and_push(term, word, "Delete")?;
+        self.commit_and_push(term, text, "Delete")?;
 
         Ok(())
     }
 
-    pub fn update_word(
+    pub fn update_text(
         &self,
         term: &Term,
-        word: &str,
+        text: &str,
         content: &str,
         timestamp: Option<&str>,
     ) -> Result<()> {
-        // Validate word
-        validate_word(word)?;
+        // Validate text
+        validate_text(text)?;
 
         term.write_line(&format!(
-            "🔄 Updating word '{}' in vocabulary notebook...",
-            word
+            "🔄 Updating text '{}' in vocabulary notebook...",
+            text
         ))?;
 
-        // First, try to delete the word if it exists (ignore error if word doesn't exist)
-        delete_from_vocabulary_notebook(&self.config.vocabulary_notebook_file, word, timestamp)?;
+        // First, try to delete the text if it exists (ignore error if text doesn't exist)
+        delete_from_vocabulary_notebook(&self.config.vocabulary_notebook_file, text, timestamp)?;
 
         // Then save the new content
         prepend_to_vocabulary_notebook(&self.config.vocabulary_notebook_file, content)?;
 
         // Commit changes only if git is enabled
-        term.write_line("✅ Successfully updated word locally")?;
+        term.write_line("✅ Successfully updated text locally")?;
 
-        self.commit_and_push(term, word, "Update")?;
+        self.commit_and_push(term, text, "Update")?;
 
         Ok(())
     }
 
-    fn commit_and_push(&self, term: &Term, word: &str, operation: &str) -> Result<()> {
+    fn commit_and_push(&self, term: &Term, text: &str, operation: &str) -> Result<()> {
         if self.config.git_enabled {
             let work_dir = get_work_dir(&self.config.vocabulary_notebook_file)?;
             // Initialize git repository if it doesn't exist
             init_git_repo(&work_dir, self.config.git_remote_url.as_deref())?;
             // Commit changes locally
             term.write_line("📝 Committing changes locally...")?;
-            self.commit_local_changes(word, operation)?;
+            self.commit_local_changes(text, operation)?;
 
             if self.config.git_remote_url.is_some() {
                 // Then perform section-aware sync
@@ -270,11 +270,11 @@ impl WordProcessor {
     }
 
     /// Helper method to commit local changes before sync
-    fn commit_local_changes(&self, word: &str, operation: &str) -> Result<()> {
+    fn commit_local_changes(&self, text: &str, operation: &str) -> Result<()> {
         let commit_message = format!(
-            "{} word: {} - {}",
+            "{} text: {} - {}",
             operation,
-            word,
+            text,
             chrono::Utc::now().format("%Y-%m-%d %H:%M:%S")
         );
         commit(&commit_message, &self.config.vocabulary_notebook_file)?;

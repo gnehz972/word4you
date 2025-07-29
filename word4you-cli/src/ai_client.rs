@@ -2,7 +2,7 @@ use anyhow::Result;
 
 #[async_trait::async_trait]
 pub trait AiClient {
-    async fn get_word_explanation(&self, word: &str, prompt_template: &str) -> Result<String>;
+    async fn get_text_explanation(&self, text: &str, prompt_template: &str) -> Result<String>;
     async fn test_connection(&self) -> Result<bool>;
 }
 
