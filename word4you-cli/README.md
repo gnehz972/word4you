@@ -1,14 +1,17 @@
-# Word4You - English Word Query & Collection CLI Tool
+# Word4You - Multilingual Learning CLI Tool
 
-A fast, efficient command-line tool for querying and collecting English words with AI-powered explanations using Google Gemini, written in Rust.
+A fast, efficient command-line tool for learning words, phrases, and sentences in English and Chinese with AI-powered explanations using Google Gemini or QWEN, written in Rust.
 
 ## Features
 
-- 🤖 AI-powered word explanations (Google Gemini or QWEN)
-- 🔄 Git backup/sync with smart conflict resolution
-- 📚 Markdown vocabulary notebook
-- 🎨 Rich terminal UI
-- ⚡ Fast execution (Rust)
+- 🌍 **Multilingual Support**: English, Chinese, and mixed-language input
+- 🧠 **Smart Classification**: Automatically detects language and input type (word/phrase/sentence)
+- 🤖 **AI-powered explanations**: Google Gemini or QWEN with specialized prompts
+- 📝 **Adaptive Templates**: Different explanation formats for words, phrases, and sentences
+- 🔄 **Git backup/sync** with smart conflict resolution
+- 📚 **Markdown vocabulary notebook**
+- 🎨 **Rich terminal UI**
+- ⚡ **Fast execution** (Rust)
 
 ## Screenshot
 CLI
@@ -48,34 +51,52 @@ If you have an existing Word4You configuration, it will be automatically migrate
 
 You'll see a message like "ℹ️  Migrating configuration from old format to new format..." during the migration process.
 
+## Multilingual Input Support
+
+Word4You now supports English, Chinese, and mixed-language input with intelligent classification:
+
+### Language Detection
+- **English**: `hello`, `break the ice`, `The early bird catches the worm.`
+- **Chinese**: `你好`, `打破僵局`, `早起的鸟儿有虫吃。`
+- **Mixed**: `Hello 你好`, `API接口`, `I love 中国菜!`
+
+### Input Type Classification
+- **Words**: Single words in any language
+- **Phrases**: Short expressions (2-5 words in English, 2-7 characters in Chinese)
+- **Sentences**: Complete sentences with punctuation or longer expressions
+
+### Adaptive Explanations
+Each combination gets a specialized prompt template:
+- **English words**: Full phonetic, definition, Chinese translation, examples
+- **Chinese words**: Pinyin, English definition, bilingual examples
+- **Phrases**: Meaning, usage context, examples (no phonetics)
+- **Sentences**: Translation with grammar and cultural notes
+
 ## Commands
 
 ```bash
-# Interactive mode (enter words one by one)
+# Interactive mode (enter words, phrases, or sentences)
 ./target/release/word4you
 
-# Query a new word
-./target/release/word4you query beautiful # Learn a new English or Chinese word
+# Query any text (automatically classified)
+./target/release/word4you query beautiful      # English word
+./target/release/word4you query "break the ice" # English phrase
+./target/release/word4you query "Hello world!"  # English sentence
+./target/release/word4you query 你好             # Chinese word/phrase
+./target/release/word4you query "早起的鸟儿有虫吃。" # Chinese sentence
+./target/release/word4you query "Hello 你好"     # Mixed language
+
+# Specify AI provider
 ./target/release/word4you query beautiful --provider gemini  # Use Gemini
 ./target/release/word4you query beautiful --provider qwen    # Use QWEN
 
-# Test API connection
-./target/release/word4you test
-
-# Configure the application
-./target/release/word4you config
-
-# Save a word with content
-./target/release/word4you save <word> --content <content>
-
-# Delete a word
-./target/release/word4you delete <word> [--timestamp <timestamp>]
-
-# Update a word
-./target/release/word4you update <word> --content <content> [--timestamp <timestamp>]
-
-# Show help
-./target/release/word4you --help
+# Other commands
+./target/release/word4you test                 # Test API connection
+./target/release/word4you config               # Configure the application
+./target/release/word4you save <text> --content <content>    # Save content
+./target/release/word4you delete <text> [--timestamp <timestamp>] # Delete entry
+./target/release/word4you update <text> --content <content> [--timestamp <timestamp>] # Update entry
+./target/release/word4you --help               # Show help
 ```
 
 ## Interactive Mode

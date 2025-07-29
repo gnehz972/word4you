@@ -77,27 +77,29 @@ impl Config {
             };
 
         let prompt_template = r#"
-**Role:** You are a bilingual dictionary assistant that provides structured explanations.
+**Role:** You are a bilingual dictionary assistant that provides structured explanations.
 **Input Handling:**
-
 - Detect language automatically (English/Chinese)
+- Detect if input is a word, phrase, sentence, or paragraph
+
+**Output Handling:**
 - For words: Full structured output
 - For phrases: Omit phonetics
-- For sentences/paragraphs: Return the original input and translation only
+- For sentences/paragraphs: Return only the original input and translation
 
 **Output Structure:**
 ## [INPUT]
 
 */Phonetics/*
 
-> Definition
+> Definition in English
 
 **Translation**
 
 - Example (source language)
 - Example (target language)
 
-*Usage Tip*
+*Usage Tip in English*
 
 **Word Example:**
 ## resilience

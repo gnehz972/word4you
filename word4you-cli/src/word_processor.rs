@@ -4,9 +4,10 @@ use crate::qwen_client::QwenClient;
 use crate::ai_client::AiClient;
 use crate::git_section_sync::{GitSectionSynchronizer, SyncResult};
 use crate::git_utils::{commit, init_git_repo};
+use crate::prompt_templates::PromptTemplates;
 use crate::utils::{
     delete_from_vocabulary_notebook, get_work_dir, prepend_to_vocabulary_notebook, validate_word,
-    determine_input_type, InputType,
+    classify_input, InputType,
 };
 use anyhow::Result;
 use console::{style, Term};
@@ -47,55 +48,38 @@ impl WordProcessor {
         }
     }
 
-        pub async fn process_word(&self, term: &Term, word: &str, raw: bool, prompt_template: &str) -> Result<()> {
+    pub async fn process_word(&self, term: &Term, word: &str, raw: bool, _prompt_template: &str) -> Result<()> {
         // Validate input text
         validate_word(word)?;
 
-        // Determine input type (word, phrase, or sentence)
-        let input_type = determine_input_type(word);
+        // Classify the input (language and type)
+        let classification = classify_input(word);
+        
+        // Get the appropriate prompt template based on classification
+        let prompt_template = PromptTemplates::get_template(&classification);
+
+        term.write_line(&prompt_template);
 
         if !raw {
-            term.write_line(&format!("🔍 Processing text: {}", word))?;
+            let lang_str = match classification.language {
+                crate::utils::Language::English => "English",
+                crate::utils::Language::Chinese => "Chinese", 
+                crate::utils::Language::Mixed => "Mixed",
+            };
+            let type_str = match classification.input_type {
+                InputType::Word => "word",
+                InputType::Phrase => "phrase",
+                InputType::Sentence => "sentence",
+            };
+            
+            term.write_line(&format!("🔍 Processing {} {}: {}", lang_str, type_str, word))?;
             term.write_line(&format!("🤖 Querying {} API...", self.config.ai_provider.to_uppercase()))?;
         }
 
-        // Get explanation from AI provider
-        let full_explanation = self.ai_client
-            .get_word_explanation(word, prompt_template)
-            .await?;
-            
-        // Format the explanation based on input type
-        let mut explanation = Box::new(match input_type {
-            InputType::Word => {
-                // For words, return the full structured response
-                full_explanation
-            },
-            InputType::Phrase => {
-                // For phrases, remove the phonetics section
-                let mut lines: Vec<&str> = full_explanation.lines().collect();
-                
-                // Find the phonetics line (usually the second line, starts with */)
-                if let Some(phonetics_idx) = lines.iter().position(|line| line.trim().starts_with("*/")) {
-                    // Remove the phonetics line
-                    lines.remove(phonetics_idx);
-                }
-                
-                lines.join("\n")
-            },
-            InputType::Sentence => {
-                // For sentences, return only the translation
-                let lines: Vec<&str> = full_explanation.lines().collect();
-                
-                // Find the translation line (usually after the > line, starts with **)
-                if let Some(translation_idx) = lines.iter().position(|line| line.trim().starts_with("**")) {
-                    // Return only the translation line
-                    lines[translation_idx].to_string()
-                } else {
-                    // Fallback to full explanation if translation line not found
-                    full_explanation
-                }
-            }
-        });
+        // Get explanation from AI provider using the appropriate template
+        let mut explanation = Box::new(self.ai_client
+            .get_word_explanation(word, &prompt_template)
+            .await?);
 
         // If raw mode, just print the response and return
         if raw {
@@ -104,7 +88,13 @@ impl WordProcessor {
         }
 
         // Display the explanation with beautiful markdown rendering
-        term.write_line("\n📖 Word Explanation:")?;
+        let content_type = match classification.input_type {
+            InputType::Word => "Word",
+            InputType::Phrase => "Phrase", 
+            InputType::Sentence => "Sentence",
+        };
+        
+        term.write_line(&format!("\n📖 {} Explanation:", content_type))?;
         term.write_line(&style("=".repeat(50)).blue().to_string())?;
 
         // Create a markdown skin for beautiful rendering
@@ -128,7 +118,7 @@ impl WordProcessor {
             )?;
             term.write_line(
                 format!(
-                    "{} - Skip this word",
+                    "{} - Skip this text",
                     style("k").red().to_string()
                 )
                 .as_str(),
@@ -157,19 +147,19 @@ impl WordProcessor {
                 }
                 1 => {
                     // Skip
-                    term.write_line("✔️ Word explanation skipped.")?;
+                    term.write_line("✔️ Text explanation skipped.")?;
                     return Ok(());
                 }
                 2 => {
                     // Regenerate explanation
                     term.write_line("🔄 Regenerating explanation...")?;
-                                        let new_explanation = self
+                    let new_explanation = self
                         .ai_client
-                        .get_word_explanation(word, prompt_template)
+                        .get_word_explanation(word, &prompt_template)
                         .await?;
                     explanation = Box::new(new_explanation);
 
-                    term.write_line("\n📖 New Word Explanation:")?;
+                    term.write_line(&format!("\n📖 New {} Explanation:", content_type))?;
                     term.write_line(&style("=".repeat(50)).blue().to_string())?;
 
                     // Render the new markdown

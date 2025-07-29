@@ -10,6 +10,7 @@ mod gemini_client;
 mod qwen_client;
 mod git_section_sync;
 mod git_utils;
+mod prompt_templates;
 mod utils;
 mod word_processor;
 
@@ -216,14 +217,10 @@ async fn query_word(term: &Term, word: &str, raw: bool, provider: Option<&str>) 
     }
 
     // Initialize word processor
-    let mut processor = WordProcessor::new(config);
+    let processor = WordProcessor::new(config);
 
-    // Use a single prompt template for both languages
-    let prompt_template = processor.config.prompt_template.clone();
-
-
-    // Process the word
-    processor.process_word(term, word, raw, &prompt_template).await?;
+    // Process the word (prompt template is now determined automatically based on classification)
+    processor.process_word(term, word, raw, "").await?;
 
     Ok(())
 }
@@ -350,10 +347,8 @@ async fn interactive_mode(term: &Term) -> anyhow::Result<()> {
             continue;
         }
 
-        // Process the word using existing functionality with a single prompt template
-        let prompt_template = processor.config.prompt_template.clone();
-
-        if let Err(e) = processor.process_word(term, &word, false, &prompt_template).await {
+        // Process the word using the new classification system
+        if let Err(e) = processor.process_word(term, &word, false, "").await {
             term.write_line(&format!("❌ Error processing text '{}': {}", word, e))?;
             term.write_line("Please try again with different text.")?;
             continue;

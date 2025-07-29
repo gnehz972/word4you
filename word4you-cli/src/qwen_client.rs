@@ -61,7 +61,7 @@ impl QwenClient {
 #[async_trait::async_trait]
 impl AiClient for QwenClient {
     async fn get_word_explanation(&self, word: &str, prompt_template: &str) -> Result<String> {
-        let prompt = prompt_template.replace("[INSERT WORD HERE]", &word.to_lowercase());
+        let prompt = prompt_template.replace("[INSERT TEXT HERE]", &word.to_lowercase());
 
         let request = QwenRequest {
             model: "qwen-turbo".to_string(), // Default model, can be overridden

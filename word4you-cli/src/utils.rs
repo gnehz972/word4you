@@ -185,35 +185,123 @@ fn is_chinese_punctuation(c: char) -> bool {
 }
 
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum Language {
+    English,
+    Chinese,
+    Mixed,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum InputType {
     Word,
     Phrase,
-    Sentence
+    Sentence,
 }
 
-pub fn determine_input_type(input: &str) -> InputType {
+#[derive(Debug, Clone)]
+pub struct InputClassification {
+    pub language: Language,
+    pub input_type: InputType,
+}
+
+pub fn classify_input(input: &str) -> InputClassification {
     let input = input.trim();
     
-    // Count spaces to determine if it's a word, phrase, or sentence
-    let space_count = input.chars().filter(|c| c.is_whitespace()).count();
+    // Determine language
+    let language = determine_language(input);
     
-    // Check for sentence-ending punctuation
-    let has_sentence_ending = input.chars().any(|c| c == '.' || c == '!' || c == '?' || c == '。' || c == '！' || c == '？');
+    // Determine input type
+    let input_type = determine_input_type(input, &language);
     
-    // Count Chinese characters to better identify Chinese sentences
-    let chinese_char_count = input.chars().filter(|c| is_chinese_ideograph(*c)).count();
-    
-    if space_count == 0 && chinese_char_count <= 1 {
-        // No spaces and at most one Chinese character, it's a single word
-        InputType::Word
-    } else if has_sentence_ending || space_count >= 5 || chinese_char_count >= 7 {
-        // Has sentence-ending punctuation, many spaces, or many Chinese characters, likely a sentence
-        InputType::Sentence
-    } else {
-        // A few words, likely a phrase
-        InputType::Phrase
+    InputClassification {
+        language,
+        input_type,
     }
 }
+
+fn determine_language(input: &str) -> Language {
+    let total_chars = input.chars().count();
+    if total_chars == 0 {
+        return Language::English; // Default fallback
+    }
+    
+    let chinese_char_count = input.chars().filter(|c| is_chinese_ideograph(*c)).count();
+    let chinese_punct_count = input.chars().filter(|c| is_chinese_punctuation(*c)).count();
+    let chinese_total = chinese_char_count + chinese_punct_count;
+    
+    // Count non-whitespace characters for better ratio calculation
+    let non_whitespace_chars = input.chars().filter(|c| !c.is_whitespace()).count();
+    
+    if non_whitespace_chars == 0 {
+        return Language::English;
+    }
+    
+    let chinese_ratio = chinese_total as f64 / non_whitespace_chars as f64;
+    
+    if chinese_ratio >= 0.6 {
+        Language::Chinese
+    } else if chinese_ratio > 0.0 && chinese_total > 0 {
+        // If there are any Chinese characters, it's mixed
+        Language::Mixed
+    } else {
+        Language::English
+    }
+}
+
+fn determine_input_type(input: &str, language: &Language) -> InputType {
+    let input = input.trim();
+    
+    // Count spaces and words
+    let space_count = input.chars().filter(|c| c.is_whitespace()).count();
+    let word_count = if space_count == 0 { 1 } else { space_count + 1 };
+    
+    // Check for sentence-ending punctuation
+    let has_sentence_ending = input.chars().any(|c| {
+        matches!(c, '.' | '!' | '?' | '。' | '！' | '？' | '…' | '：' | ':')
+    });
+    
+    // Count Chinese characters
+    let chinese_char_count = input.chars().filter(|c| is_chinese_ideograph(*c)).count();
+    
+    match language {
+        Language::Chinese | Language::Mixed => {
+            if chinese_char_count == 1 && space_count == 0 {
+                // Single Chinese character
+                InputType::Word
+            } else if has_sentence_ending || chinese_char_count >= 8 {
+                // Has sentence punctuation or many Chinese characters
+                InputType::Sentence
+            } else if chinese_char_count >= 2 && chinese_char_count <= 7 {
+                // 2-7 Chinese characters, likely a phrase
+                InputType::Phrase
+            } else {
+                // Fallback based on word count
+                if word_count == 1 {
+                    InputType::Word
+                } else if word_count <= 4 {
+                    InputType::Phrase
+                } else {
+                    InputType::Sentence
+                }
+            }
+        }
+        Language::English => {
+            if word_count == 1 && !has_sentence_ending {
+                // Single English word
+                InputType::Word
+            } else if has_sentence_ending || word_count >= 6 {
+                // Has sentence punctuation or many words
+                InputType::Sentence
+            } else {
+                // 2-5 words, likely a phrase
+                InputType::Phrase
+            }
+        }
+    }
+}
+
+
 
 pub fn validate_word(word: &str) -> Result<()> {
     if word.trim().is_empty() {
@@ -286,14 +374,97 @@ mod tests {
         assert!(validate_word("hello").is_ok());
         assert!(validate_word("test-word").is_ok());
         assert!(validate_word("a").is_ok());
+        assert!(validate_word("你好").is_ok());
+        assert!(validate_word("Hello world").is_ok());
+        assert!(validate_word("这是一个句子。").is_ok());
 
         assert!(validate_word("").is_err());
         assert!(validate_word("   ").is_err());
-        assert!(validate_word("hello123").is_err());
-        assert!(validate_word("hello@world").is_err());
 
-        let long_word = "a".repeat(51);
-        assert!(validate_word(&long_word).is_err());
+        let long_text = "a".repeat(201);
+        assert!(validate_word(&long_text).is_err());
+    }
+
+    #[test]
+    fn test_language_classification() {
+        // English
+        assert_eq!(determine_language("hello"), Language::English);
+        assert_eq!(determine_language("Hello world!"), Language::English);
+        
+        // Chinese
+        assert_eq!(determine_language("你好"), Language::Chinese);
+        assert_eq!(determine_language("这是一个测试。"), Language::Chinese);
+        
+        // Mixed
+        assert_eq!(determine_language("Hello 你好"), Language::Mixed);
+        assert_eq!(determine_language("API接口"), Language::Mixed);
+    }
+
+    #[test]
+    fn test_input_type_classification() {
+        // English words
+        let classification = classify_input("hello");
+        assert_eq!(classification.language, Language::English);
+        assert_eq!(classification.input_type, InputType::Word);
+        
+        // English phrases
+        let classification = classify_input("break the ice");
+        assert_eq!(classification.language, Language::English);
+        assert_eq!(classification.input_type, InputType::Phrase);
+        
+        // English sentences
+        let classification = classify_input("The early bird catches the worm.");
+        assert_eq!(classification.language, Language::English);
+        assert_eq!(classification.input_type, InputType::Sentence);
+        
+        // Chinese words
+        let classification = classify_input("你好");
+        assert_eq!(classification.language, Language::Chinese);
+        assert_eq!(classification.input_type, InputType::Phrase); // 2 characters = phrase
+        
+        let classification = classify_input("好");
+        assert_eq!(classification.language, Language::Chinese);
+        assert_eq!(classification.input_type, InputType::Word);
+        
+        // Chinese phrases
+        let classification = classify_input("打破僵局");
+        assert_eq!(classification.language, Language::Chinese);
+        assert_eq!(classification.input_type, InputType::Phrase);
+        
+        // Chinese sentences
+        let classification = classify_input("早起的鸟儿有虫吃。");
+        assert_eq!(classification.language, Language::Chinese);
+        assert_eq!(classification.input_type, InputType::Sentence);
+        
+        // Mixed language
+        let classification = classify_input("Hello 世界");
+        assert_eq!(classification.language, Language::Mixed);
+    }
+
+    #[test]
+    fn test_chinese_character_detection() {
+        assert!(is_chinese_ideograph('你'));
+        assert!(is_chinese_ideograph('好'));
+        assert!(is_chinese_ideograph('世'));
+        assert!(is_chinese_ideograph('界'));
+        
+        assert!(!is_chinese_ideograph('a'));
+        assert!(!is_chinese_ideograph('A'));
+        assert!(!is_chinese_ideograph('1'));
+        assert!(!is_chinese_ideograph(' '));
+    }
+
+    #[test]
+    fn test_chinese_punctuation_detection() {
+        assert!(is_chinese_punctuation('。'));
+        assert!(is_chinese_punctuation('，'));
+        assert!(is_chinese_punctuation('？'));
+        assert!(is_chinese_punctuation('！'));
+        
+        assert!(!is_chinese_punctuation('.'));
+        assert!(!is_chinese_punctuation(','));
+        assert!(!is_chinese_punctuation('?'));
+        assert!(!is_chinese_punctuation('!'));
     }
 
     #[test]
