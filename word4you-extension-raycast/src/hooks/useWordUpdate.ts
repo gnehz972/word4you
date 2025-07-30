@@ -3,7 +3,7 @@ import { getWordExplanation, updateWordInVocabulary } from "../services/wordServ
 import { showFailureToast } from "@raycast/utils";
 
 export function useWordUpdate(onWordUpdated?: () => Promise<void>) {
-  const handleUpdate = async (word: string) => {
+  const handleUpdate = async (word: string, existingTimestamp?: string) => {
     const toast = await showToast({
       style: Toast.Style.Animated,
       title: `Querying fresh content for "${word}"...`,
@@ -22,9 +22,16 @@ export function useWordUpdate(onWordUpdated?: () => Promise<void>) {
 
       toast.title = `Updating "${word}"...`;
 
-      // The CLI expects just the content without the "## word" header
-      // as the word is passed separately as a parameter
-      const success = await updateWordInVocabulary(word, freshResult.raw_output, undefined, (message) => {
+      // The CLI now requires a timestamp to identify which entry to update
+      // We need the timestamp from the existing saved word entry
+      if (!existingTimestamp) {
+        toast.style = Toast.Style.Failure;
+        toast.title = "Cannot update word";
+        toast.message = "No timestamp provided for existing entry";
+        return;
+      }
+
+      const success = await updateWordInVocabulary(existingTimestamp, freshResult.raw_output, (message) => {
         toast.message = message;
       });
 

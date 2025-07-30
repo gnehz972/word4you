@@ -88,15 +88,14 @@ export async function getWordExplanation(word: string): Promise<WordExplanation 
 }
 
 export async function saveWordToVocabulary(
-  word: string,
   content: string,
   onStatusUpdate?: (message: string) => void,
 ): Promise<boolean> {
   try {
-    const result = await executeWordCliCommand(["save", word, "--content", content], { onStatusUpdate });
+    const result = await executeWordCliCommand(["save", content], { onStatusUpdate });
 
     if (!result.success) {
-      console.error(`Save failed for word: ${word}`);
+      console.error(`Save failed for content`);
       console.error(`content: ${content}`);
       console.error(`Error details:`, result.error);
     }
@@ -109,21 +108,14 @@ export async function saveWordToVocabulary(
 }
 
 export async function deleteWordFromVocabulary(
-  word: string,
-  timestamp?: string,
+  timestamp: string,
   onStatusUpdate?: (message: string) => void,
 ): Promise<boolean> {
   try {
-    // Build arguments array
-    const args = ["delete", word];
-    if (timestamp) {
-      args.push("--timestamp", timestamp);
-    }
-
-    const result = await executeWordCliCommand(args, { onStatusUpdate });
+    const result = await executeWordCliCommand(["delete", timestamp], { onStatusUpdate });
 
     if (!result.success) {
-      console.error(`Delete failed for word: ${word}`);
+      console.error(`Delete failed for timestamp: ${timestamp}`);
       console.error(`Error details:`, result.error);
     }
 
@@ -135,22 +127,15 @@ export async function deleteWordFromVocabulary(
 }
 
 export async function updateWordInVocabulary(
-  word: string,
+  timestamp: string,
   content: string,
-  timestamp?: string,
   onStatusUpdate?: (message: string) => void,
 ): Promise<boolean> {
   try {
-    // Build arguments array
-    const args = ["update", word, "--content", content];
-    if (timestamp) {
-      args.push("--timestamp", timestamp);
-    }
-
-    const result = await executeWordCliCommand(args, { onStatusUpdate });
+    const result = await executeWordCliCommand(["update", timestamp, "--content", content], { onStatusUpdate });
 
     if (!result.success) {
-      console.error(`Update failed for word: ${word}`);
+      console.error(`Update failed for timestamp: ${timestamp}`);
       console.error(`content: ${content}`);
       console.error(`Error details:`, result.error);
     }

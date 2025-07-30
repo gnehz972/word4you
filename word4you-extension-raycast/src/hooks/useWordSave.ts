@@ -6,26 +6,26 @@ import { showFailureToast } from "@raycast/utils";
 export function useWordSave(onWordSaved?: () => Promise<void>, onAiResultCleared?: () => void) {
   const [isSaving, setIsSaving] = useState(false);
 
-  const handleSave = async (word: string, content: string) => {
+  const handleSave = async (content: string) => {
     if (isSaving) return;
 
     setIsSaving(true);
 
     const toast = await showToast({
       style: Toast.Style.Animated,
-      title: "Saving word to vocabulary...",
+      title: "Saving content to vocabulary...",
     });
 
     try {
-      const success = await saveWordToVocabulary(word, content, (message) => {
+      const success = await saveWordToVocabulary(content, (message: string) => {
         toast.message = message;
       });
 
       if (success) {
         toast.style = Toast.Style.Success;
-        toast.title = "Word saved successfully!";
+        toast.title = "Content saved successfully!";
 
-        // Reload saved words to include the new word
+        // Reload saved words to include the new content
         if (onWordSaved) {
           await onWordSaved();
         }
@@ -36,10 +36,10 @@ export function useWordSave(onWordSaved?: () => Promise<void>, onAiResultCleared
         }
       } else {
         toast.style = Toast.Style.Failure;
-        toast.title = "Failed to save word";
+        toast.title = "Failed to save content";
       }
     } catch (error) {
-      showFailureToast(error, { title: "Failed to save word" });
+      showFailureToast(error, { title: "Failed to save content" });
     } finally {
       setIsSaving(false);
     }

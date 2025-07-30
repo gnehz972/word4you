@@ -7,9 +7,9 @@ interface WordListItemProps {
   index?: number;
   total?: number;
   isAiResult: boolean | null;
-  onSave?: (word: string, content: string) => void;
-  onDelete?: (word: string, timestamp?: string) => void;
-  onUpdate?: (word: string) => void;
+  onSave?: (content: string) => void;
+  onDelete?: (timestamp: string) => void;
+  onUpdate?: (word: string, timestamp: string) => void;
 }
 
 export function WordListItem({
@@ -30,14 +30,14 @@ export function WordListItem({
       actions={
         <ActionPanel>
           {isAiResult && onSave && (
-            <Action title="Save to Vocabulary" icon="💾" onAction={() => onSave(word.word, word.raw_output)} />
+            <Action title="Save to Vocabulary" icon="💾" onAction={() => onSave(word.raw_output)} />
           )}
           {!isAiResult && (
             <>
-              {onDelete && (
-                <Action title="Delete Word" icon="🗑️" onAction={() => onDelete(word.word, word.timestamp)} />
+              {onDelete && word.timestamp && (
+                <Action title="Delete Word" icon="🗑️" onAction={() => onDelete(word.timestamp!)} />
               )}
-              {onUpdate && <Action title="Update Word" icon="📝" onAction={() => onUpdate(word.word)} />}
+              {onUpdate && word.timestamp && <Action title="Update Word" icon="📝" onAction={() => onUpdate(word.word, word.timestamp!)} />}
             </>
           )}
         </ActionPanel>

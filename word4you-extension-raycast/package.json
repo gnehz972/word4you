@@ -37,9 +37,27 @@
       ],
       "preferences": [
         {
+          "name": "aiProvider",
+          "type": "dropdown",
+          "required": false,
+          "title": "AI Provider",
+          "description": "Choose your preferred AI provider",
+          "default": "gemini",
+          "data": [
+            {
+              "title": "Google Gemini",
+              "value": "gemini"
+            },
+            {
+              "title": "QWEN",
+              "value": "qwen"
+            }
+          ]
+        },
+        {
           "name": "geminiApiKey",
           "type": "password",
-          "required": true,
+          "required": false,
           "title": "Gemini API Key",
           "description": "Your Google Gemini API key (get one at https://aistudio.google.com/app/apikey)",
           "placeholder": "Enter your Gemini API key"
@@ -52,6 +70,23 @@
           "description": "The Gemini model to use for word explanations",
           "default": "gemini-2.0-flash-001",
           "placeholder": "gemini-2.0-flash-001"
+        },
+        {
+          "name": "qwenApiKey",
+          "type": "password",
+          "required": false,
+          "title": "QWEN API Key",
+          "description": "Your QWEN API key (get one at https://dashscope.console.aliyun.com/)",
+          "placeholder": "Enter your QWEN API key"
+        },
+        {
+          "name": "qwenModelName",
+          "type": "textfield",
+          "required": false,
+          "title": "QWEN Model Name",
+          "description": "The QWEN model to use for word explanations",
+          "default": "qwen-turbo",
+          "placeholder": "qwen-turbo"
         },
         {
           "name": "vocabularyBaseDir",

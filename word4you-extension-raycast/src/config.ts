@@ -4,8 +4,11 @@ import os from "os";
 import fs from "fs";
 
 export interface Preferences {
+  aiProvider: string;
   geminiApiKey: string;
   geminiModelName: string;
+  qwenApiKey: string;
+  qwenModelName: string;
   vocabularyBaseDir: string;
   gitEnabled: boolean;
   gitRemoteUrl: string;
@@ -89,13 +92,16 @@ export function ensureVocabularyDirectoryExists(vocabularyPath: string): void {
 
 // Create environment variables from preferences
 export function createEnvironmentFromPreferences(): NodeJS.ProcessEnv {
-  const preferences = getPreferenceValues();
+  const preferences = getPreferenceValues<Preferences>();
 
   return {
     ...process.env,
     // Pass Raycast preferences as environment variables for the CLI
+    WORD4YOU_AI_PROVIDER: preferences.aiProvider || "gemini",
     WORD4YOU_GEMINI_API_KEY: preferences.geminiApiKey || "",
     WORD4YOU_GEMINI_MODEL_NAME: preferences.geminiModelName || "gemini-2.0-flash-001",
+    WORD4YOU_QWEN_API_KEY: preferences.qwenApiKey || "",
+    WORD4YOU_QWEN_MODEL_NAME: preferences.qwenModelName || "qwen-turbo",
     WORD4YOU_VOCABULARY_BASE_DIR: preferences.vocabularyBaseDir || "~",
     WORD4YOU_GIT_ENABLED: preferences.gitEnabled ? "true" : "false",
     WORD4YOU_GIT_REMOTE_URL: preferences.gitRemoteUrl || "",
