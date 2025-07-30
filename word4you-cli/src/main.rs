@@ -30,9 +30,7 @@ Features:
 
 Usage:
   word4you                           # Interactive mode (enter text one by one)
-    word4you query <text>              # Learn a new English or Chinese word, phrase, or sentence
-  word4you query <text> --provider gemini  # Use Gemini AI provider
-  word4you query <text> --provider qwen    # Use QWEN AI provider
+  word4you query <text>              # Learn a new English or Chinese word, phrase, or sentence
   word4you test                      # Test API connection
   word4you config                    # Set up or update configuration
   word4you config --show-vob-path      # Show the vocabulary notebook path
@@ -42,7 +40,6 @@ Usage:
 
 Options:
   --raw                              # Output raw response from API without user interaction
-  --provider <provider>              # AI provider to use (gemini or qwen)
 "#;
 
 #[derive(Parser)]
@@ -67,10 +64,6 @@ enum Commands {
         /// Output raw response from API without user interaction
         #[arg(long)]
         raw: bool,
-
-        /// AI provider to use (gemini or qwen)
-        #[arg(long, value_enum)]
-        provider: Option<String>,
     },
 
     /// Save content to vocabulary notebook
@@ -146,8 +139,8 @@ async fn main() -> Result<()> {
 
     // Handle subcommands
     match &cli.command {
-                Some(Commands::Query { word, raw, provider }) => {
-            if let Err(e) = query_text(&term, word, *raw, provider.as_deref()).await {
+                Some(Commands::Query { word, raw }) => {
+            if let Err(e) = query_text(&term, word, *raw).await {
                 eprintln!("❌ Error: {}", e);
                 return Ok(());
             }
@@ -207,14 +200,9 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn query_text(term: &Term, text: &str, raw: bool, provider: Option<&str>) -> anyhow::Result<()> {
+async fn query_text(term: &Term, text: &str, raw: bool) -> anyhow::Result<()> {
     // Validate configuration
-    let mut config = Config::load()?;
-
-    // Override provider if specified
-    if let Some(provider) = provider {
-        config.ai_provider = provider.to_string();
-    }
+    let config = Config::load()?;
 
     // Initialize text processor
     let processor = TextProcessor::new(config);
