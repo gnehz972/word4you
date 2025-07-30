@@ -63,8 +63,7 @@ pub fn prepend_to_vocabulary_notebook(vocabulary_notebook_file: &str, content: &
 
 pub fn delete_from_vocabulary_notebook(
     vocabulary_notebook_file: &str,
-    word: &str,
-    timestamp: Option<&str>,
+    timestamp: &str,
 ) -> Result<()> {
     ensure_vocabulary_notebook_exists(vocabulary_notebook_file)?;
 
@@ -82,26 +81,16 @@ pub fn delete_from_vocabulary_notebook(
 
         // Check if this line starts a new word section
         if !found && line.starts_with("## ") {
-            let section_word = line[3..].trim(); // Remove "## " prefix
+            // Search forward for the timestamp line within the current section
+            let mut j = i + 1;
 
-            // Check if this is the section we want to delete
-            if section_word.to_lowercase() == word.to_lowercase() {
-                // If timestamp is specified, look for its exact match
-                if let Some(ts) = timestamp {
-                    // Search forward for the timestamp line within the current section
-                    let mut j = i + 1;
-
-                    // Look ahead to find the timestamp line before the section separator
-                    while j < lines.len() && lines[j].trim() != "---" {
-                        if lines[j].starts_with("<!-- timestamp=") && lines[j].contains(ts) {
-                            found = true;
-                            break;
-                        }
-                        j += 1;
-                    }
-                } else {
+            // Look ahead to find the timestamp line before the section separator
+            while j < lines.len() && lines[j].trim() != "---" {
+                if lines[j].starts_with("<!-- timestamp=") && lines[j].contains(timestamp) {
                     found = true;
+                    break;
                 }
+                j += 1;
             }
 
             // Skip the entire section if it matches our criteria
@@ -128,9 +117,8 @@ pub fn delete_from_vocabulary_notebook(
 
     if !found {
         return Err(anyhow!(
-            "Word '{}' {} not found in vocabulary notebook",
-            word,
-            timestamp.map_or("".to_string(), |ts| format!("with timestamp {}", ts))
+            "Entry with timestamp '{}' not found in vocabulary notebook",
+            timestamp
         ));
     }
 
@@ -475,7 +463,7 @@ mod tests {
 
         fs::write(temp_file, "## hello\nHello content\n\n<!-- timestamp=2023-01-01T12:00:00.123+00:00 -->\n\n---\n## world\nWorld content\n\n<!-- timestamp=2023-01-02T12:00:00.456+00:00 -->\n\n---").unwrap();
 
-        delete_from_vocabulary_notebook(temp_file, "hello", Some("2023-01-01T12:00:00.123+00:00"))
+        delete_from_vocabulary_notebook(temp_file, "2023-01-01T12:00:00.123+00:00")
             .unwrap();
 
         let result = fs::read_to_string(temp_file).unwrap();
@@ -486,22 +474,23 @@ mod tests {
     }
 
     #[test]
-    fn test_delete_without_timestamp() {
+    fn test_delete_by_timestamp() {
         let dir = tempdir().unwrap();
         let file_path = dir.path().join("test_vocab_delete_all.md");
         let temp_file = file_path.to_str().unwrap();
 
         fs::write(temp_file, "## hello\nHello content 1\n\n<!-- timestamp=2023-01-01T12:00:00.123+00:00 -->\n---\n\n## word\nHello content 2\n\n<!-- timestamp=2023-01-02T12:00:00.456+00:00 -->\n---\n").unwrap();
 
-        delete_from_vocabulary_notebook(temp_file, "hello", None).unwrap();
+        delete_from_vocabulary_notebook(temp_file, "2023-01-01T12:00:00.123+00:00").unwrap();
 
         let result = fs::read_to_string(temp_file).unwrap();
 
         assert!(!result.contains("## hello"));
+        assert!(result.contains("## word"));
     }
 
     #[test]
-    fn test_delete_nonexistent_word_with_timestamp() {
+    fn test_delete_nonexistent_timestamp() {
         let dir = tempdir().unwrap();
         let file_path = dir.path().join("test_vocab_delete_nonexistent.md");
         let temp_file = file_path.to_str().unwrap();
@@ -514,8 +503,7 @@ mod tests {
 
         let result = delete_from_vocabulary_notebook(
             temp_file,
-            "world",
-            Some("2023-01-01T12:00:00.123+00:00"),
+            "2023-01-01T12:00:00.999+00:00",
         );
 
         assert!(result.is_err());

@@ -140,7 +140,7 @@ impl TextProcessor {
             match selection {
                 0 => {
                     // Save to vocabulary notebook using the shared method
-                    self.save_text(term, text, &explanation)?;
+                    self.save_text(term, &explanation)?;
                     return Ok(());
                 }
                 1 => {
@@ -180,42 +180,33 @@ impl TextProcessor {
         self.ai_client.test_connection().await
     }
 
-    pub fn save_text(&self, term: &Term, text: &str, content: &str) -> Result<()> {
-        // Validate input text
-        validate_text(text)?;
-
-        term.write_line(&format!(
-            "💾 Saving text '{}' to vocabulary notebook...",
-            text
-        ))?;
+    pub fn save_text(&self, term: &Term, content: &str) -> Result<()> {
+        term.write_line("💾 Saving content to vocabulary notebook...")?;
 
         // Save to vocabulary notebook
         prepend_to_vocabulary_notebook(&self.config.vocabulary_notebook_file, content)?;
 
         // Commit changes only if git is enabled
-        term.write_line("✅ Successfully saved text locally")?;
+        term.write_line("✅ Successfully saved content locally")?;
 
-        self.commit_and_push(term, text, "Save")?;
+        self.commit_and_push(term, "content", "Save")?;
 
         Ok(())
     }
 
-    pub fn delete_text(&self, term: &Term, text: &str, timestamp: Option<&str>) -> Result<()> {
-        // Validate input text
-        validate_text(text)?;
-
+    pub fn delete_text(&self, term: &Term, timestamp: &str) -> Result<()> {
         term.write_line(&format!(
-            "🗑️  Deleting text '{}' from vocabulary notebook...",
-            text
+            "🗑️  Deleting entry with timestamp '{}' from vocabulary notebook...",
+            timestamp
         ))?;
 
-        // Delete from vocabulary notebook, optionally with timestamp
-        delete_from_vocabulary_notebook(&self.config.vocabulary_notebook_file, text, timestamp)?;
+        // Delete from vocabulary notebook by timestamp
+        delete_from_vocabulary_notebook(&self.config.vocabulary_notebook_file, timestamp)?;
 
         // Commit changes only if git is enabled
-        term.write_line("✅ Successfully deleted text locally")?;
+        term.write_line("✅ Successfully deleted entry locally")?;
 
-        self.commit_and_push(term, text, "Delete")?;
+        self.commit_and_push(term, timestamp, "Delete")?;
 
         Ok(())
     }
@@ -223,28 +214,24 @@ impl TextProcessor {
     pub fn update_text(
         &self,
         term: &Term,
-        text: &str,
+        timestamp: &str,
         content: &str,
-        timestamp: Option<&str>,
     ) -> Result<()> {
-        // Validate text
-        validate_text(text)?;
-
         term.write_line(&format!(
-            "🔄 Updating text '{}' in vocabulary notebook...",
-            text
+            "🔄 Updating entry with timestamp '{}' in vocabulary notebook...",
+            timestamp
         ))?;
 
-        // First, try to delete the text if it exists (ignore error if text doesn't exist)
-        delete_from_vocabulary_notebook(&self.config.vocabulary_notebook_file, text, timestamp)?;
+        // First, try to delete the entry by timestamp if it exists
+        delete_from_vocabulary_notebook(&self.config.vocabulary_notebook_file, timestamp)?;
 
         // Then save the new content
         prepend_to_vocabulary_notebook(&self.config.vocabulary_notebook_file, content)?;
 
         // Commit changes only if git is enabled
-        term.write_line("✅ Successfully updated text locally")?;
+        term.write_line("✅ Successfully updated entry locally")?;
 
-        self.commit_and_push(term, text, "Update")?;
+        self.commit_and_push(term, timestamp, "Update")?;
 
         Ok(())
     }

@@ -545,16 +545,20 @@ impl GitSectionSynchronizer {
     fn apply_local_changes(&self, changes: &LocalChanges) -> Result<()> {
         // First, remove deleted sections
         for deleted in &changes.deleted_sections {
-            self.term
-                .write_line(&format!("🗑️  Removing deleted word: {}", deleted.word))?;
-            if let Err(e) = crate::utils::delete_from_vocabulary_notebook(
-                &self.config.vocabulary_notebook_file,
-                &deleted.word,
-                deleted.timestamp.as_deref(),
-            ) {
+            if let Some(timestamp) = &deleted.timestamp {
                 self.term
-                    .write_line(&format!("⚠️  Could not delete '{}': {}", deleted.word, e))?;
-                // Continue with other deletions
+                    .write_line(&format!("🗑️  Removing entry with timestamp: {}", timestamp))?;
+                if let Err(e) = crate::utils::delete_from_vocabulary_notebook(
+                    &self.config.vocabulary_notebook_file,
+                    timestamp,
+                ) {
+                    self.term
+                        .write_line(&format!("⚠️  Could not delete entry with timestamp '{}': {}", timestamp, e))?;
+                    // Continue with other deletions
+                }
+            } else {
+                self.term
+                    .write_line(&format!("⚠️  Cannot delete '{}': no timestamp available", deleted.word))?;
             }
         }
 

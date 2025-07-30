@@ -34,9 +34,9 @@ Usage:
   word4you test                      # Test API connection
   word4you config                    # Set up or update configuration
   word4you config --show-vob-path      # Show the vocabulary notebook path
-  word4you save <text> --content <content>  # Save content to vocabulary notebook
-  word4you delete <text> [--timestamp <timestamp>]  # Delete content from vocabulary notebook, optionally by specific timestamp
-  word4you update <text> --content <content> [--timestamp <timestamp>]  # Update content (delete if exists, then save)
+  word4you save <content>                   # Save content to vocabulary notebook
+  word4you delete <timestamp>                    # Delete content from vocabulary notebook by timestamp
+  word4you update <timestamp> --content <content>  # Update content (delete entry by timestamp, then save)
 
 Options:
   --raw                              # Output raw response from API without user interaction
@@ -68,36 +68,24 @@ enum Commands {
 
     /// Save content to vocabulary notebook
     Save {
-        /// The text to save (word, phrase, or sentence)
-        word: String,
-
         /// The content to save
-        #[arg(long)]
         content: String,
     },
 
-    /// Delete content from vocabulary notebook
+    /// Delete content from vocabulary notebook by timestamp
     Delete {
-        /// The text to delete (word, phrase, or sentence)
-        word: String,
-
-        /// Optional timestamp for the specific entry to delete
-        #[arg(long)]
-        timestamp: Option<String>,
+        /// Timestamp of the entry to delete
+        timestamp: String,
     },
 
-    /// Update content: delete if exists, then save new content
+    /// Update content: delete entry by timestamp, then save new content
     Update {
-        /// The text to update (word, phrase, or sentence)
-        word: String,
+        /// Timestamp of the entry to update
+        timestamp: String,
 
         /// The new content to save
         #[arg(long)]
         content: String,
-
-        /// Optional timestamp for the specific entry to update
-        #[arg(long)]
-        timestamp: Option<String>,
     },
 
     /// Test the API connection
@@ -151,24 +139,23 @@ async fn main() -> Result<()> {
                 return Ok(());
             }
         }
-        Some(Commands::Save { word, content }) => {
-            if let Err(e) = save_text(&term, word, content).await {
+        Some(Commands::Save { content }) => {
+            if let Err(e) = save_text(&term, content).await {
                 eprintln!("❌ Error: {}", e);
                 return Ok(());
             }
         }
-        Some(Commands::Delete { word, timestamp }) => {
-            if let Err(e) = delete_text(&term, word, timestamp.as_deref()).await {
+        Some(Commands::Delete { timestamp }) => {
+            if let Err(e) = delete_text(&term, timestamp).await {
                 eprintln!("❌ Error: {}", e);
                 return Ok(());
             }
         }
         Some(Commands::Update {
-            word,
-            content,
             timestamp,
+            content,
         }) => {
-            if let Err(e) = update_text(&term, word, content, timestamp.as_deref()).await {
+            if let Err(e) = update_text(&term, timestamp, content).await {
                 eprintln!("❌ Error: {}", e);
                 return Ok(());
             }
@@ -213,37 +200,36 @@ async fn query_text(term: &Term, text: &str, raw: bool) -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn save_text(term: &Term, text: &str, content: &str) -> anyhow::Result<()> {
+async fn save_text(term: &Term, content: &str) -> anyhow::Result<()> {
     // Validate configuration
     let config = Config::load()?;
 
     // Initialize text processor
     let processor = TextProcessor::new(config);
 
-    // Save the text
-    processor.save_text(term, text, content)?;
+    // Save the content
+    processor.save_text(term, content)?;
 
     Ok(())
 }
 
-async fn delete_text(term: &Term, text: &str, timestamp: Option<&str>) -> anyhow::Result<()> {
+async fn delete_text(term: &Term, timestamp: &str) -> anyhow::Result<()> {
     // Validate configuration
     let config = Config::load()?;
 
     // Initialize text processor
     let processor = TextProcessor::new(config);
 
-    // Delete the text
-    processor.delete_text(term, text, timestamp)?;
+    // Delete by timestamp
+    processor.delete_text(term, timestamp)?;
 
     Ok(())
 }
 
 async fn update_text(
     term: &Term,
-    text: &str,
+    timestamp: &str,
     content: &str,
-    timestamp: Option<&str>,
 ) -> anyhow::Result<()> {
     // Validate configuration
     let config = Config::load()?;
@@ -251,8 +237,8 @@ async fn update_text(
     // Initialize text processor
     let processor = TextProcessor::new(config);
 
-    // Update the text (delete if exists, then save)
-    processor.update_text(term, text, content, timestamp)?;
+    // Update the entry (delete by timestamp, then save)
+    processor.update_text(term, timestamp, content)?;
 
     Ok(())
 }
