@@ -47,7 +47,7 @@ Options:
     name = "word4you",
     about = "Learn English words with AI-powered explanations using Google Gemini",
     long_about = INTRO,
-    version = "1.0.0"
+    version = "1.1.0"
 )]
 struct Cli {
     #[command(subcommand)]
