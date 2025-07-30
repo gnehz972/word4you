@@ -30,4 +30,4 @@ impl std::fmt::Display for AiProvider {
             AiProvider::Qwen => write!(f, "qwen"),
         }
     }
-} 
+}

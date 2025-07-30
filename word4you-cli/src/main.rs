@@ -7,12 +7,12 @@ mod ai_client;
 mod config;
 mod config_manager;
 mod gemini_client;
-mod qwen_client;
 mod git_section_sync;
 mod git_utils;
 mod prompt_templates;
-mod utils;
+mod qwen_client;
 mod text_processor;
+mod utils;
 
 use config::Config;
 use config_manager::ConfigManager;
@@ -90,7 +90,7 @@ enum Commands {
 
     /// Test the API connection
     Test,
-    
+
     /// Set up or update configuration
     Config {
         /// Show the vocabulary notebook path
@@ -106,28 +106,30 @@ async fn main() -> Result<()> {
 
     // Check if configuration is available
     // Priority: Environment variables > Config file
-    let has_env_config = std::env::var("WORD4YOU_GEMINI_API_KEY").is_ok() || std::env::var("WORD4YOU_QWEN_API_KEY").is_ok();
+    let has_env_config = std::env::var("WORD4YOU_GEMINI_API_KEY").is_ok()
+        || std::env::var("WORD4YOU_QWEN_API_KEY").is_ok();
     let has_file_config = ConfigManager::config_exists();
-    
+
     // If neither environment variables nor config file exists, and not running config command, run onboarding
-    if !has_env_config && !has_file_config && !matches!(cli.command, Some(Commands::Config { .. })) {
+    if !has_env_config && !has_file_config && !matches!(cli.command, Some(Commands::Config { .. }))
+    {
         term.write_line(&style("👋 Welcome to Word4You!").cyan().bold().to_string())?;
         term.write_line("It looks like this is your first time running Word4You.")?;
         term.write_line("Let's set up your configuration before we begin.")?;
         term.write_line("")?;
-        
+
         if let Err(e) = ConfigManager::run_setup(&term) {
             eprintln!("❌ Configuration error: {}", e);
             term.write_line("You can run 'word4you config' later to set up your configuration.")?;
             return Ok(());
         }
-        
+
         term.write_line("")?;
     }
 
     // Handle subcommands
     match &cli.command {
-                Some(Commands::Query { word, raw }) => {
+        Some(Commands::Query { word, raw }) => {
             if let Err(e) = query_text(&term, word, *raw).await {
                 eprintln!("❌ Error: {}", e);
                 return Ok(());
@@ -151,10 +153,7 @@ async fn main() -> Result<()> {
                 return Ok(());
             }
         }
-        Some(Commands::Update {
-            timestamp,
-            content,
-        }) => {
+        Some(Commands::Update { timestamp, content }) => {
             if let Err(e) = update_text(&term, timestamp, content).await {
                 eprintln!("❌ Error: {}", e);
                 return Ok(());
@@ -226,11 +225,7 @@ async fn delete_text(term: &Term, timestamp: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn update_text(
-    term: &Term,
-    timestamp: &str,
-    content: &str,
-) -> anyhow::Result<()> {
+async fn update_text(term: &Term, timestamp: &str, content: &str) -> anyhow::Result<()> {
     // Validate configuration
     let config = Config::load()?;
 
@@ -251,11 +246,7 @@ async fn test_api_connection(term: &Term) -> anyhow::Result<()> {
 
     match processor.test_api_connection().await {
         Ok(true) => {
-            term.write_line(
-                &style("✅ API connection successful")
-                    .green()
-                    .to_string(),
-            )?;
+            term.write_line(&style("✅ API connection successful").green().to_string())?;
             Ok(())
         }
         Ok(false) => {
@@ -272,11 +263,11 @@ async fn test_api_connection(term: &Term) -> anyhow::Result<()> {
 fn show_vocabulary_path(_term: &Term) -> anyhow::Result<()> {
     // Load configuration
     let config = Config::load()?;
-    
+
     // Simply print the vocabulary notebook file path without any formatting
     // This makes it easier for scripts and other programs to parse the output
     println!("{}", config.vocabulary_notebook_file);
-    
+
     Ok(())
 }
 

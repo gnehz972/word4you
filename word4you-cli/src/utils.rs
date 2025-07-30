@@ -138,7 +138,7 @@ pub fn is_chinese_ideograph(c: char) -> bool {
     (c >= '\u{2B740}' && c <= '\u{2B81F}') || // CJK Unified Ideographs Extension D
     (c >= '\u{2B820}' && c <= '\u{2CEAF}') || // CJK Unified Ideographs Extension E
     (c >= '\u{2CEB0}' && c <= '\u{2EBEF}') || // CJK Unified Ideographs Extension F
-    (c >= '\u{30000}' && c <= '\u{3134F}')    // CJK Unified Ideographs Extension G
+    (c >= '\u{30000}' && c <= '\u{3134F}') // CJK Unified Ideographs Extension G
 }
 
 fn is_chinese_punctuation(c: char) -> bool {
@@ -167,11 +167,10 @@ fn is_chinese_punctuation(c: char) -> bool {
         '\u{2018}' | // LEFT SINGLE QUOTATION MARK (‘)
         '\u{2019}' | // RIGHT SINGLE QUOTATION MARK (’)
         '\u{201C}' | // LEFT DOUBLE QUOTATION MARK (“)
-        '\u{201D}'   // RIGHT DOUBLE QUOTATION MARK (”)
-        // Add more as needed based on requirements
+        '\u{201D}' // RIGHT DOUBLE QUOTATION MARK (”)
+                   // Add more as needed based on requirements
     )
 }
-
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Language {
@@ -195,13 +194,13 @@ pub struct InputClassification {
 
 pub fn classify_input(input: &str) -> InputClassification {
     let input = input.trim();
-    
+
     // Determine language
     let language = determine_language(input);
-    
+
     // Determine input type
     let input_type = determine_input_type(input, &language);
-    
+
     InputClassification {
         language,
         input_type,
@@ -213,20 +212,20 @@ fn determine_language(input: &str) -> Language {
     if total_chars == 0 {
         return Language::English; // Default fallback
     }
-    
+
     let chinese_char_count = input.chars().filter(|c| is_chinese_ideograph(*c)).count();
     let chinese_punct_count = input.chars().filter(|c| is_chinese_punctuation(*c)).count();
     let chinese_total = chinese_char_count + chinese_punct_count;
-    
+
     // Count non-whitespace characters for better ratio calculation
     let non_whitespace_chars = input.chars().filter(|c| !c.is_whitespace()).count();
-    
+
     if non_whitespace_chars == 0 {
         return Language::English;
     }
-    
+
     let chinese_ratio = chinese_total as f64 / non_whitespace_chars as f64;
-    
+
     if chinese_ratio >= 0.6 {
         Language::Chinese
     } else if chinese_ratio > 0.0 && chinese_total > 0 {
@@ -239,19 +238,19 @@ fn determine_language(input: &str) -> Language {
 
 fn determine_input_type(input: &str, language: &Language) -> InputType {
     let input = input.trim();
-    
+
     // Count spaces and words
     let space_count = input.chars().filter(|c| c.is_whitespace()).count();
     let word_count = if space_count == 0 { 1 } else { space_count + 1 };
-    
+
     // Check for sentence-ending punctuation
-    let has_sentence_ending = input.chars().any(|c| {
-        matches!(c, '.' | '!' | '?' | '。' | '！' | '？' | '…' | '：' | ':')
-    });
-    
+    let has_sentence_ending = input
+        .chars()
+        .any(|c| matches!(c, '.' | '!' | '?' | '。' | '！' | '？' | '…' | '：' | ':'));
+
     // Count Chinese characters
     let chinese_char_count = input.chars().filter(|c| is_chinese_ideograph(*c)).count();
-    
+
     match language {
         Language::Chinese | Language::Mixed => {
             if chinese_char_count == 1 && space_count == 0 {
@@ -289,8 +288,6 @@ fn determine_input_type(input: &str, language: &Language) -> InputType {
     }
 }
 
-
-
 pub fn validate_text(text: &str) -> Result<()> {
     if text.trim().is_empty() {
         return Err(anyhow!("Input cannot be empty"));
@@ -299,19 +296,24 @@ pub fn validate_text(text: &str) -> Result<()> {
     let text = text.trim();
 
     // Allow letters (including CJK), digits, punctuation, and spaces for phrases and sentences
-    if !text.chars().all(|c|
-                c.is_alphabetic() 
-                || c.is_ascii_digit() 
-                || c.is_ascii_punctuation() 
-                || c.is_ascii_whitespace() 
-                || is_chinese_ideograph(c) 
-                || is_chinese_punctuation(c)
-        ) {
-        return Err(anyhow!("Input can only contain letters, numbers, punctuation, and spaces"));
+    if !text.chars().all(|c| {
+        c.is_alphabetic()
+            || c.is_ascii_digit()
+            || c.is_ascii_punctuation()
+            || c.is_ascii_whitespace()
+            || is_chinese_ideograph(c)
+            || is_chinese_punctuation(c)
+    }) {
+        return Err(anyhow!(
+            "Input can only contain letters, numbers, punctuation, and spaces"
+        ));
     }
-    
+
     // Ensure the input contains at least one letter (alphabetic character)
-    if !text.chars().any(|c| c.is_alphabetic() || is_chinese_ideograph(c)) {
+    if !text
+        .chars()
+        .any(|c| c.is_alphabetic() || is_chinese_ideograph(c))
+    {
         return Err(anyhow!("Input must contain at least one letter"));
     }
 
@@ -378,11 +380,11 @@ mod tests {
         // English
         assert_eq!(determine_language("hello"), Language::English);
         assert_eq!(determine_language("Hello world!"), Language::English);
-        
+
         // Chinese
         assert_eq!(determine_language("你好"), Language::Chinese);
         assert_eq!(determine_language("这是一个测试。"), Language::Chinese);
-        
+
         // Mixed
         assert_eq!(determine_language("Hello 你好"), Language::Mixed);
         assert_eq!(determine_language("API接口"), Language::Mixed);
@@ -394,36 +396,36 @@ mod tests {
         let classification = classify_input("hello");
         assert_eq!(classification.language, Language::English);
         assert_eq!(classification.input_type, InputType::Word);
-        
+
         // English phrases
         let classification = classify_input("break the ice");
         assert_eq!(classification.language, Language::English);
         assert_eq!(classification.input_type, InputType::Phrase);
-        
+
         // English sentences
         let classification = classify_input("The early bird catches the worm.");
         assert_eq!(classification.language, Language::English);
         assert_eq!(classification.input_type, InputType::Sentence);
-        
+
         // Chinese words
         let classification = classify_input("你好");
         assert_eq!(classification.language, Language::Chinese);
         assert_eq!(classification.input_type, InputType::Phrase); // 2 characters = phrase
-        
+
         let classification = classify_input("好");
         assert_eq!(classification.language, Language::Chinese);
         assert_eq!(classification.input_type, InputType::Word);
-        
+
         // Chinese phrases
         let classification = classify_input("打破僵局");
         assert_eq!(classification.language, Language::Chinese);
         assert_eq!(classification.input_type, InputType::Phrase);
-        
+
         // Chinese sentences
         let classification = classify_input("早起的鸟儿有虫吃。");
         assert_eq!(classification.language, Language::Chinese);
         assert_eq!(classification.input_type, InputType::Sentence);
-        
+
         // Mixed language
         let classification = classify_input("Hello 世界");
         assert_eq!(classification.language, Language::Mixed);
@@ -435,7 +437,7 @@ mod tests {
         assert!(is_chinese_ideograph('好'));
         assert!(is_chinese_ideograph('世'));
         assert!(is_chinese_ideograph('界'));
-        
+
         assert!(!is_chinese_ideograph('a'));
         assert!(!is_chinese_ideograph('A'));
         assert!(!is_chinese_ideograph('1'));
@@ -448,7 +450,7 @@ mod tests {
         assert!(is_chinese_punctuation('，'));
         assert!(is_chinese_punctuation('？'));
         assert!(is_chinese_punctuation('！'));
-        
+
         assert!(!is_chinese_punctuation('.'));
         assert!(!is_chinese_punctuation(','));
         assert!(!is_chinese_punctuation('?'));
@@ -463,8 +465,7 @@ mod tests {
 
         fs::write(temp_file, "## hello\nHello content\n\n<!-- timestamp=2023-01-01T12:00:00.123+00:00 -->\n\n---\n## world\nWorld content\n\n<!-- timestamp=2023-01-02T12:00:00.456+00:00 -->\n\n---").unwrap();
 
-        delete_from_vocabulary_notebook(temp_file, "2023-01-01T12:00:00.123+00:00")
-            .unwrap();
+        delete_from_vocabulary_notebook(temp_file, "2023-01-01T12:00:00.123+00:00").unwrap();
 
         let result = fs::read_to_string(temp_file).unwrap();
         println!("Result after deletion:\n{}", result);
@@ -501,10 +502,7 @@ mod tests {
         )
         .unwrap();
 
-        let result = delete_from_vocabulary_notebook(
-            temp_file,
-            "2023-01-01T12:00:00.999+00:00",
-        );
+        let result = delete_from_vocabulary_notebook(temp_file, "2023-01-01T12:00:00.999+00:00");
 
         assert!(result.is_err());
 

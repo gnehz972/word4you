@@ -1,7 +1,7 @@
+use crate::ai_client::AiClient;
 use anyhow::{anyhow, Result};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use crate::ai_client::AiClient;
 
 #[derive(Debug, Serialize)]
 struct GeminiRequest {
@@ -60,7 +60,6 @@ impl GeminiClient {
 
 #[async_trait::async_trait]
 impl AiClient for GeminiClient {
-
     async fn get_text_explanation(&self, text: &str, prompt_template: &str) -> Result<String> {
         let prompt = prompt_template.replace("[INSERT TEXT HERE]", text);
 

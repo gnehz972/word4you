@@ -110,8 +110,7 @@ impl GitSectionSynchronizer {
         self.term.write_line("📤 Pushing changes to remote...")?;
         match run_git_command(&["push", "-u", "origin", "main"], work_dir) {
             Ok(_) => {
-                self
-                    .term
+                self.term
                     .write_line("✅ Successfully pushed changes to remote")?;
                 Ok(SyncResult::Success)
             }
@@ -552,13 +551,17 @@ impl GitSectionSynchronizer {
                     &self.config.vocabulary_notebook_file,
                     timestamp,
                 ) {
-                    self.term
-                        .write_line(&format!("⚠️  Could not delete entry with timestamp '{}': {}", timestamp, e))?;
+                    self.term.write_line(&format!(
+                        "⚠️  Could not delete entry with timestamp '{}': {}",
+                        timestamp, e
+                    ))?;
                     // Continue with other deletions
                 }
             } else {
-                self.term
-                    .write_line(&format!("⚠️  Cannot delete '{}': no timestamp available", deleted.word))?;
+                self.term.write_line(&format!(
+                    "⚠️  Cannot delete '{}': no timestamp available",
+                    deleted.word
+                ))?;
             }
         }
 

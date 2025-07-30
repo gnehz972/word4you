@@ -21,61 +21,74 @@ impl Config {
         // Check if WORD4YOU_GEMINI_API_KEY environment variable is set
         // If it is, load all configuration from environment variables
         // If not, fallback to loading all configuration from TOML config file
-        
-        let ai_provider = env::var("WORD4YOU_AI_PROVIDER")
-            .unwrap_or_else(|_| "gemini".to_string());
+
+        let ai_provider = env::var("WORD4YOU_AI_PROVIDER").unwrap_or_else(|_| "gemini".to_string());
         let gemini_api_key = env::var("WORD4YOU_GEMINI_API_KEY");
         let _qwen_api_key = env::var("WORD4YOU_QWEN_API_KEY");
 
-        let (ai_provider, gemini_api_key, gemini_model_name, qwen_api_key, qwen_model_name, vocabulary_base_dir_raw, git_enabled, git_remote_url) = 
-            if let Ok(gemini_key) = gemini_api_key {
-                // Load all configuration from environment variables
-                let gemini_model = env::var("WORD4YOU_GEMINI_MODEL_NAME")
-                    .unwrap_or_else(|_| "gemini-2.0-flash-001".to_string());
-                let qwen_key = env::var("WORD4YOU_QWEN_API_KEY")
-                    .unwrap_or_else(|_| "".to_string());
-                let qwen_model = env::var("WORD4YOU_QWEN_MODEL_NAME")
-                    .unwrap_or_else(|_| "qwen-turbo".to_string());
-                let vocab_dir = env::var("WORD4YOU_VOCABULARY_BASE_DIR")
-                    .unwrap_or_else(|_| "~".to_string());
-                let git_enabled = env::var("WORD4YOU_GIT_ENABLED")
-                    .map(|v| v.to_lowercase() == "true")
-                    .unwrap_or(false);
-                let git_url = env::var("WORD4YOU_GIT_REMOTE_URL")
-                    .ok()
-                    .filter(|s| !s.is_empty());
-                
-                (ai_provider, gemini_key, gemini_model, qwen_key, qwen_model, vocab_dir, git_enabled, git_url)
-            } else {
-                // Fallback to loading all configuration from TOML config file
-                if !ConfigManager::config_exists() {
-                    return Err(anyhow!(
-                        "Configuration not found. Run 'word4you config' to update your configuration."
-                    ));
-                }
-                
-                let user_config = ConfigManager::load_config()?;
-                
-                // Check if we have at least one API key
-                if user_config.gemini_api_key.is_empty() && user_config.qwen_api_key.is_empty() {
-                    return Err(anyhow!(
+        let (
+            ai_provider,
+            gemini_api_key,
+            gemini_model_name,
+            qwen_api_key,
+            qwen_model_name,
+            vocabulary_base_dir_raw,
+            git_enabled,
+            git_remote_url,
+        ) = if let Ok(gemini_key) = gemini_api_key {
+            // Load all configuration from environment variables
+            let gemini_model = env::var("WORD4YOU_GEMINI_MODEL_NAME")
+                .unwrap_or_else(|_| "gemini-2.0-flash-001".to_string());
+            let qwen_key = env::var("WORD4YOU_QWEN_API_KEY").unwrap_or_else(|_| "".to_string());
+            let qwen_model =
+                env::var("WORD4YOU_QWEN_MODEL_NAME").unwrap_or_else(|_| "qwen-turbo".to_string());
+            let vocab_dir =
+                env::var("WORD4YOU_VOCABULARY_BASE_DIR").unwrap_or_else(|_| "~".to_string());
+            let git_enabled = env::var("WORD4YOU_GIT_ENABLED")
+                .map(|v| v.to_lowercase() == "true")
+                .unwrap_or(false);
+            let git_url = env::var("WORD4YOU_GIT_REMOTE_URL")
+                .ok()
+                .filter(|s| !s.is_empty());
+
+            (
+                ai_provider,
+                gemini_key,
+                gemini_model,
+                qwen_key,
+                qwen_model,
+                vocab_dir,
+                git_enabled,
+                git_url,
+            )
+        } else {
+            // Fallback to loading all configuration from TOML config file
+            if !ConfigManager::config_exists() {
+                return Err(anyhow!(
+                    "Configuration not found. Run 'word4you config' to update your configuration."
+                ));
+            }
+
+            let user_config = ConfigManager::load_config()?;
+
+            // Check if we have at least one API key
+            if user_config.gemini_api_key.is_empty() && user_config.qwen_api_key.is_empty() {
+                return Err(anyhow!(
                         "No API key found in configuration. Run 'word4you config' to update your configuration."
                     ));
-                }
-                
-                (
-                    user_config.ai_provider,
-                    user_config.gemini_api_key,
-                    user_config.gemini_model_name,
-                    user_config.qwen_api_key,
-                    user_config.qwen_model_name,
-                    user_config.vocabulary_base_dir,
-                    user_config.git_enabled,
-                    user_config.git_remote_url,
-                )
-            };
+            }
 
-
+            (
+                user_config.ai_provider,
+                user_config.gemini_api_key,
+                user_config.gemini_model_name,
+                user_config.qwen_api_key,
+                user_config.qwen_model_name,
+                user_config.vocabulary_base_dir,
+                user_config.git_enabled,
+                user_config.git_remote_url,
+            )
+        };
 
         // Expand tilde path for vocabulary base directory
         let vocabulary_base_dir = expand_tilde_path(&vocabulary_base_dir_raw);
@@ -83,7 +96,7 @@ impl Config {
         // Create word4you subdirectory path
         let mut word4you_dir = PathBuf::from(vocabulary_base_dir);
         word4you_dir.push("word4you");
-        
+
         // Create the directory if it doesn't exist
         if !word4you_dir.exists() {
             std::fs::create_dir_all(&word4you_dir)?;

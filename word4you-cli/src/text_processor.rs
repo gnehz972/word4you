@@ -1,13 +1,13 @@
+use crate::ai_client::AiClient;
 use crate::config::Config;
 use crate::gemini_client::GeminiClient;
-use crate::qwen_client::QwenClient;
-use crate::ai_client::AiClient;
 use crate::git_section_sync::{GitSectionSynchronizer, SyncResult};
 use crate::git_utils::{commit, init_git_repo};
 use crate::prompt_templates::PromptTemplates;
+use crate::qwen_client::QwenClient;
 use crate::utils::{
-    delete_from_vocabulary_notebook, get_work_dir, prepend_to_vocabulary_notebook, validate_text,
-    classify_input, InputType,
+    classify_input, delete_from_vocabulary_notebook, get_work_dir, prepend_to_vocabulary_notebook,
+    validate_text, InputType,
 };
 use anyhow::Result;
 use console::{style, Term};
@@ -41,27 +41,30 @@ impl TextProcessor {
                 ))
             }
         };
-        
-        Self {
-            ai_client,
-            config,
-        }
+
+        Self { ai_client, config }
     }
 
-    pub async fn process_text(&self, term: &Term, text: &str, raw: bool, _prompt_template: &str) -> Result<()> {
+    pub async fn process_text(
+        &self,
+        term: &Term,
+        text: &str,
+        raw: bool,
+        _prompt_template: &str,
+    ) -> Result<()> {
         // Validate input text
         validate_text(text)?;
 
         // Classify the input (language and type)
         let classification = classify_input(text);
-        
+
         // Get the appropriate prompt template based on classification
         let prompt_template = PromptTemplates::get_template(&classification);
 
         if !raw {
             let lang_str = match classification.language {
                 crate::utils::Language::English => "English",
-                crate::utils::Language::Chinese => "Chinese", 
+                crate::utils::Language::Chinese => "Chinese",
                 crate::utils::Language::Mixed => "Mixed",
             };
             let type_str = match classification.input_type {
@@ -69,15 +72,23 @@ impl TextProcessor {
                 InputType::Phrase => "phrase",
                 InputType::Sentence => "sentence",
             };
-            
-            term.write_line(&format!("🔍 Processing {} {}: {}", lang_str, type_str, text))?;
-            term.write_line(&format!("🤖 Querying {} API...", self.config.ai_provider.to_uppercase()))?;
+
+            term.write_line(&format!(
+                "🔍 Processing {} {}: {}",
+                lang_str, type_str, text
+            ))?;
+            term.write_line(&format!(
+                "🤖 Querying {} API...",
+                self.config.ai_provider.to_uppercase()
+            ))?;
         }
 
         // Get explanation from AI provider using the appropriate template
-        let mut explanation = Box::new(self.ai_client
-            .get_text_explanation(text, &prompt_template)
-            .await?);
+        let mut explanation = Box::new(
+            self.ai_client
+                .get_text_explanation(text, &prompt_template)
+                .await?,
+        );
 
         // If raw mode, just print the response and return
         if raw {
@@ -88,10 +99,10 @@ impl TextProcessor {
         // Display the explanation with beautiful markdown rendering
         let content_type = match classification.input_type {
             InputType::Word => "Word",
-            InputType::Phrase => "Phrase", 
+            InputType::Phrase => "Phrase",
             InputType::Sentence => "Sentence",
         };
-        
+
         term.write_line(&format!("\n📖 {} Explanation:", content_type))?;
         term.write_line(&style("=".repeat(50)).blue().to_string())?;
 
@@ -114,13 +125,7 @@ impl TextProcessor {
                 )
                 .as_str(),
             )?;
-            term.write_line(
-                format!(
-                    "{} - Skip this text",
-                    style("k").red().to_string()
-                )
-                .as_str(),
-            )?;
+            term.write_line(format!("{} - Skip this text", style("k").red().to_string()).as_str())?;
             term.write_line(
                 format!(
                     "{} - Regenerate explanation",
@@ -211,12 +216,7 @@ impl TextProcessor {
         Ok(())
     }
 
-    pub fn update_text(
-        &self,
-        term: &Term,
-        timestamp: &str,
-        content: &str,
-    ) -> Result<()> {
+    pub fn update_text(&self, term: &Term, timestamp: &str, content: &str) -> Result<()> {
         term.write_line(&format!(
             "🔄 Updating entry with timestamp '{}' in vocabulary notebook...",
             timestamp

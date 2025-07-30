@@ -245,6 +245,7 @@ Please provide the structured explanation for: [INSERT TEXT HERE]
 **[TRANSLATION TO DOMINANT LANGUAGE]**
 
 Please provide the translation for: [INSERT TEXT HERE]
-"#.to_string()
+"#
+        .to_string()
     }
 }

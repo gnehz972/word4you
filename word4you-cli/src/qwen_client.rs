@@ -1,7 +1,7 @@
+use crate::ai_client::AiClient;
 use anyhow::{anyhow, Result};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use crate::ai_client::AiClient;
 
 #[derive(Debug, Serialize)]
 struct QwenRequest {
@@ -49,7 +49,8 @@ pub struct QwenClient {
 
 impl QwenClient {
     pub fn new(api_key: String, _model_name: String) -> Self {
-        let base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions".to_string();
+        let base_url =
+            "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions".to_string();
         Self {
             client: Client::new(),
             api_key,
@@ -135,12 +136,12 @@ mod tests {
 
     #[test]
     fn test_qwen_client_creation() {
-        let client = QwenClient::new(
-            "test_api_key".to_string(),
-            "qwen-turbo".to_string(),
-        );
-        
+        let client = QwenClient::new("test_api_key".to_string(), "qwen-turbo".to_string());
+
         assert_eq!(client.api_key, "test_api_key");
-        assert_eq!(client.base_url, "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions");
+        assert_eq!(
+            client.base_url,
+            "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
+        );
     }
-} 
+}
