@@ -15,7 +15,7 @@ export function useCliSetup() {
     hasChecked.current = true;
 
     const checkCliInstallation = async () => {
-      const installed = isCliInstalled();
+      const installed = await isCliInstalled();
       setCliInstalled(installed);
 
       if (!installed) {

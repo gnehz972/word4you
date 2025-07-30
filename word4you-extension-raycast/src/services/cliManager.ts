@@ -1,5 +1,6 @@
 import fs from "fs";
 import {
+  CLI_CONFIG,
   createEnvironmentFromPreferences,
   ensureVocabularyDirectoryExists,
   getCliFilepath,
@@ -12,11 +13,20 @@ import { environment } from "@raycast/api";
 import path from "path";
 import { chmod, mkdir, rm } from "fs/promises";
 
-// Check if word4you CLI is installed
-export function isCliInstalled(): boolean {
+// Check if word4you CLI is installed with correct version
+export async function isCliInstalled(): Promise<boolean> {
   const availablePath = getAvailableExecutablePath();
   console.log("Checking for Word4You CLI, found at:", availablePath);
-  return availablePath !== null;
+  
+  if (!availablePath) {
+    return false;
+  }
+  
+  // Check if the found CLI has the correct version
+  const isVersionCorrect = await checkCliVersion(availablePath);
+  console.log("CLI version check result:", isVersionCorrect);
+  
+  return isVersionCorrect;
 }
 
 // Get executable path for the word4you CLI
@@ -24,12 +34,19 @@ async function getExecutablePathAsync(): Promise<string> {
   // Check if CLI is already available
   const availablePath = getAvailableExecutablePath();
   if (availablePath) {
-    return availablePath;
+    // Verify the version of the found CLI
+    const isVersionCorrect = await checkCliVersion(availablePath);
+    if (isVersionCorrect) {
+      console.log("Found CLI with correct version at:", availablePath);
+      return availablePath;
+    } else {
+      console.log("Found CLI but version is incorrect, will download correct version");
+    }
+  } else {
+    console.warn("word4you not found, will download it");
   }
 
-  console.warn("word4you not found, will download it");
-
-  // If not found, download it
+  // If not found or version is incorrect, download it
   try {
     return await ensureCLI();
   } catch (error) {
@@ -98,15 +115,54 @@ export async function executeWordCliCommandSync(args: string[]): Promise<string>
   });
 }
 
+// Check if the CLI version matches the expected version
+async function checkCliVersion(cliPath: string): Promise<boolean> {
+  try {
+    const result = executeCliCommand(cliPath, ["--version"], {
+      cwd: process.cwd(),
+      env: process.env,
+    });
+    
+    // Extract version from output (e.g., "word4you 1.0.0" -> "1.0.0")
+    const versionMatch = result.match(/word4you\s+(\d+\.\d+\.\d+)/i);
+    if (!versionMatch) {
+      console.warn("Could not parse CLI version from output:", result);
+      return false;
+    }
+    
+    const installedVersion = versionMatch[1];
+    const expectedVersion = CLI_CONFIG.version.replace(/^v/, ""); // Remove 'v' prefix if present
+    
+    console.log(`CLI version check: installed=${installedVersion}, expected=${expectedVersion}`);
+    
+    return installedVersion === expectedVersion;
+  } catch (error) {
+    console.error("Error checking CLI version:", error);
+    return false;
+  }
+}
+
 // Ensure the Word4You CLI is available, downloading it if necessary
 export async function ensureCLI(): Promise<string> {
   const cli = getCliFilepath();
 
   console.log("Ensuring Word4You CLI is available at:", cli);
 
-  // If CLI already exists, return its path
+  // If CLI already exists, check its version
   if (fs.existsSync(cli)) {
-    return cli;
+    const isVersionCorrect = await checkCliVersion(cli);
+    if (isVersionCorrect) {
+      console.log("CLI exists and version is correct");
+      return cli;
+    } else {
+      console.log("CLI exists but version is incorrect, will re-download");
+      // Remove the old CLI so it gets re-downloaded
+      try {
+        fs.unlinkSync(cli);
+      } catch (error) {
+        console.warn("Could not remove old CLI:", error);
+      }
+    }
   }
 
   // Get download configuration from config

@@ -17,7 +17,7 @@ export interface Preferences {
 // CLI Download Configuration
 export const CLI_CONFIG = {
   // GitHub release version and base URL
-  version: "v1.0.0",
+  version: "v1.1.0",
   baseUrl: "https://github.com/gnehz972/word4you/releases/download",
 
   // Platform-specific asset names
@@ -28,8 +28,8 @@ export const CLI_CONFIG = {
 
   // Expected SHA256 hashes for verification
   hashes: {
-    "word4you-aarch64-apple-darwin": "2a5bb4555e547c49ca837d8a4676cb50bf1afd8cf077dcf139f195bb7a06cd1a",
-    "word4you-x86_64-apple-darwin": "678e8c1fee0800ba754c90559a8b4b0a6b1a020eea4d04c12d4473298d2575fd",
+    "word4you-aarch64-apple-darwin": "860ffc91d20c31eb58794ed4bc672d89a5fb7337364fbb72397acc68501e8bad",
+    "word4you-x86_64-apple-darwin": "7f8da53c327de6842bac116c801896036831d5d7ad489c16420c3a26ece8064c",
   },
 } as const;
 
