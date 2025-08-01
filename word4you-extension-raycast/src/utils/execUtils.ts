@@ -44,10 +44,8 @@ export function executeCliWithStatusUpdate(
   } = {},
 ): Promise<boolean> {
   return new Promise((resolve) => {
-    const escapedPath = escapeExecutablePath(executablePath);
-    const escapedArgs = escapeArgs(args);
     // Use spawn for better control over arguments and streaming
-    const childProcess = spawn(escapedPath, escapedArgs, {
+    const childProcess = spawn(executablePath, args, {
       cwd: options.cwd || process.cwd(),
       env: options.env || process.env,
       stdio: ["pipe", "pipe", "pipe"], // Enable piping for all streams
