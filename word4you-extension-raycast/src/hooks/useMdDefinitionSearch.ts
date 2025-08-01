@@ -1,15 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { Toast, showToast } from "@raycast/api";
-import { WordExplanation } from "../types";
-import { getWordExplanation } from "../services/wordService";
+import { MdDefinition } from "../types";
+import { getMdDefinitionExplanation } from "../services/mdDefinitionService";
 
-export function useWordSearch(
-  savedWordsMap: Map<string, WordExplanation>,
+export function useMdDefinitionSearch(
+  savedMdDefinitionsMap: Map<string, MdDefinition>,
   isLoadingSaved: boolean,
-  initialWord?: string,
+  initialText?: string,
 ) {
-  const [searchText, setSearchText] = useState(initialWord || "");
-  const [aiResult, setAiResult] = useState<WordExplanation | null>(null);
+  const [searchText, setSearchText] = useState(initialText || "");
+  const [aiResult, setAiResult] = useState<MdDefinition | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSearch = useCallback(
@@ -21,11 +21,11 @@ export function useWordSearch(
 
       const searchLower = searchTerm.toLowerCase();
 
-      // Check if word exists locally
-      const localWord = savedWordsMap.get(searchLower);
+      // Check if text exists locally
+      const localMdDefinition = savedMdDefinitionsMap.get(searchLower);
 
-      if (localWord) {
-        // Word exists locally, no need to query AI
+      if (localMdDefinition) {
+        // Text exists locally, no need to query AI
         setAiResult(null);
         return;
       }
@@ -33,7 +33,7 @@ export function useWordSearch(
       // Clear previous AI result when starting a new search
       setAiResult(null);
 
-      // Only query AI if word doesn't exist locally
+      // Only query AI if text doesn't exist locally
       setIsLoading(true);
 
       const toast = await showToast({
@@ -41,7 +41,7 @@ export function useWordSearch(
         title: `Querying "${searchTerm}"...`,
       });
 
-      const result = await getWordExplanation(searchTerm.trim());
+      const result = await getMdDefinitionExplanation(searchTerm.trim());
 
       if (result) {
         toast.style = Toast.Style.Success;
@@ -55,20 +55,20 @@ export function useWordSearch(
 
       setIsLoading(false);
     },
-    [savedWordsMap],
+    [savedMdDefinitionsMap],
   );
 
-  // Auto-trigger if word is provided as argument
+  // Auto-trigger if text is provided as argument
   useEffect(() => {
-    if (initialWord && initialWord.trim() && !isLoadingSaved) {
-      setSearchText(initialWord.trim());
-      handleSearch(initialWord.trim());
+    if (initialText && initialText.trim() && !isLoadingSaved) {
+      setSearchText(initialText.trim());
+      handleSearch(initialText.trim());
     }
-  }, [initialWord, isLoadingSaved, handleSearch]);
+  }, [initialText, isLoadingSaved, handleSearch]);
 
   // Clear AI result when search text changes
   useEffect(() => {
-    if (aiResult && searchText.trim() !== aiResult.word) {
+    if (aiResult && searchText.trim() !== aiResult.text) {
       setAiResult(null);
     }
   }, [searchText, aiResult]);

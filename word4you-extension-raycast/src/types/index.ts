@@ -1,9 +1,9 @@
 export interface Arguments {
-  word: string;
+  text: string;
 }
 
-export interface WordExplanation {
-  word: string;
+export interface MdDefinition {
+  text: string;
   pronunciation: string;
   definition: string;
   chinese: string;

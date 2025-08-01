@@ -14,10 +14,12 @@
       "name": "learn-word",
       "title": "Learn Word",
       "subtitle": "Word4You",
-      "description": "Search saved words or query new words with AI explanations",
+      "description": "Learn word/phrase/sentence using AI and save",
       "mode": "view",
       "keywords": [
         "word",
+        "phrase",
+        "sentence",
         "query",
         "learn",
         "english",
@@ -29,8 +31,8 @@
       ],
       "arguments": [
         {
-          "name": "word",
-          "placeholder": "word",
+          "name": "text",
+          "placeholder": "word/phrase/sentence",
           "type": "text",
           "required": false
         }
@@ -67,7 +69,7 @@
           "type": "textfield",
           "required": false,
           "title": "Gemini Model Name",
-          "description": "The Gemini model to use for word explanations",
+          "description": "The Gemini model to use for text explanations",
           "default": "gemini-2.0-flash-001",
           "placeholder": "gemini-2.0-flash-001"
         },
@@ -84,7 +86,7 @@
           "type": "textfield",
           "required": false,
           "title": "QWEN Model Name",
-          "description": "The QWEN model to use for word explanations",
+          "description": "The QWEN model to use for text explanations",
           "default": "qwen-turbo",
           "placeholder": "qwen-turbo"
         },

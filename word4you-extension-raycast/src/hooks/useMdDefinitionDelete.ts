@@ -1,23 +1,23 @@
 import { Toast, showToast } from "@raycast/api";
-import { deleteWordFromVocabulary } from "../services/wordService";
+import { deleteMdDefinitionFromVocabulary } from "../services/mdDefinitionService";
 
-export function useWordDelete(onWordDeleted?: () => Promise<void>) {
+export function useMdDefinitionDelete(onMdDefinitionDeleted?: () => Promise<void>) {
   const handleDelete = async (timestamp: string) => {
     const toast = await showToast({
       style: Toast.Style.Animated,
-      title: `Deleting entry...`,
+      title: `Deleting...`,
     });
 
-    const success = await deleteWordFromVocabulary(timestamp, (message: string) => {
+    const success = await deleteMdDefinitionFromVocabulary(timestamp, (message: string) => {
       toast.message = message;
     });
 
     if (success) {
       toast.style = Toast.Style.Success;
-      toast.title = "Entry deleted successfully!";
+      toast.title = "Entry deleted";
 
-      if (onWordDeleted) {
-        await onWordDeleted();
+      if (onMdDefinitionDeleted) {
+        await onMdDefinitionDeleted();
       }
     } else {
       toast.style = Toast.Style.Failure;

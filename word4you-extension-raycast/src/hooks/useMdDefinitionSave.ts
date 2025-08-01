@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Toast, showToast } from "@raycast/api";
-import { saveWordToVocabulary } from "../services/wordService";
+import { saveMdDefinitionToVocabulary } from "../services/mdDefinitionService";
 
-export function useWordSave(onWordSaved?: () => Promise<void>, onAiResultCleared?: () => void) {
+export function useMdDefinitionSave(onMdDefinitionSaved?: () => Promise<void>, onAiResultCleared?: () => void) {
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async (content: string) => {
@@ -12,20 +12,20 @@ export function useWordSave(onWordSaved?: () => Promise<void>, onAiResultCleared
 
     const toast = await showToast({
       style: Toast.Style.Animated,
-      title: "Saving content to vocabulary...",
+      title: "Saving...",
     });
 
-    const success = await saveWordToVocabulary(content, (message: string) => {
+    const success = await saveMdDefinitionToVocabulary(content, (message: string) => {
       toast.message = message;
     });
 
     if (success) {
       toast.style = Toast.Style.Success;
-      toast.title = "Content saved successfully!";
+      toast.title = "Entry saved";
 
-      // Reload saved words to include the new content
-      if (onWordSaved) {
-        await onWordSaved();
+      // Reload saved md definitions to include the new content
+      if (onMdDefinitionSaved) {
+        await onMdDefinitionSaved();
       }
 
       // Clear AI result since it's now saved
@@ -34,7 +34,7 @@ export function useWordSave(onWordSaved?: () => Promise<void>, onAiResultCleared
       }
     } else {
       toast.style = Toast.Style.Failure;
-      toast.title = "Failed to save content";
+      toast.title = "Failed to save entry";
     }
 
     setIsSaving(false);

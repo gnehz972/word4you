@@ -7,26 +7,21 @@ import {
   getDownloadUrl,
   getVocabularyPath,
 } from "../config";
-import { downloadFile, verifyFileHash } from "../utils/downloadUtils";
-import { executeCliCommand, executeCliWithStatusUpdate } from "../utils/execUtils";
-import { environment } from "@raycast/api";
+import {downloadFile, verifyFileHash} from "../utils/downloadUtils";
+import {executeCliCommand, executeCliWithStatusUpdate} from "../utils/execUtils";
+import {environment} from "@raycast/api";
 import path from "path";
-import { chmod, mkdir, rm } from "fs/promises";
+import {chmod, mkdir, rm} from "fs/promises";
 
 // Check if word4you CLI is installed with correct version
 export async function isRequiredCliInstalled(): Promise<boolean> {
   const executablePath = getCliFilepath();
-  console.log("Checking for Word4You CLI, found at:", executablePath);
 
   if (!fs.existsSync(executablePath)) {
     return false;
   }
 
-  // Check if the found CLI has the correct version
-  const isVersionCorrect = await checkCliVersion(executablePath);
-  console.log("CLI version check result:", isVersionCorrect);
-
-  return isVersionCorrect;
+  return await checkCliVersion(executablePath);
 }
 
 // Execute a CLI command with all the common setup steps
