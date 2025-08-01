@@ -4,14 +4,16 @@ A fast, efficient command-line tool for learning words, phrases, and sentences i
 
 ## Features
 
-- 🌍 **Multilingual Support**: English, Chinese, and mixed-language input
+- 🌍 **Multilingual Support**: Full support for English, Chinese, and mixed-language input
+- 🔄 **Bi-directional Translation**: Seamless translation between Chinese and English
 - 🧠 **Smart Classification**: Automatically detects language and input type (word/phrase/sentence)
-- 🤖 **AI-powered explanations**: Google Gemini or QWEN with specialized prompts
-- 📝 **Adaptive Templates**: Different explanation formats for words, phrases, and sentences
-- 🔄 **Git backup/sync** with smart conflict resolution
-- 📚 **Markdown vocabulary notebook**
-- 🎨 **Rich terminal UI**
-- ⚡ **Fast execution** (Rust)
+- 🤖 **Dual AI Providers**: Google Gemini and Qwen APIs with specialized prompts for each input type
+- 📝 **Adaptive Templates**: Different explanation formats optimized for words, phrases, and sentences
+- 🎯 **Context-Aware**: Provides appropriate explanations based on detected language and input type
+- 🔄 **Git Backup/Sync**: Smart conflict resolution for vocabulary synchronization
+- 📚 **Markdown Vocabulary**: Human-readable notebook format
+- 🎨 **Rich Terminal UI**: Beautiful command-line interface
+- ⚡ **Fast Execution**: Built with Rust for optimal performance
 
 ## Screenshot
 CLI
@@ -86,16 +88,13 @@ Each combination gets a specialized prompt template:
 ./target/release/word4you query "早起的鸟儿有虫吃。" # Chinese sentence
 ./target/release/word4you query "Hello 你好"     # Mixed language
 
-# Specify AI provider
-./target/release/word4you query beautiful --provider gemini  # Use Gemini
-./target/release/word4you query beautiful --provider qwen    # Use QWEN
-
 # Other commands
 ./target/release/word4you test                 # Test API connection
 ./target/release/word4you config               # Configure the application
-./target/release/word4you save <text> --content <content>    # Save content
-./target/release/word4you delete <text> [--timestamp <timestamp>] # Delete entry
-./target/release/word4you update <text> --content <content> [--timestamp <timestamp>] # Update entry
+./target/release/word4you config --show-vob-path # Show vocabulary notebook path
+./target/release/word4you save <content>       # Save content to vocabulary notebook
+./target/release/word4you delete <timestamp>   # Delete entry by timestamp
+./target/release/word4you update <timestamp> --content <content> # Update entry by timestamp
 ./target/release/word4you --help               # Show help
 ```
 
@@ -194,5 +193,5 @@ Check the [sample vocabulary notebook](./sample_vocabulary_notebook.md) for an e
 ## Requirements
 
 - Rust 1.70+
-- Google Gemini API key
-- Git (optional)
+- Either a Google Gemini API key or Qwen API key (or both)
+- Git (optional, for vocabulary synchronization)

@@ -16,10 +16,13 @@ or just put it in your obsidian vault, using obsidian plugin to do the synchroni
 
 ## Features
 
-- 🤖 AI-powered word explanations using Google Gemini API or QWEN API
-- 📚 Markdown vocabulary notebook easily readable and editable and convertible to other formats
-- 🔄 Git backup/sync with smart conflict resolution
-- 🎨 Rich terminal UI/Raycast extension
+- 🤖 **Dual AI Support**: AI-powered explanations using Google Gemini API or Qwen API
+- 🌍 **Multilingual Input**: Support for words, phrases, and sentences in English, Chinese, and mixed languages
+- 🔄 **Bi-directional Translation**: Seamless translation between Chinese and English
+- 📚 **Smart Classification**: Automatically detects input type and provides appropriate explanations
+- 📝 **Markdown Vocabulary**: Easily readable and editable vocabulary notebook
+- 🔄 **Git Sync**: Backup and synchronization with smart conflict resolution
+- 🎨 **Rich UI**: Beautiful terminal interface and Raycast extension
 
 ## Screenshot
 Word4you CLI
