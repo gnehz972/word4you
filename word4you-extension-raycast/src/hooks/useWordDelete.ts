@@ -1,6 +1,5 @@
 import { Toast, showToast } from "@raycast/api";
 import { deleteWordFromVocabulary } from "../services/wordService";
-import { showFailureToast } from "@raycast/utils";
 
 export function useWordDelete(onWordDeleted?: () => Promise<void>) {
   const handleDelete = async (timestamp: string) => {
@@ -26,7 +25,10 @@ export function useWordDelete(onWordDeleted?: () => Promise<void>) {
         toast.title = "Failed to delete entry";
       }
     } catch (error) {
-      showFailureToast(error, { title: "Failed to delete entry" });
+      toast.style = Toast.Style.Failure;
+      toast.title = "Error deleting entry";
+      toast.message = error instanceof Error ? error.message : "An unknown error occurred";
+      console.error("Error details:", error);
     }
   };
 

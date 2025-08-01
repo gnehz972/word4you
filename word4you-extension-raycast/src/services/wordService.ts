@@ -1,6 +1,6 @@
 import fs from "fs";
 import { WordExplanation } from "../types";
-import { executeWordCliCommand, executeWordCliCommandSync } from "./cliManager";
+import { executeWordCliWithStatusUpdate, executeWordCli } from "./cliManager";
 
 export function parseRawWordExplanation(output: string, word: string): WordExplanation | null {
   try {
@@ -79,7 +79,7 @@ export function parseRawWordExplanation(output: string, word: string): WordExpla
 
 export async function getWordExplanation(word: string): Promise<WordExplanation | null> {
   try {
-    const output = await executeWordCliCommandSync(["query", word, "--raw"]);
+    const output = await executeWordCli(["query", word, "--raw"]);
     return parseRawWordExplanation(output, word);
   } catch (error: unknown) {
     console.error("Error getting word explanation:", error);
@@ -92,15 +92,13 @@ export async function saveWordToVocabulary(
   onStatusUpdate?: (message: string) => void,
 ): Promise<boolean> {
   try {
-    const result = await executeWordCliCommand(["save", content], { onStatusUpdate });
+    const result = await executeWordCliWithStatusUpdate(["save", content], { onStatusUpdate });
 
-    if (!result.success) {
-      console.error(`Save failed for content`);
-      console.error(`content: ${content}`);
-      console.error(`Error details:`, result.error);
+    if (!result) {
+      console.error(`Save failed for content`, content);
     }
 
-    return result.success;
+    return result;
   } catch (error) {
     console.error("Error in saveWordToVocabulary:", error);
     return false;
@@ -112,14 +110,13 @@ export async function deleteWordFromVocabulary(
   onStatusUpdate?: (message: string) => void,
 ): Promise<boolean> {
   try {
-    const result = await executeWordCliCommand(["delete", timestamp], { onStatusUpdate });
+    const result = await executeWordCliWithStatusUpdate(["delete", timestamp], { onStatusUpdate });
 
-    if (!result.success) {
+    if (!result) {
       console.error(`Delete failed for timestamp: ${timestamp}`);
-      console.error(`Error details:`, result.error);
     }
 
-    return result.success;
+    return result;
   } catch (error) {
     console.error("Error in deleteWordFromVocabulary:", error);
     return false;
@@ -132,15 +129,15 @@ export async function updateWordInVocabulary(
   onStatusUpdate?: (message: string) => void,
 ): Promise<boolean> {
   try {
-    const result = await executeWordCliCommand(["update", timestamp, "--content", content], { onStatusUpdate });
+    const result = await executeWordCliWithStatusUpdate(["update", timestamp, "--content", content], {
+      onStatusUpdate,
+    });
 
-    if (!result.success) {
+    if (!result) {
       console.error(`Update failed for timestamp: ${timestamp}`);
-      console.error(`content: ${content}`);
-      console.error(`Error details:`, result.error);
     }
 
-    return result.success;
+    return result;
   } catch (error) {
     console.error("Error in updateWordInVocabulary:", error);
     return false;
