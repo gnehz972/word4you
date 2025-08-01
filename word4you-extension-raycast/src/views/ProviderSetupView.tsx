@@ -1,4 +1,4 @@
-import { List, ActionPanel, Action, Icon, openExtensionPreferences } from "@raycast/api";
+import { List, ActionPanel, Action, Icon, openExtensionPreferences, popToRoot } from "@raycast/api";
 import { getPreferenceValues } from "@raycast/api";
 
 interface Preferences {
@@ -29,7 +29,14 @@ export function ProviderSetupView() {
         description={message || "Please configure your AI provider and API key in extension preferences"}
         actions={
           <ActionPanel>
-            <Action title="Open Extension Preferences" icon={Icon.Gear} onAction={openExtensionPreferences} />
+            <Action
+              title="Open Extension Preferences"
+              icon={Icon.Gear}
+              onAction={async () => {
+                await openExtensionPreferences();
+                await popToRoot();
+              }}
+            />
           </ActionPanel>
         }
       />
