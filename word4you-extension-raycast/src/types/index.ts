@@ -11,5 +11,5 @@ export interface WordExplanation {
   example_zh: string;
   tip: string;
   raw_output: string;
-  timestamp?: string;
+  timestamp: string;
 }

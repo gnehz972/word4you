@@ -35,10 +35,10 @@ export function WordListItem({
           {!isAiResult && (
             <>
               {onDelete && word.timestamp && (
-                <Action title="Delete Word" icon="🗑️" onAction={() => onDelete(word.timestamp!)} />
+                <Action title="Delete Word" icon="🗑️" onAction={() => onDelete(word.timestamp)} />
               )}
               {onUpdate && word.timestamp && (
-                <Action title="Update Word" icon="📝" onAction={() => onUpdate(word.word, word.timestamp!)} />
+                <Action title="Update Word" icon="📝" onAction={() => onUpdate(word.word, word.timestamp)} />
               )}
             </>
           )}
