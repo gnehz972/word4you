@@ -7,11 +7,11 @@ import {
   getDownloadUrl,
   getVocabularyPath,
 } from "../config";
-import {downloadFile, verifyFileHash} from "../utils/downloadUtils";
-import {executeCliCommand, executeCliWithStatusUpdate} from "../utils/execUtils";
-import {environment} from "@raycast/api";
+import { downloadFile, verifyFileHash } from "../utils/downloadUtils";
+import { executeCliCommand, executeCliWithStatusUpdate } from "../utils/execUtils";
+import { environment } from "@raycast/api";
 import path from "path";
-import {chmod, mkdir, rm} from "fs/promises";
+import { chmod, mkdir, rm } from "fs/promises";
 
 // Check if word4you CLI is installed with correct version
 export async function isRequiredCliInstalled(): Promise<boolean> {
