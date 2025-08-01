@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import { Toast, showToast } from "@raycast/api";
 import { WordExplanation } from "../types";
 import { getWordExplanation } from "../services/wordService";
-import { showFailureToast } from "@raycast/utils";
 
 export function useWordSearch(
   savedWordsMap: Map<string, WordExplanation>,
@@ -42,24 +41,19 @@ export function useWordSearch(
         title: `Querying "${searchTerm}"...`,
       });
 
-      try {
-        const result = await getWordExplanation(searchTerm.trim());
+      const result = await getWordExplanation(searchTerm.trim());
 
-        if (result) {
-          toast.style = Toast.Style.Success;
-          toast.title = "Query completed!";
-          setAiResult(result);
-        } else {
-          toast.style = Toast.Style.Failure;
-          toast.title = "Failed to get explanation";
-          setAiResult(null);
-        }
-      } catch (error) {
-        showFailureToast(error, { title: "Error occurred" });
+      if (result) {
+        toast.style = Toast.Style.Success;
+        toast.title = "Query completed!";
+        setAiResult(result);
+      } else {
+        toast.style = Toast.Style.Failure;
+        toast.title = "Failed to get explanation";
         setAiResult(null);
-      } finally {
-        setIsLoading(false);
       }
+
+      setIsLoading(false);
     },
     [savedWordsMap],
   );

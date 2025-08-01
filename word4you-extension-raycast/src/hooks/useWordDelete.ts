@@ -8,27 +8,20 @@ export function useWordDelete(onWordDeleted?: () => Promise<void>) {
       title: `Deleting entry...`,
     });
 
-    try {
-      const success = await deleteWordFromVocabulary(timestamp, (message: string) => {
-        toast.message = message;
-      });
+    const success = await deleteWordFromVocabulary(timestamp, (message: string) => {
+      toast.message = message;
+    });
 
-      if (success) {
-        toast.style = Toast.Style.Success;
-        toast.title = "Entry deleted successfully!";
+    if (success) {
+      toast.style = Toast.Style.Success;
+      toast.title = "Entry deleted successfully!";
 
-        if (onWordDeleted) {
-          await onWordDeleted();
-        }
-      } else {
-        toast.style = Toast.Style.Failure;
-        toast.title = "Failed to delete entry";
+      if (onWordDeleted) {
+        await onWordDeleted();
       }
-    } catch (error) {
+    } else {
       toast.style = Toast.Style.Failure;
-      toast.title = "Error deleting entry";
-      toast.message = error instanceof Error ? error.message : "An unknown error occurred";
-      console.error("Error details:", error);
+      toast.title = "Failed to delete entry";
     }
   };
 

@@ -81,7 +81,7 @@ export async function getWordExplanation(word: string): Promise<WordExplanation 
   try {
     const output = await executeWordCli(["query", word, "--raw"]);
     return parseRawWordExplanation(output, word);
-  } catch (error: unknown) {
+  } catch (error) {
     console.error("Error getting word explanation:", error);
     return null;
   }
