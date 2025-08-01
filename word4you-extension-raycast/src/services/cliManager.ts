@@ -17,15 +17,15 @@ import { chmod, mkdir, rm } from "fs/promises";
 export async function isCliInstalled(): Promise<boolean> {
   const availablePath = getAvailableExecutablePath();
   console.log("Checking for Word4You CLI, found at:", availablePath);
-  
+
   if (!availablePath) {
     return false;
   }
-  
+
   // Check if the found CLI has the correct version
   const isVersionCorrect = await checkCliVersion(availablePath);
   console.log("CLI version check result:", isVersionCorrect);
-  
+
   return isVersionCorrect;
 }
 
@@ -122,19 +122,19 @@ async function checkCliVersion(cliPath: string): Promise<boolean> {
       cwd: process.cwd(),
       env: process.env,
     });
-    
+
     // Extract version from output (e.g., "word4you 1.0.0" -> "1.0.0")
     const versionMatch = result.match(/word4you\s+(\d+\.\d+\.\d+)/i);
     if (!versionMatch) {
       console.warn("Could not parse CLI version from output:", result);
       return false;
     }
-    
+
     const installedVersion = versionMatch[1];
     const expectedVersion = CLI_CONFIG.version.replace(/^v/, ""); // Remove 'v' prefix if present
-    
+
     console.log(`CLI version check: installed=${installedVersion}, expected=${expectedVersion}`);
-    
+
     return installedVersion === expectedVersion;
   } catch (error) {
     console.error("Error checking CLI version:", error);

@@ -90,6 +90,13 @@ export function ensureVocabularyDirectoryExists(vocabularyPath: string): void {
   }
 }
 
+// Check if user has configured their AI provider and API key
+export function isProviderConfigured(): boolean {
+  const preferences = getPreferenceValues<Preferences>();
+  const provider = preferences.aiProvider || "gemini";
+  return (provider === "gemini" && !!preferences.geminiApiKey) || (provider === "qwen" && !!preferences.qwenApiKey);
+}
+
 // Create environment variables from preferences
 export function createEnvironmentFromPreferences(): NodeJS.ProcessEnv {
   const preferences = getPreferenceValues<Preferences>();

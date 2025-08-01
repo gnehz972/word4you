@@ -1,5 +1,10 @@
 # Word4you Changelog
 
+## [Unreleased]
+
+- Add custom provider setup view for AI provider selection and API key configuration
+- Support for Qwen as an alternative AI provider
+
 ## [Initial Version] - {PR_MERGE_DATE}
 
 - Add Wrapper to consume word4you CLI

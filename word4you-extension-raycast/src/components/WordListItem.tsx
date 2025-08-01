@@ -37,7 +37,9 @@ export function WordListItem({
               {onDelete && word.timestamp && (
                 <Action title="Delete Word" icon="🗑️" onAction={() => onDelete(word.timestamp!)} />
               )}
-              {onUpdate && word.timestamp && <Action title="Update Word" icon="📝" onAction={() => onUpdate(word.word, word.timestamp!)} />}
+              {onUpdate && word.timestamp && (
+                <Action title="Update Word" icon="📝" onAction={() => onUpdate(word.word, word.timestamp!)} />
+              )}
             </>
           )}
         </ActionPanel>
