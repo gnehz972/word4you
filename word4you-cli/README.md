@@ -42,17 +42,6 @@ Saved vocabulary notebook(View in Obsidian)
    word4you query beautiful --provider qwen    # Use QWEN
    ```
 
-## Backward Compatibility
-
-If you have an existing Word4You configuration, it will be automatically migrated to the new format when you first run the updated version. The migration process:
-
-- Preserves your existing Gemini API key and settings
-- Sets QWEN as an optional provider (you can configure it later)
-- Maintains all your vocabulary and Git settings
-- Automatically saves the migrated configuration
-
-You'll see a message like "ℹ️  Migrating configuration from old format to new format..." during the migration process.
-
 ## Multilingual Input Support
 
 Word4You now supports English, Chinese, and mixed-language input with intelligent classification:
