@@ -155,4 +155,3 @@ export function useComposeWords(savedMdDefinitions: MdDefinition[], isLoadingSav
     generateSentence,
   };
 }
-

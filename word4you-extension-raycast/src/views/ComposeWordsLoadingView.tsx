@@ -11,4 +11,3 @@ export function ComposeWordsLoadingView({ currentWords }: ComposeWordsLoadingVie
 
   return <Detail isLoading={true} markdown={loadingMsg} />;
 }
-

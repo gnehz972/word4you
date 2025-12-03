@@ -12,14 +12,10 @@ import { isProviderConfigured } from "./config";
 
 function ComposeWordsView() {
   const { savedMdDefinitions, isLoadingSaved } = useSavedMdDefinitions();
-  const {
-    composedSentence,
-    isGenerating,
-    error,
-    currentWords,
-    singleWordsCount,
-    generateSentence,
-  } = useComposeWords(savedMdDefinitions, isLoadingSaved);
+  const { composedSentence, isGenerating, error, currentWords, singleWordsCount, generateSentence } = useComposeWords(
+    savedMdDefinitions,
+    isLoadingSaved,
+  );
 
   if (isLoadingSaved) {
     return <List isLoading={true} />;

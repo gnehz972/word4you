@@ -22,4 +22,3 @@ Please use the **Learn Word** command to save more words to your vocabulary note
     />
   );
 }
-
