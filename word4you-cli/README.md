@@ -17,13 +17,17 @@ A fast, efficient command-line tool for learning words, phrases, and sentences i
 - ⚡ **Fast Execution**: Built with Rust for optimal performance
 
 ## Screenshot
-CLI
+CLI Query Word
 
-<img src="./media/screenshot-1.png" width=800 />
+<img src="./media/screenshot-1.png" width=600 />
+
+Compose sentence
+
+<img src="./media/screenshot-3.png" width=600 />
 
 Saved vocabulary notebook(View in Obsidian)
 
-<img src="./media/screenshot-2.png" width=800 />
+<img src="./media/screenshot-2.png" width=600 />
 
 ## Quick Start
 1. Download the [appropriate binary](https://github.com/gnehz972/word4you/releases) for your system and rename it to `word4you`
