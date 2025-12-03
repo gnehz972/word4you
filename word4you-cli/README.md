@@ -78,8 +78,9 @@ Each combination gets a specialized prompt template:
 ./target/release/word4you query "早起的鸟儿有虫吃。" # Chinese sentence
 ./target/release/word4you query "Hello 你好"     # Mixed language
 
-# Compose a sentence using two words
-./target/release/word4you compose beautiful resilience  # Generate sentence with both words
+# Compose sentences
+./target/release/word4you compose                       # Interactive mode with random saved words
+./target/release/word4you compose beautiful resilience  # Generate sentence with specific words
 
 # Other commands
 ./target/release/word4you test                 # Test API connection

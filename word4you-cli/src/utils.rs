@@ -333,6 +333,66 @@ pub fn get_work_dir(vocabulary_notebook_file: &str) -> Result<&Path> {
     Ok(work_dir)
 }
 
+/// Parse saved word titles from the vocabulary notebook
+/// Returns a vector of word/phrase titles (the text after "## ")
+pub fn parse_saved_words(vocabulary_notebook_file: &str) -> Result<Vec<String>> {
+    let path = Path::new(vocabulary_notebook_file);
+    
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    
+    let content = fs::read_to_string(vocabulary_notebook_file)?;
+    let mut words = Vec::new();
+    
+    for line in content.lines() {
+        if line.starts_with("## ") {
+            let word = line.trim_start_matches("## ").trim().to_string();
+            if !word.is_empty() {
+                words.push(word);
+            }
+        }
+    }
+    
+    Ok(words)
+}
+
+/// Get random words from a list, excluding composed sentences (those with " + ")
+pub fn get_random_single_words(words: &[String], count: usize) -> Vec<String> {
+    use std::collections::HashSet;
+    
+    // Filter out composed sentences
+    let single_words: Vec<&String> = words
+        .iter()
+        .filter(|w| !w.contains(" + "))
+        .collect();
+    
+    if single_words.len() < count {
+        return single_words.into_iter().cloned().collect();
+    }
+    
+    // Simple random selection without external crate
+    let mut selected = HashSet::new();
+    let mut result = Vec::new();
+    
+    // Use a simple pseudo-random based on system time
+    let seed = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos() as usize;
+    
+    let mut attempts = 0;
+    while result.len() < count && attempts < 1000 {
+        let idx = (seed.wrapping_mul(attempts + 1).wrapping_add(attempts * 7)) % single_words.len();
+        if selected.insert(idx) {
+            result.push(single_words[idx].clone());
+        }
+        attempts += 1;
+    }
+    
+    result
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

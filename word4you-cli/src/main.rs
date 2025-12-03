@@ -32,7 +32,8 @@ Features:
 Usage:
   word4you                           # Interactive mode (enter text one by one)
   word4you query <text>              # Learn a new English or Chinese word, phrase, or sentence
-  word4you compose <word1> <word2>   # Compose a sentence using two words
+  word4you compose                   # Interactive compose mode (random words from saved vocabulary)
+  word4you compose <word1> <word2>   # Compose a sentence using two specific words
   word4you test                      # Test API connection
   word4you config                    # Set up or update configuration
   word4you config --show-vob-path    # Show the vocabulary notebook path
@@ -90,13 +91,13 @@ enum Commands {
         content: String,
     },
 
-    /// Compose a sentence using two given words
+    /// Compose a sentence using two given words (or random words if not provided)
     Compose {
-        /// First word to use in the sentence
-        word1: String,
+        /// First word to use in the sentence (optional, uses random if not provided)
+        word1: Option<String>,
 
-        /// Second word to use in the sentence
-        word2: String,
+        /// Second word to use in the sentence (optional, uses random if not provided)
+        word2: Option<String>,
     },
 
     /// Test the API connection
@@ -171,9 +172,21 @@ async fn main() -> Result<()> {
             }
         }
         Some(Commands::Compose { word1, word2 }) => {
-            if let Err(e) = compose_sentence(&term, word1, word2).await {
-                eprintln!("❌ Error: {}", e);
-                return Ok(());
+            match (word1, word2) {
+                (Some(w1), Some(w2)) => {
+                    // Both words provided, compose directly
+                    if let Err(e) = compose_sentence(&term, w1, w2).await {
+                        eprintln!("❌ Error: {}", e);
+                        return Ok(());
+                    }
+                }
+                _ => {
+                    // No words or partial words, enter interactive mode
+                    if let Err(e) = interactive_compose_mode(&term).await {
+                        eprintln!("❌ Error: {}", e);
+                        return Ok(());
+                    }
+                }
             }
         }
         Some(Commands::Config { show_vob_path }) => {
@@ -267,6 +280,174 @@ async fn compose_sentence(_term: &Term, word1: &str, word2: &str) -> anyhow::Res
 
     // Print result directly (for CLI parsing)
     println!("{}", result);
+
+    Ok(())
+}
+
+async fn interactive_compose_mode(term: &Term) -> anyhow::Result<()> {
+    use crate::utils::{get_random_single_words, parse_saved_words, prepend_to_vocabulary_notebook};
+    use termimad::*;
+
+    // Validate configuration
+    let config = Config::load()?;
+
+    // Initialize text processor
+    let processor = TextProcessor::new(config.clone());
+
+    term.write_line(
+        &style("✍️  Welcome to Word4You Compose Mode!")
+            .cyan()
+            .bold()
+            .to_string(),
+    )?;
+    term.write_line("Compose sentences using your saved words.\n")?;
+
+    // Parse saved words from vocabulary notebook
+    let all_words = parse_saved_words(&config.vocabulary_notebook_file)?;
+    let single_words: Vec<String> = all_words
+        .iter()
+        .filter(|w| !w.contains(" + "))
+        .cloned()
+        .collect();
+
+    if single_words.len() < 2 {
+        term.write_line(&style("❌ You need at least 2 saved words to compose sentences.")
+            .red()
+            .to_string())?;
+        term.write_line("Please use 'word4you query <word>' to save more words first.")?;
+        return Ok(());
+    }
+
+    term.write_line(&format!(
+        "📚 Found {} saved words (excluding composed sentences)\n",
+        single_words.len()
+    ))?;
+
+    // Create a markdown skin for rendering
+    let skin = MadSkin::default();
+
+    // Get initial random words
+    let mut current_words = get_random_single_words(&single_words, 2);
+    if current_words.len() < 2 {
+        return Err(anyhow::anyhow!("Not enough words to compose"));
+    }
+
+    loop {
+        let word1 = &current_words[0];
+        let word2 = &current_words[1];
+
+        term.write_line(&format!(
+            "🎲 Composing: {} + {}",
+            style(word1).yellow(),
+            style(word2).yellow()
+        ))?;
+        term.write_line(&format!(
+            "🤖 Querying {} API...\n",
+            config.ai_provider.to_uppercase()
+        ))?;
+
+        // Generate sentence
+        let result = processor.compose_sentence(word1, word2).await?;
+
+        // Display result
+        term.write_line(&style("=".repeat(50)).blue().to_string())?;
+        let rendered = FmtText::from(&skin, &result, None);
+        term.write_line(&rendered.to_string())?;
+        term.write_line(&style("=".repeat(50)).blue().to_string())?;
+
+        // Show action menu
+        term.write_line("\nChoose an action:")?;
+        term.write_line(
+            &format!(
+                "{} - Regenerate with same words ({} + {})",
+                style("r").green(),
+                word1,
+                word2
+            ),
+        )?;
+        term.write_line(
+            &format!(
+                "{} - Generate with new random words",
+                style("n").yellow()
+            ),
+        )?;
+        term.write_line(
+            &format!(
+                "{} - Save to vocabulary notebook",
+                style("s").cyan()
+            ),
+        )?;
+        term.write_line(
+            &format!(
+                "{} - Exit",
+                style("e").red()
+            ),
+        )?;
+        term.write_line("")?;
+
+        let choices = vec!["r", "n", "s", "e"];
+        let selection = dialoguer::Select::new()
+            .with_prompt("Enter your choice")
+            .items(&choices)
+            .default(0)
+            .interact()?;
+
+        match selection {
+            0 => {
+                // Regenerate with same words - just continue the loop
+                term.write_line("\n🔄 Regenerating with same words...\n")?;
+                continue;
+            }
+            1 => {
+                // Generate with new random words
+                term.write_line("\n🎲 Selecting new random words...\n")?;
+                current_words = get_random_single_words(&single_words, 2);
+                if current_words.len() < 2 {
+                    term.write_line("❌ Not enough words available")?;
+                    break;
+                }
+                continue;
+            }
+            2 => {
+                // Save to vocabulary notebook
+                term.write_line("\n💾 Saving to vocabulary notebook...")?;
+                prepend_to_vocabulary_notebook(&config.vocabulary_notebook_file, &result)?;
+                term.write_line(&style("✅ Sentence saved!").green().to_string())?;
+                
+                // Ask what to do next
+                term.write_line("\nWhat would you like to do next?")?;
+                let next_choices = vec!["Continue composing", "Exit"];
+                let next_selection = dialoguer::Select::new()
+                    .with_prompt("Choose")
+                    .items(&next_choices)
+                    .default(0)
+                    .interact()?;
+                
+                if next_selection == 1 {
+                    term.write_line("\n👋 Goodbye!")?;
+                    break;
+                }
+                
+                // Get new words for next round
+                term.write_line("\n🎲 Selecting new random words...\n")?;
+                current_words = get_random_single_words(&single_words, 2);
+                if current_words.len() < 2 {
+                    term.write_line("❌ Not enough words available")?;
+                    break;
+                }
+                continue;
+            }
+            3 => {
+                // Exit
+                term.write_line("\n👋 Goodbye!")?;
+                break;
+            }
+            _ => {
+                term.write_line("❓ Invalid choice. Please try again.")?;
+                continue;
+            }
+        }
+    }
 
     Ok(())
 }
