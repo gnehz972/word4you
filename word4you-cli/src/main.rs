@@ -24,6 +24,7 @@ Features:
 • AI-powered explanations for words, phrases, and sentences using Google Gemini or QWEN
 • Translations between English and Chinese with phonetic symbols
 • Example sentences in both English and Chinese
+• Compose sentences using two words with AI
 • Automatic Git integration for version control
 • Markdown-formatted vocabulary notebook
 • Content update functionality (delete and replace)
@@ -31,11 +32,12 @@ Features:
 Usage:
   word4you                           # Interactive mode (enter text one by one)
   word4you query <text>              # Learn a new English or Chinese word, phrase, or sentence
+  word4you compose <word1> <word2>   # Compose a sentence using two words
   word4you test                      # Test API connection
   word4you config                    # Set up or update configuration
-  word4you config --show-vob-path      # Show the vocabulary notebook path
-  word4you save <content>                   # Save content to vocabulary notebook
-  word4you delete <timestamp>                    # Delete content from vocabulary notebook by timestamp
+  word4you config --show-vob-path    # Show the vocabulary notebook path
+  word4you save <content>            # Save content to vocabulary notebook
+  word4you delete <timestamp>        # Delete content from vocabulary notebook by timestamp
   word4you update <timestamp> --content <content>  # Update content (delete entry by timestamp, then save)
 
 Options:
@@ -47,7 +49,7 @@ Options:
     name = "word4you",
     about = "Learn English words with AI-powered explanations using Google Gemini",
     long_about = INTRO,
-    version = "1.1.0"
+    version = "1.2.0"
 )]
 struct Cli {
     #[command(subcommand)]

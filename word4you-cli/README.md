@@ -9,6 +9,7 @@ A fast, efficient command-line tool for learning words, phrases, and sentences i
 - 🧠 **Smart Classification**: Automatically detects language and input type (word/phrase/sentence)
 - 🤖 **Dual AI Providers**: Google Gemini and Qwen APIs with specialized prompts for each input type
 - 📝 **Adaptive Templates**: Different explanation formats optimized for words, phrases, and sentences
+- ✍️ **Compose Sentences**: Generate sentences using two words with AI for practice
 - 🎯 **Context-Aware**: Provides appropriate explanations based on detected language and input type
 - 🔄 **Git Backup/Sync**: Smart conflict resolution for vocabulary synchronization
 - 📚 **Markdown Vocabulary**: Human-readable notebook format
@@ -76,6 +77,9 @@ Each combination gets a specialized prompt template:
 ./target/release/word4you query 你好             # Chinese word/phrase
 ./target/release/word4you query "早起的鸟儿有虫吃。" # Chinese sentence
 ./target/release/word4you query "Hello 你好"     # Mixed language
+
+# Compose a sentence using two words
+./target/release/word4you compose beautiful resilience  # Generate sentence with both words
 
 # Other commands
 ./target/release/word4you test                 # Test API connection

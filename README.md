@@ -20,6 +20,7 @@ or just put it in your obsidian vault, using obsidian plugin to do the synchroni
 - 🌍 **Multilingual Input**: Support for words, phrases, and sentences in English, Chinese, and mixed languages
 - 🔄 **Bi-directional Translation**: Seamless translation between Chinese and English
 - 📚 **Smart Classification**: Automatically detects input type and provides appropriate explanations
+- ✍️ **Compose Sentences**: Generate sentences using two words with AI for practice
 - 📝 **Markdown Vocabulary**: Easily readable and editable vocabulary notebook
 - 🔄 **Git Sync**: Backup and synchronization with smart conflict resolution
 - 🎨 **Rich UI**: Beautiful terminal interface and Raycast extension

@@ -1,6 +1,6 @@
 [package]
 name = "word4you"
-version = "1.1.0"
+version = "1.2.0"
 edition = "2021"
 authors = ["gnehz972 <zoz20042008@gmail.com>"]
 description = "A command-line tool for learning English words with AI-powered explanations using Google Gemini"
