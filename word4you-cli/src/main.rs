@@ -88,6 +88,15 @@ enum Commands {
         content: String,
     },
 
+    /// Compose a sentence using two given words
+    Compose {
+        /// First word to use in the sentence
+        word1: String,
+
+        /// Second word to use in the sentence
+        word2: String,
+    },
+
     /// Test the API connection
     Test,
 
@@ -155,6 +164,12 @@ async fn main() -> Result<()> {
         }
         Some(Commands::Update { timestamp, content }) => {
             if let Err(e) = update_text(&term, timestamp, content).await {
+                eprintln!("❌ Error: {}", e);
+                return Ok(());
+            }
+        }
+        Some(Commands::Compose { word1, word2 }) => {
+            if let Err(e) = compose_sentence(&term, word1, word2).await {
                 eprintln!("❌ Error: {}", e);
                 return Ok(());
             }
@@ -234,6 +249,22 @@ async fn update_text(term: &Term, timestamp: &str, content: &str) -> anyhow::Res
 
     // Update the entry (delete by timestamp, then save)
     processor.update_text(term, timestamp, content)?;
+
+    Ok(())
+}
+
+async fn compose_sentence(_term: &Term, word1: &str, word2: &str) -> anyhow::Result<()> {
+    // Validate configuration
+    let config = Config::load()?;
+
+    // Initialize text processor
+    let processor = TextProcessor::new(config);
+
+    // Compose a sentence using both words
+    let result = processor.compose_sentence(word1, word2).await?;
+
+    // Print result directly (for CLI parsing)
+    println!("{}", result);
 
     Ok(())
 }

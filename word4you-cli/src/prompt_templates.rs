@@ -248,4 +248,35 @@ Please provide the translation for: [INSERT TEXT HERE]
 "#
         .to_string()
     }
+
+    /// Template for composing a sentence using two given words
+    pub fn compose_sentence_template() -> String {
+        r#"
+**Role:** You are a creative English teacher who helps students practice vocabulary by composing natural, meaningful sentences.
+
+**Task:** Create ONE natural English sentence that uses BOTH of the following words/phrases. The sentence should be:
+- Grammatically correct
+- Natural and commonly used in daily life
+- Clear and easy to understand
+- Between 10-20 words in length
+
+**Output Structure:**
+## [WORD1] + [WORD2]
+
+- [ENGLISH SENTENCE]
+
+- [中文翻译]
+
+**Example:**
+Words: "resilience", "overcome"
+## resilience + overcome
+
+- Her remarkable resilience helped her overcome the challenges she faced during the pandemic.
+
+- 她非凡的韧性帮助她克服了疫情期间面临的挑战。
+
+Now create a sentence using these two words: [INSERT TEXT HERE]
+"#
+        .to_string()
+    }
 }

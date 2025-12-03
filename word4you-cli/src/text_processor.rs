@@ -185,6 +185,19 @@ impl TextProcessor {
         self.ai_client.test_connection().await
     }
 
+    /// Compose a sentence using two words and return the result
+    pub async fn compose_sentence(&self, word1: &str, word2: &str) -> Result<String> {
+        let prompt_template = PromptTemplates::compose_sentence_template();
+        let words_text = format!("\"{}\", \"{}\"", word1, word2);
+
+        let result = self
+            .ai_client
+            .get_text_explanation(&words_text, &prompt_template)
+            .await?;
+
+        Ok(result)
+    }
+
     pub fn save_text(&self, term: &Term, content: &str) -> Result<()> {
         term.write_line("💾 Saving content to vocabulary notebook...")?;
 
